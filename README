@@ -1,0 +1,27 @@
+The widespread availability of CAD tools and rapid manufacturing techniques
+like 3D printing and laser cutting allows designers to rapidly prototype the
+shape of new devices.  Many such devices also feature electromechanical input
+components: buttons, scroll wheels, volume knobs, etc.  Prototyping interactive
+devices requires more than just shape, adding sensors requires intimate
+knowledge of both electronics and practical limitations of the fabrication
+technologies and materials being used.  To assist these types of designers, we
+have developed Skuld, a CAD plugin (openSCAD module?) which takes high-level
+sensing needs specifications and modifies designers’ models to house
+electronics and fabricated parts to accomplish these goals.  Designers describe
+their desired inputs in the form of Card’s input device tuple, specifying
+Manipulation Operator (position/rotation, force/torque), Input Domain,
+Resolution Function, and Output Domain using a series of sliders and radio
+buttons.  Skuld then modifies the designer’s model to include input sensors
+which will fulfill these requirements: it modifies the interior of the model to
+include housings and routing guides for the required electronics, and it adds
+features to the exterior of the model appropriate for user actuation.  Skuld
+also generates a parts list and assembly instructions.  Skuld is aware of both
+3D printing and laser cutting technologies, and can be used to automate in
+interactivity design for prototypes designed for either or a hybrid of the two;
+the system uses a set of rules on wall thickness and material strength to
+validate the generated models (this sounds like BS, but I’m not sure how it
+works yet).  To demonstrate Skuld’s effectiveness, we performed a first-use
+user study where users were asked to add sensing functionality to a 3D model of
+a child’s toy (generated previously by us) for fabrication in either our 3D
+printer or on our laser cutter.  The authors also demonstrate several sensing
+prototypes fabricated using Skuld.
