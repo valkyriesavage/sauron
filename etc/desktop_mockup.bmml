@@ -1,0 +1,130 @@
+<mockup version="1.0" skin="sketch" measuredW="879" measuredH="785" mockupW="759" mockupH="729">
+  <controls>
+    <control controlID="0" controlTypeID="com.balsamiq.mockups::Canvas" x="120" y="56" w="585" h="631" measuredW="100" measuredH="70" zOrder="0" locked="false" isInGroup="-1"/>
+    <control controlID="1" controlTypeID="com.balsamiq.mockups::Title" x="363" y="71" w="-1" h="-1" measuredW="99" measuredH="50" zOrder="1" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Skuld</text>
+      </controlProperties>
+    </control>
+    <control controlID="2" controlTypeID="com.balsamiq.mockups::HSlider" x="441" y="165" w="234" h="-1" measuredW="33" measuredH="11" zOrder="3" locked="false" isInGroup="-1">
+      <controlProperties>
+        <value>69</value>
+      </controlProperties>
+    </control>
+    <control controlID="3" controlTypeID="com.balsamiq.mockups::Label" x="290" y="160" w="-1" h="-1" measuredW="68" measuredH="21" zOrder="4" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>input%20action</text>
+      </controlProperties>
+    </control>
+    <control controlID="4" controlTypeID="com.balsamiq.mockups::HSlider" x="441" y="214" w="234" h="-1" measuredW="33" measuredH="11" zOrder="5" locked="false" isInGroup="-1">
+      <controlProperties>
+        <value>26</value>
+      </controlProperties>
+    </control>
+    <control controlID="5" controlTypeID="com.balsamiq.mockups::Label" x="290" y="209" w="-1" h="-1" measuredW="78" measuredH="21" zOrder="6" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>output%20range</text>
+      </controlProperties>
+    </control>
+    <control controlID="6" controlTypeID="com.balsamiq.mockups::Label" x="441" y="131" w="-1" h="-1" measuredW="45" measuredH="21" zOrder="7" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>coarse</text>
+      </controlProperties>
+    </control>
+    <control controlID="7" controlTypeID="com.balsamiq.mockups::Label" x="627" y="131" w="-1" h="-1" measuredW="48" measuredH="21" zOrder="8" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>smooth</text>
+      </controlProperties>
+    </control>
+    <control controlID="8" controlTypeID="com.balsamiq.mockups::RadioButtonGroup" x="152" y="121" w="-1" h="-1" measuredW="117" measuredH="147" zOrder="21" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>I%20want%20to%20measure...%0A%28o%29%20absolute%0A%28%20%29%20relative%0A%20%0A%28o%29%20rotation%0A%28%20%29%20position%0A%28%20%29%20force</text>
+      </controlProperties>
+    </control>
+    <control controlID="11" controlTypeID="com.balsamiq.mockups::Image" x="143" y="313" w="156" h="194" measuredW="77" measuredH="79" zOrder="23" locked="false" isInGroup="-1"/>
+    <control controlID="12" controlTypeID="com.balsamiq.mockups::TextInput" x="417" y="590" w="-1" h="-1" measuredW="79" measuredH="27" zOrder="10" locked="false" isInGroup="-1"/>
+    <control controlID="14" controlTypeID="com.balsamiq.mockups::Label" x="290" y="614" w="-1" h="-1" measuredW="54" measuredH="21" zOrder="11" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>final%20size</text>
+      </controlProperties>
+    </control>
+    <control controlID="15" controlTypeID="com.balsamiq.mockups::Label" x="354" y="593" w="-1" h="-1" measuredW="40" measuredH="21" zOrder="12" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>height</text>
+      </controlProperties>
+    </control>
+    <control controlID="16" controlTypeID="com.balsamiq.mockups::Label" x="354" y="614" w="-1" h="-1" measuredW="36" measuredH="21" zOrder="13" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>width</text>
+      </controlProperties>
+    </control>
+    <control controlID="17" controlTypeID="com.balsamiq.mockups::Label" x="354" y="635" w="-1" h="-1" measuredW="40" measuredH="21" zOrder="14" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>depth</text>
+      </controlProperties>
+    </control>
+    <control controlID="18" controlTypeID="com.balsamiq.mockups::TextInput" x="417" y="611" w="-1" h="-1" measuredW="79" measuredH="27" zOrder="15" locked="false" isInGroup="-1"/>
+    <control controlID="19" controlTypeID="com.balsamiq.mockups::TextInput" x="417" y="632" w="-1" h="-1" measuredW="79" measuredH="27" zOrder="16" locked="false" isInGroup="-1"/>
+    <control controlID="23" controlTypeID="com.balsamiq.mockups::ComboBox" x="496" y="611" w="94" h="-1" measuredW="68" measuredH="78" zOrder="17" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>inches%0Ayards%0Amillimeters%0Ameters</text>
+      </controlProperties>
+    </control>
+    <control controlID="25" controlTypeID="com.balsamiq.mockups::RadioButtonGroup" x="152" y="590" w="-1" h="-1" measuredW="138" measuredH="63" zOrder="18" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>I%20want%20to%20make%20it%20on%20a...%0A%28o%29%203D%20printer%0A%28%20%29%20laser%20cutter</text>
+      </controlProperties>
+    </control>
+    <control controlID="26" controlTypeID="com.balsamiq.mockups::StickyNote" x="377" y="671" w="109" h="114" measuredW="109" measuredH="123" zOrder="19" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>these%20are%20the%20typical%20units%20for%20STLs</text>
+      </controlProperties>
+    </control>
+    <control controlID="27" controlTypeID="com.balsamiq.mockups::StickyNote" x="640" y="240" w="239" h="166" measuredW="109" measuredH="123" zOrder="29" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>want%20to%20be%20able%20to%20specify%20range%2C%20like%20%28-180%2C180%5D%20vs%20%5B0%2C360%29.%20%20best%20way%20to%20do%20that%3F%20I%20like%20the%20mathematical%20notation%2C%20and%20doing%20it%20with%20sliders%20seems%20silly...%20do%20we%20need%20this%2C%20or%20is%20saying%20that%20we%27ll%20output%20360%20values%20sufficient%3F</text>
+      </controlProperties>
+    </control>
+    <control controlID="28" controlTypeID="com.balsamiq.mockups::FieldSet" x="286" y="109" w="400" h="181" measuredW="200" measuredH="170" zOrder="2" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>sensitivity</text>
+      </controlProperties>
+    </control>
+    <control controlID="29" controlTypeID="com.balsamiq.mockups::FieldSet" x="134" y="567" w="556" h="104" measuredW="200" measuredH="170" zOrder="9" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>fabrication</text>
+      </controlProperties>
+    </control>
+    <control controlID="32" controlTypeID="com.balsamiq.mockups::Image" x="306" y="311" w="156" h="194" measuredW="77" measuredH="79" zOrder="24" locked="false" isInGroup="-1"/>
+    <control controlID="33" controlTypeID="com.balsamiq.mockups::Label" x="187" y="522" w="-1" h="-1" measuredW="64" measuredH="21" zOrder="25" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>front%20view</text>
+      </controlProperties>
+    </control>
+    <control controlID="34" controlTypeID="com.balsamiq.mockups::Label" x="355" y="520" w="-1" h="-1" measuredW="58" measuredH="21" zOrder="26" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>exploded</text>
+      </controlProperties>
+    </control>
+    <control controlID="36" controlTypeID="com.balsamiq.mockups::Paragraph" x="477" y="311" w="200" h="201" measuredW="200" measuredH="80" zOrder="27" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Parts%20list%3A%0Asomething%20x2%0Asomething%20else%20x1%0Asome%20third%20thing%20x4%0Aalso%20this%20thing%20x1%0A%20%0A%20%0A%20%0A%20%0A%20%0AEstimated%20time%20to%20fabricate%20and%20assemble%3A%2030%20minutes</text>
+      </controlProperties>
+    </control>
+    <control controlID="37" controlTypeID="com.balsamiq.mockups::FieldSet" x="134" y="109" w="150" h="181" measuredW="200" measuredH="170" zOrder="20" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>input</text>
+      </controlProperties>
+    </control>
+    <control controlID="38" controlTypeID="com.balsamiq.mockups::FieldSet" x="134" y="290" w="552" h="277" measuredW="200" measuredH="170" zOrder="22" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>my%20device</text>
+      </controlProperties>
+    </control>
+    <control controlID="39" controlTypeID="com.balsamiq.mockups::Button" x="612" y="611" w="-1" h="-1" measuredW="63" measuredH="27" zOrder="28" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>build%20it%21</text>
+      </controlProperties>
+    </control>
+  </controls>
+</mockup>
