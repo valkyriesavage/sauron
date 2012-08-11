@@ -1,7 +1,7 @@
 module binary_ring(radius, bits, ridge_width, height) {
   for(i=[0:2:pow(2,bits)]) {
     union() {
-      for(angle=[ i*360/pow(2,bits) : (i+1)*360/pow(2,bits)] ) {
+      for(angle=[ i*360/pow(2,bits) : pow(2,-bits/3) : (i+1)*360/pow(2,bits)] ) {
         translate([radius*cos(angle), radius*sin(angle)])
           rotate(angle)
           cube(size=[ridge_width,1,height]);
@@ -28,18 +28,18 @@ module measurement_arm(inner_hole, height, radius, bits, spacing) {
   }
 }
 
-large_radius = 50;
-inner_hole = 5;
+total_bits = 6;
 ridge_width = 15;
+inner_hole = 5;
 buffer = 5;
+large_radius = total_bits*(ridge_width+buffer-1);
 height = 10;
-total_bits = 3;
 
 difference() {
   union() {
     color("Azure")
       cylinder(r=large_radius+ridge_width, h=height/2);
-    for(i=[0:2]) {
+    for(i=[0:total_bits-1]) {
       color("DarkSlateGray")
         binary_ring(radius=large_radius-(ridge_width+buffer)*i,
                     bits=total_bits-i,
@@ -50,6 +50,7 @@ difference() {
   cylinder(r=inner_hole, h=height, center=true);
 }
 
-translate([0,0,30])
-  color("MediumPurple")
-    measurement_arm(inner_hole, height, radius, total_bits, ridge_width+buffer);
+translate([0,large_radius+total_bits*ridge_width,inner_hole])
+  rotate(a=[90,0,0])
+    color("MediumPurple")
+      measurement_arm(inner_hole, height, radius, total_bits, ridge_width+buffer);
