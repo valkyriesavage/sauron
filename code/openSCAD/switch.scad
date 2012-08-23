@@ -1,2 +1,2 @@
 color("OliveDrab")
-  cube(5);
+  cube(24,24,14);

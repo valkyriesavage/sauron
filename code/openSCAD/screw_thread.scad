@@ -10,10 +10,10 @@ fn_value = 50;	// $fn value for torus, makes it look
 
 // Test input values, values are in mm. Comment out these lines if
 // you plan on using this module externally
-t_d1 = 4;  // Diameter of coils in the helix
-t_d2 = 25; // Diameter of central thread (add d1 for max diameter )
-t_h1 = 3; // Height between coils (0 means coils have no separation)
-t_h2 = 30; // Height of total coil (should be non-zero)
+//t_d1 = 4;  // Diameter of coils in the helix
+//t_d2 = 25; // Diameter of central thread (add d1 for max diameter )
+//t_h1 = 3; // Height between coils (0 means coils have no separation)
+//t_h2 = 30; // Height of total coil (should be non-zero)
 
 module half_torus( d1, w )
 {
@@ -93,7 +93,7 @@ module spring( d1, d2, h1, h2 )
 		}
 } // spring module //
 
-spring( t_d1, t_d2, t_h1, t_h2 ); // Debug output checking
+//spring( t_d1, t_d2, t_h1, t_h2 ); // Debug output checking
 
 module screw_thread( d1, d2, h1, h2 )
 {
