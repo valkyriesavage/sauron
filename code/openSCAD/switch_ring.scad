@@ -16,4 +16,4 @@ module switch_ring(num_switches, inner_diameter, outer_diameter) {
   }
 }
 
-switch_ring(8, 100, 200);
+	switch_ring(8, 4*switch_width, 7*switch_width);
