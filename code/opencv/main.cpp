@@ -1,172 +1,103 @@
+// This is the main part of the computer vision algorithm for
+// the Skuld project.  It has several parts:
+//   * detect interesting edges, ideally those of the input component bases
+//   * calculate optical flow along these edges
+//   * report when thresholds have been exceeded, i.e. an event has occurred
 
-// This code displays corners found by the opencv function
-// GoodFeaturesToTrack (cvGoodFeaturesToTrack)
-//
-// Sample webcam code taken from
-//   http://www.cs.iit.edu/~agam/cs512/lect-notes/
-//   opencv-intro/opencv-intro.html#SECTION00070000000000000000
-//
-// compile with:
-// gcc `pkg-config --cflags opencv` `pkg-config --libs opencv`
-// -o good_features good_features.cpp
-//
-// Kristi Tsukida  <kristi.tsukida@gmail.com> Aug 20, 2008
-//
+#include <math.h>
+#include <opencv2/opencv.hpp>
 
-#include <iostream>
-#include <cv.h>
-#include <highgui.h>
-#include <stdio.h>
-#include <sys/time.h>
+using namespace cv;
 
-#define VIDEO_WINDOW   "Webcam"
-#define CORNER_EIG     "Eigenvalue Corner Detection"
+const int BUTTON = 1;
+const int SLIDER = 2;
+const int JOYSTICK = 3;
 
-#define USEC_PER_SEC 1000000L
+void drawOptFlowMap(const Mat& flow,
+                    Mat& cflowmap,
+                    int step,
+                    const Scalar& color) {
 
-CvScalar target_color[4] = { // in BGR order
-	{{   0,   0, 255,   0 }},  // red
-	{{   0, 255,   0,   0 }},  // green
-	{{ 255,   0,   0,   0 }},  // blue
-	{{   0, 255, 255,   0 }}   // yellow
-};
-
-// returns the number of usecs of (t2 - t1)
-long time_elapsed (struct timeval &t1, struct timeval &t2) {
-	
-	long sec, usec;
-	
-	sec = t2.tv_sec - t1.tv_sec;
-	usec = t2.tv_usec - t1.tv_usec;
-	if (usec < 0) {
-		--sec;
-		usec = usec + USEC_PER_SEC;
+	for(int y = 0; y < cflowmap.rows; y += step)
+	{
+		for(int x = 0; x < cflowmap.cols; x += step)
+		{
+			const Point2f& fxy = flow.at<Point2f>(y, x);
+			line(cflowmap,
+					 Point(x,y),
+					 Point(cvRound(x+fxy.x),cvRound(y+fxy.y)),
+					 color);
+			circle(cflowmap, Point(x,y), 2, color, -1);
+		}
 	}
-	return sec*USEC_PER_SEC + usec;
 }
 
-struct timeval start_time;
-struct timeval end_time;
-void start_timer() {
-	struct timezone tz;
-	gettimeofday (&start_time, &tz);
-}
-long end_timer() {
-	struct timezone tz;
-	gettimeofday (&end_time, &tz);
-	return time_elapsed(start_time, end_time);
+void detectThresholds(const Mat& flow,
+											/*vector of exceeded things??*/
+											int step) {
+	const int thresholdButton = step*2;
+	for(int y = 0; y < flow.rows; y += step)
+	{
+		for(int x = 0; x < flow.cols; x += step)
+		{
+			const Point2f& fxy = flow.at<Point2f>(y, x);
+			if (sqrt(pow(fxy.x, 2) + pow(fxy.y, 2)) > thresholdButton) {
+				printf("exceeded at %f, %f\n", fxy.x, fxy.y);
+			}
+		}
+	}
 }
 
-// A Simple Camera Capture Framework
-int main(int argc, char *argv[]) {
-	long eig_time;
+int main(int argc, char **args) {
 	
-	CvCapture* capture = 0;
-	IplImage* curr_frame = 0; // current video frame
-	IplImage* gray_frame = 0; // grayscale version of current frame
-	int w, h; // video frame size
-	IplImage* eig_image = 0;
-	IplImage* temp_image = 0;
-	
-	// Capture from a webcam
-	capture = cvCaptureFromCAM(CV_CAP_ANY);
-	//capture = cvCaptureFromCAM(0); // capture from video device #0
-	if ( !capture) {
-		fprintf(stderr, "ERROR: capture is NULL... Exiting\n");
-		//getchar();
+	VideoCapture cap(0); // open the default camera
+	if(!cap.isOpened())  // check if we succeeded
 		return -1;
+	
+	Mat newFrame, newGray, prevGray, thresholdsExceeded;
+	
+	cap >> newFrame; // get a new frame from camera
+	cvtColor(newFrame, newGray, CV_BGR2GRAY);
+	prevGray = newGray.clone();
+	
+	double pyr_scale = 0.5;
+	int levels = 3;
+	int winsize = 5;
+	int iterations = 5;
+	int poly_n = 5;
+	double poly_sigma = 1.1;
+	int flags = 0;
+	int step = 20;
+	
+	while(1) {
+		cap >> newFrame;
+		if(newFrame.empty()) break;
+		cvtColor(newFrame, newGray, CV_BGR2GRAY);
+		
+		Mat flow = Mat(newGray.size(), CV_32FC2);
+		
+		/* Do optical flow computation */
+		calcOpticalFlowFarneback(prevGray,
+														 newGray,
+														 flow,
+														 pyr_scale,
+														 levels,
+														 winsize,
+														 iterations,
+														 poly_n,
+														 poly_sigma,
+														 flags
+														 );
+		
+		drawOptFlowMap(flow, newFrame, step, CV_RGB(0,255,0));
+		detectThresholds(flow, step);
+		
+		namedWindow("Output",1);
+		imshow("Output", newFrame);
+		waitKey(1);
+		
+		prevGray = newGray.clone();
 	}
 	
-	// Create a window in which the captured images will be presented
-	cvNamedWindow(VIDEO_WINDOW, 0); // allow the window to be resized
-	
-	cvNamedWindow(CORNER_EIG, 0); // allow the window to be resized
-	cvMoveWindow(CORNER_EIG, 330, 0);
-	
-	// Show the image captured from the camera in the window and repeat
-	while (true) {
-		
-		// Get one frame
-		curr_frame = cvQueryFrame(capture);
-		if ( !curr_frame) {
-			fprintf(stderr, "ERROR: frame is null... Exiting\n");
-			//getchar();
-			break;
-		}
-		// Do not release the frame!
-		
-		// Get frame size
-		w = curr_frame->width;
-		h = curr_frame->height;
-		
-		// Convert the frame image to grayscale
-		if( ! gray_frame ) {
-			//fprintf(stderr, "Allocate gray_frame\n");
-			int channels = 1;
-			gray_frame = cvCreateImage(
-																 cvGetSize(curr_frame),
-																 IPL_DEPTH_8U, channels);
-		}
-		cvCvtColor(curr_frame, gray_frame, CV_BGR2GRAY);
-		
-		// ==== Allocate memory for corner arrays ====
-		if ( !eig_image) {
-			//fprintf(stderr, "Allocate eig_image\n");
-			eig_image = cvCreateImage(cvSize(w, h),
-																IPL_DEPTH_32F, 1);
-		}
-		if ( !temp_image) {
-			//fprintf(stderr, "Allocate temp_image\n");
-			temp_image = cvCreateImage(cvSize(w, h),
-																 IPL_DEPTH_32F, 1);
-		}
-		
-		// ==== Corner Detection: MinEigenVal method ====
-		start_timer();
-		const int MAX_CORNERS = 50;
-		CvPoint2D32f corners[MAX_CORNERS] = {0};
-		int corner_count = MAX_CORNERS;
-		double quality_level = 0.1;
-		double min_distance = 5;
-		int eig_block_size = 3;
-		int use_harris = false;
-		
-		cvGoodFeaturesToTrack(gray_frame,
-													eig_image,                    // output
-													temp_image,
-													corners,
-													&corner_count,
-													quality_level,
-													min_distance,
-													NULL,
-													eig_block_size,
-													use_harris);
-		cvScale(eig_image, eig_image, 100, 0.00);
-		eig_time = end_timer();
-		cvShowImage(CORNER_EIG, eig_image);
-		
-		// ==== Draw circles around detected corners in original image
-		//fprintf(stderr, "corner[0] = (%f, %f)\n", corners[0].x, corners[0].y);
-		for( int i = 0; i < corner_count; i++) {
-			int radius = h/25;
-			cvCircle(curr_frame,
-							 cvPoint((int)(corners[i].x + 0.5f),(int)(corners[i].y + 0.5f)),
-							 radius,
-							 target_color[0]);
-		}
-		cvShowImage(VIDEO_WINDOW, curr_frame);
-		
-		// If ESC key pressed, Key=0x10001B under OpenCV 0.9.7(linux version),
-		// remove higher bits using AND operator
-		if ( (cvWaitKey(10) & 255) == 27)
-			break;
-	}
-	
-	// Release the capture device housekeeping
-	cvReleaseCapture( &capture);
-	cvDestroyWindow(VIDEO_WINDOW);
-	cvDestroyWindow(CORNER_EIG);
-	// Disable harris processing
-	//	cvDestroyWindow(CORNER_HARRIS);
 	return 0;
 }
