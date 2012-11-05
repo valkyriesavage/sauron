@@ -48,6 +48,17 @@ void detectThresholds(const Mat& flow,
 	}
 }
 
+void determineButtons(vector<Point>& thresholdsExceeded/*,
+											vector<RotatedRect>& buttonLocations*/) {
+	Rect q1(0,0, 300, 300);
+	for (vector<Point>::iterator it=thresholdsExceeded.begin(); it<thresholdsExceeded.end(); it++) {
+		//for(vector<RotatedRect>::iterator itRect=buttonLocations.begin(); itRect<buttonLocations.
+		if ((*it).inside(q1)) {
+			std::cout << "wooooooo	q1\n";
+		}
+	}
+}
+
 int main(int argc, char **args) {
 	
 	VideoCapture cap(0); // open the default camera
@@ -69,7 +80,7 @@ int main(int argc, char **args) {
 	int flags = 0;
 	int step = 20;
 	
-	while(1) {
+	while(true) {
 		cap >> newFrame;
 		if(newFrame.empty()) break;
 		cvtColor(newFrame, newGray, CV_BGR2GRAY);
@@ -92,12 +103,11 @@ int main(int argc, char **args) {
 		drawOptFlowMap(flow, newFrame, step, CV_RGB(0,255,0));
 		vector<Point> thresholdsExceeded;
 		detectThresholds(flow, thresholdsExceeded, step);
+		determineButtons(thresholdsExceeded);
 		
 		/*namedWindow("Output",1);
 		imshow("Output", newFrame);
 		waitKey(1);*/
-		printf("well, we exceeded on... ");
-		std::cout << thresholdsExceeded << "\n";
 		
 		prevGray = newGray.clone();
 	}
