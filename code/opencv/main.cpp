@@ -33,7 +33,7 @@ void drawOptFlowMap(const Mat& flow,
 }
 
 void detectThresholds(const Mat& flow,
-											/*vector of exceeded things??*/
+											vector<Point>& thresholdsExceeded,
 											int step) {
 	const int thresholdButton = step*2;
 	for(int y = 0; y < flow.rows; y += step)
@@ -42,7 +42,7 @@ void detectThresholds(const Mat& flow,
 		{
 			const Point2f& fxy = flow.at<Point2f>(y, x);
 			if (sqrt(pow(fxy.x, 2) + pow(fxy.y, 2)) > thresholdButton) {
-				printf("exceeded at %f, %f\n", fxy.x, fxy.y);
+				thresholdsExceeded.push_back(Point(x*1.f, y*1.f));
 			}
 		}
 	}
@@ -90,11 +90,14 @@ int main(int argc, char **args) {
 														 );
 		
 		drawOptFlowMap(flow, newFrame, step, CV_RGB(0,255,0));
-		detectThresholds(flow, step);
+		vector<Point> thresholdsExceeded;
+		detectThresholds(flow, thresholdsExceeded, step);
 		
-		namedWindow("Output",1);
+		/*namedWindow("Output",1);
 		imshow("Output", newFrame);
-		waitKey(1);
+		waitKey(1);*/
+		printf("well, we exceeded on... ");
+		std::cout << thresholdsExceeded << "\n";
 		
 		prevGray = newGray.clone();
 	}
