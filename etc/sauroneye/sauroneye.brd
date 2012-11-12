@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.3">
+<eagle version="6.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -103,65 +103,92 @@
 </layers>
 <board>
 <plain>
-<wire x1="16.51" y1="11.43" x2="83.49" y2="11.43" width="0" layer="20"/>
-<wire x1="83.49" y1="11.43" x2="83.49" y2="72.38" width="0" layer="20"/>
-<wire x1="83.49" y1="72.38" x2="16.51" y2="72.38" width="0" layer="20"/>
-<wire x1="16.51" y1="72.38" x2="16.51" y2="11.43" width="0" layer="20"/>
+<wire x1="12.7" y1="15.24" x2="83.49" y2="15.24" width="0" layer="25"/>
+<wire x1="83.49" y1="15.24" x2="83.49" y2="72.38" width="0" layer="20"/>
+<wire x1="83.49" y1="72.38" x2="12.7" y2="72.38" width="0" layer="20"/>
+<wire x1="12.7" y1="72.38" x2="12.7" y2="15.24" width="0" layer="20"/>
 <circle x="50.8" y="43.18" radius="18.288" width="0.4064" layer="20"/>
+<text x="13.97" y="16.51" size="1.778" layer="1" ratio="15">Sauron v 0.1</text>
+<text x="59.69" y="16.51" size="1.778" layer="1" ratio="15">Valkyrie Savage</text>
+<text x="68.58" y="19.05" size="1.778" layer="1" ratio="15">Nov. 2012</text>
 </plain>
 <libraries>
-<library name="SparkFun-LED">
+<library name="SparkFun">
 <description>&lt;h3&gt;SparkFun Electronics' preferred foot prints&lt;/h3&gt;
-In this library you'll find discrete LEDs for illumination or indication, but no displays.&lt;br&gt;&lt;br&gt;
-We've spent an enormous amount of time creating and checking these footprints and parts, but it is the end user's responsibility to ensure correctness and suitablity for a given componet or application. If you enjoy using this library, please buy one of our products at www.sparkfun.com.
+We've spent an enormous amount of time creating and checking these footprints and parts. If you enjoy using this library, please buy one of our products at www.sparkfun.com.
 &lt;br&gt;&lt;br&gt;
 &lt;b&gt;Licensing:&lt;/b&gt; CC v3.0 Share-Alike You are welcome to use this library for commercial purposes. For attribution, we ask that when you begin to sell your device using our footprint, you email us with a link to the product being sold. We want bragging rights that we helped (in a very small part) to create your 8th world wonder. We would like the opportunity to feature your device on our homepage.</description>
 <packages>
-<package name="LTE-302">
-<wire x1="2.159" y1="0.762" x2="2.159" y2="-0.762" width="0.127" layer="21"/>
-<wire x1="2.159" y1="-0.762" x2="0.762" y2="-0.762" width="0.127" layer="21"/>
-<wire x1="0.762" y1="-0.762" x2="0.381" y2="-0.762" width="0.127" layer="21"/>
-<wire x1="0.381" y1="-0.762" x2="-0.381" y2="-0.762" width="0.127" layer="21"/>
-<wire x1="-0.381" y1="-0.762" x2="-0.762" y2="-0.762" width="0.127" layer="21"/>
-<wire x1="-0.762" y1="-0.762" x2="-2.159" y2="-0.762" width="0.127" layer="21"/>
-<wire x1="-2.159" y1="-0.762" x2="-2.159" y2="0.762" width="0.127" layer="21"/>
-<wire x1="-2.159" y1="0.762" x2="-0.381" y2="0.762" width="0.127" layer="21"/>
-<wire x1="-0.381" y1="0.762" x2="0.381" y2="0.762" width="0.127" layer="21"/>
-<wire x1="0.381" y1="0.762" x2="2.159" y2="0.762" width="0.127" layer="21"/>
-<wire x1="-0.381" y1="0" x2="0.381" y2="0.762" width="0.127" layer="21"/>
-<wire x1="0.381" y1="0.762" x2="0.381" y2="-0.762" width="0.127" layer="21"/>
-<wire x1="0.381" y1="-0.762" x2="-0.381" y2="0" width="0.127" layer="21"/>
-<wire x1="-0.381" y1="0" x2="-0.381" y2="0.762" width="0.127" layer="21"/>
-<wire x1="-0.381" y1="0" x2="-0.381" y2="-0.762" width="0.127" layer="21"/>
-<wire x1="0.762" y1="-0.762" x2="-0.762" y2="-0.762" width="0.127" layer="21" curve="-180"/>
-<pad name="A" x="1.27" y="0" drill="0.8"/>
-<pad name="C" x="-1.27" y="0" drill="0.8"/>
+<package name="USB-MINIB">
+<description>&lt;b&gt;USB Series Mini-B Surface Mounted&lt;/b&gt;</description>
+<wire x1="-1.3" y1="3.8" x2="0.8" y2="3.8" width="0.2032" layer="21"/>
+<wire x1="3.3" y1="3.1" x2="3.3" y2="2.2" width="0.2032" layer="21"/>
+<wire x1="3.3" y1="-2.2" x2="3.3" y2="-3.1" width="0.2032" layer="21"/>
+<wire x1="0.8" y1="-3.8" x2="-1.3" y2="-3.8" width="0.2032" layer="21"/>
+<wire x1="-5.9" y1="3.8" x2="-5.9" y2="-3.8" width="0.2032" layer="51"/>
+<wire x1="-5.9" y1="-3.8" x2="-4.5" y2="-3.8" width="0.2032" layer="51"/>
+<wire x1="-5.9" y1="3.8" x2="-4.5" y2="3.8" width="0.2032" layer="51"/>
+<smd name="D+" x="2.5" y="0" dx="2.5" dy="0.5" layer="1"/>
+<smd name="D-" x="2.5" y="0.8" dx="2.5" dy="0.5" layer="1"/>
+<smd name="GND" x="2.5" y="-1.6" dx="2.5" dy="0.5" layer="1"/>
+<smd name="ID" x="2.5" y="-0.8" dx="2.5" dy="0.5" layer="1"/>
+<smd name="MTN3" x="-3" y="-4.5" dx="2.5" dy="2" layer="1"/>
+<smd name="MTN1" x="-3" y="4.5" dx="2.5" dy="2" layer="1"/>
+<smd name="MTN4" x="2.5" y="-4.5" dx="2.5" dy="2" layer="1"/>
+<smd name="MTN2" x="2.5" y="4.5" dx="2.5" dy="2" layer="1"/>
+<smd name="VBUS" x="2.5" y="1.6" dx="2.5" dy="0.5" layer="1"/>
+<text x="-3.81" y="1.27" size="0.4064" layer="25">&gt;NAME</text>
+<text x="-3.81" y="0" size="0.4064" layer="27">&gt;VALUE</text>
+<hole x="0" y="2.2" drill="0.9"/>
+<hole x="0" y="-2.2" drill="0.9"/>
+</package>
+<package name="AXIAL-0.3">
+<wire x1="-2.54" y1="0.762" x2="2.54" y2="0.762" width="0.2032" layer="21"/>
+<wire x1="2.54" y1="0.762" x2="2.54" y2="0" width="0.2032" layer="21"/>
+<wire x1="2.54" y1="0" x2="2.54" y2="-0.762" width="0.2032" layer="21"/>
+<wire x1="2.54" y1="-0.762" x2="-2.54" y2="-0.762" width="0.2032" layer="21"/>
+<wire x1="-2.54" y1="-0.762" x2="-2.54" y2="0" width="0.2032" layer="21"/>
+<wire x1="-2.54" y1="0" x2="-2.54" y2="0.762" width="0.2032" layer="21"/>
+<wire x1="2.54" y1="0" x2="2.794" y2="0" width="0.2032" layer="21"/>
+<wire x1="-2.54" y1="0" x2="-2.794" y2="0" width="0.2032" layer="21"/>
+<pad name="P$1" x="-3.81" y="0" drill="0.9" diameter="1.8796"/>
+<pad name="P$2" x="3.81" y="0" drill="0.9" diameter="1.8796"/>
+<text x="-2.54" y="1.27" size="0.4064" layer="25" font="vector">&gt;Name</text>
+<text x="-2.032" y="-0.381" size="1.016" layer="21" font="vector" ratio="15">&gt;Value</text>
 </package>
 </packages>
 </library>
-<library name="SparkFun-Electromechanical">
-<description>&lt;h3&gt;SparkFun Electronics' preferred foot prints&lt;/h3&gt;
-In this library you'll find anything that moves- switches, relays, buttons, potentiometers. Also, anything that goes on a board but isn't electrical in nature- screws, standoffs, etc.&lt;br&gt;&lt;br&gt;
-We've spent an enormous amount of time creating and checking these footprints and parts, but it is the end user's responsibility to ensure correctness and suitablity for a given componet or application. If you enjoy using this library, please buy one of our products at www.sparkfun.com.
-&lt;br&gt;&lt;br&gt;
-&lt;b&gt;Licensing:&lt;/b&gt; CC v3.0 Share-Alike You are welcome to use this library for commercial purposes. For attribution, we ask that when you begin to sell your device using our footprint, you email us with a link to the product being sold. We want bragging rights that we helped (in a very small part) to create your 8th world wonder. We would like the opportunity to feature your device on our homepage.</description>
+<library name="led">
+<description>&lt;b&gt;LEDs&lt;/b&gt;&lt;p&gt;
+&lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;&lt;br&gt;
+Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternational.com&amp;gt;&lt;/author&gt; with DUOLED</description>
 <packages>
-<package name="BATTCON_12MM_PTH">
-<wire x1="-6.35" y1="-3.81" x2="-3.81" y2="-6.35" width="0.2032" layer="21"/>
-<wire x1="-3.81" y1="-6.35" x2="3.81" y2="-6.35" width="0.2032" layer="21"/>
-<wire x1="3.81" y1="-6.35" x2="6.35" y2="-3.81" width="0.2032" layer="21"/>
-<wire x1="6.35" y1="-3.81" x2="6.35" y2="-2.54" width="0.2032" layer="21"/>
-<wire x1="-6.35" y1="-3.81" x2="-6.35" y2="-2.54" width="0.2032" layer="21"/>
-<wire x1="-6.35" y1="2.54" x2="-6.35" y2="4.064" width="0.2032" layer="21"/>
-<wire x1="6.35" y1="2.54" x2="6.35" y2="4.064" width="0.2032" layer="21"/>
-<wire x1="-3.175" y1="5.588" x2="3.175" y2="5.588" width="0.2032" layer="21" curve="102.56384"/>
-<wire x1="-6.35" y1="4.064" x2="-3.175" y2="5.588" width="0.2032" layer="21" curve="-123.398919"/>
-<wire x1="6.35" y1="4.064" x2="3.175" y2="5.588" width="0.2032" layer="21" curve="128.77667"/>
-<pad name="VCC@1" x="-6.604" y="0" drill="1.8542" shape="square"/>
-<pad name="VCC@2" x="6.604" y="0" drill="1.8542" shape="square"/>
-<smd name="GND" x="0" y="0" dx="7.62" dy="7.62" layer="1"/>
-<text x="-3.81" y="-3.81" size="0.4064" layer="25">&gt;NAME</text>
-<text x="-3.81" y="-5.08" size="0.4064" layer="27">&gt;VALUE</text>
+<package name="LED3MM">
+<description>&lt;B&gt;LED&lt;/B&gt;&lt;p&gt;
+3 mm, round</description>
+<wire x1="1.5748" y1="-1.27" x2="1.5748" y2="1.27" width="0.254" layer="51"/>
+<wire x1="-1.524" y1="0" x2="-1.1708" y2="0.9756" width="0.1524" layer="51" curve="-39.80361"/>
+<wire x1="-1.524" y1="0" x2="-1.1391" y2="-1.0125" width="0.1524" layer="51" curve="41.633208"/>
+<wire x1="1.1571" y1="0.9918" x2="1.524" y2="0" width="0.1524" layer="51" curve="-40.601165"/>
+<wire x1="1.1708" y1="-0.9756" x2="1.524" y2="0" width="0.1524" layer="51" curve="39.80361"/>
+<wire x1="0" y1="1.524" x2="1.2401" y2="0.8858" width="0.1524" layer="21" curve="-54.461337"/>
+<wire x1="-1.2192" y1="0.9144" x2="0" y2="1.524" width="0.1524" layer="21" curve="-53.130102"/>
+<wire x1="0" y1="-1.524" x2="1.203" y2="-0.9356" width="0.1524" layer="21" curve="52.126876"/>
+<wire x1="-1.203" y1="-0.9356" x2="0" y2="-1.524" width="0.1524" layer="21" curve="52.126876"/>
+<wire x1="-0.635" y1="0" x2="0" y2="0.635" width="0.1524" layer="51" curve="-90"/>
+<wire x1="-1.016" y1="0" x2="0" y2="1.016" width="0.1524" layer="51" curve="-90"/>
+<wire x1="0" y1="-0.635" x2="0.635" y2="0" width="0.1524" layer="51" curve="90"/>
+<wire x1="0" y1="-1.016" x2="1.016" y2="0" width="0.1524" layer="51" curve="90"/>
+<wire x1="0" y1="2.032" x2="1.561" y2="1.3009" width="0.254" layer="21" curve="-50.193108"/>
+<wire x1="-1.7929" y1="0.9562" x2="0" y2="2.032" width="0.254" layer="21" curve="-61.926949"/>
+<wire x1="0" y1="-2.032" x2="1.5512" y2="-1.3126" width="0.254" layer="21" curve="49.763022"/>
+<wire x1="-1.7643" y1="-1.0082" x2="0" y2="-2.032" width="0.254" layer="21" curve="60.255215"/>
+<wire x1="-2.032" y1="0" x2="-1.7891" y2="0.9634" width="0.254" layer="51" curve="-28.301701"/>
+<wire x1="-2.032" y1="0" x2="-1.7306" y2="-1.065" width="0.254" layer="51" curve="31.60822"/>
+<pad name="A" x="-1.27" y="0" drill="0.8128" shape="octagon"/>
+<pad name="K" x="1.27" y="0" drill="0.8128" shape="octagon"/>
+<text x="1.905" y="0.381" size="1.27" layer="25" ratio="10">&gt;NAME</text>
+<text x="1.905" y="-1.651" size="1.27" layer="27" ratio="10">&gt;VALUE</text>
 </package>
 </packages>
 </library>
@@ -174,7 +201,7 @@ We've spent an enormous amount of time creating and checking these footprints an
 <class number="0" name="default" width="0" drill="0">
 </class>
 </classes>
-<designrules name="default">
+<designrules>
 <description language="de">&lt;b&gt;EAGLE Design Rules&lt;/b&gt;
 &lt;p&gt;
 Die Standard-Design-Rules sind so gewählt, dass sie für 
@@ -351,56 +378,85 @@ design rules under a new name.</description>
 </pass>
 </autorouter>
 <elements>
-<element name="D7" library="SparkFun-LED" package="LTE-302" value="" x="74.93" y="53.34" rot="R270"/>
-<element name="D8" library="SparkFun-LED" package="LTE-302" value="" x="50.8" y="66.04"/>
-<element name="D9" library="SparkFun-LED" package="LTE-302" value="" x="26.67" y="53.34" rot="R90"/>
-<element name="D10" library="SparkFun-LED" package="LTE-302" value="" x="26.67" y="31.75" rot="R90"/>
-<element name="D11" library="SparkFun-LED" package="LTE-302" value="" x="50.8" y="19.05" rot="R180"/>
-<element name="D12" library="SparkFun-LED" package="LTE-302" value="" x="74.93" y="30.48" rot="R270"/>
-<element name="BAT1" library="SparkFun-Electromechanical" package="BATTCON_12MM_PTH" value="" x="76.2" y="41.91" rot="R270"/>
+<element name="X1" library="SparkFun" package="USB-MINIB" value="USBSMD" x="17.78" y="45.72"/>
+<element name="LED1" library="led" package="LED3MM" value="TLLG4400" x="27.94" y="26.67" rot="R90">
+<attribute name="MF" value="VISHAY SEMICONDUCTOR" x="27.94" y="26.67" size="1.778" layer="27" ratio="15" rot="R90" display="off"/>
+<attribute name="OC_FARNELL" value="1612435" x="27.94" y="26.67" size="1.778" layer="27" ratio="15" rot="R90" display="off"/>
+</element>
+<element name="LED2" library="led" package="LED3MM" value="TLLG4400" x="50.8" y="19.05" rot="R90">
+<attribute name="MF" value="VISHAY SEMICONDUCTOR" x="50.8" y="19.05" size="1.778" layer="27" ratio="15" rot="R90" display="off"/>
+<attribute name="OC_FARNELL" value="1612435" x="50.8" y="19.05" size="1.778" layer="27" ratio="15" rot="R90" display="off"/>
+</element>
+<element name="LED3" library="led" package="LED3MM" value="TLLG4400" x="73.66" y="26.67" rot="R90">
+<attribute name="MF" value="VISHAY SEMICONDUCTOR" x="73.66" y="26.67" size="1.778" layer="27" ratio="15" rot="R90" display="off"/>
+<attribute name="OC_FARNELL" value="1612435" x="73.66" y="26.67" size="1.778" layer="27" ratio="15" rot="R90" display="off"/>
+</element>
+<element name="LED4" library="led" package="LED3MM" value="TLLG4400" x="73.66" y="57.15" rot="R270">
+<attribute name="MF" value="VISHAY SEMICONDUCTOR" x="73.66" y="57.15" size="1.778" layer="27" ratio="15" rot="R270" display="off"/>
+<attribute name="OC_FARNELL" value="1612435" x="73.66" y="57.15" size="1.778" layer="27" ratio="15" rot="R270" display="off"/>
+</element>
+<element name="LED5" library="led" package="LED3MM" value="TLLG4400" x="50.8" y="67.31" rot="R270">
+<attribute name="MF" value="VISHAY SEMICONDUCTOR" x="50.8" y="67.31" size="1.778" layer="27" ratio="15" rot="R270" display="off"/>
+<attribute name="OC_FARNELL" value="1612435" x="50.8" y="67.31" size="1.778" layer="27" ratio="15" rot="R270" display="off"/>
+</element>
+<element name="LED6" library="led" package="LED3MM" value="TLLG4400" x="27.94" y="58.42" rot="R270">
+<attribute name="MF" value="VISHAY SEMICONDUCTOR" x="27.94" y="58.42" size="1.778" layer="27" ratio="15" rot="R270" display="off"/>
+<attribute name="OC_FARNELL" value="1612435" x="27.94" y="58.42" size="1.778" layer="27" ratio="15" rot="R270" display="off"/>
+</element>
+<element name="R1" library="SparkFun" package="AXIAL-0.3" value="33 OHM" x="27.94" y="35.56" rot="R270"/>
+<element name="R2" library="SparkFun" package="AXIAL-0.3" value="33 OHM" x="27.94" y="49.53" rot="R90"/>
 </elements>
 <signals>
-<signal name="N$6">
-<contactref element="D7" pad="C"/>
-<contactref element="D8" pad="A"/>
-<wire x1="74.93" y1="66.04" x2="52.07" y2="66.04" width="0.254" layer="1"/>
-<wire x1="74.93" y1="54.61" x2="74.93" y2="66.04" width="0.254" layer="1"/>
-</signal>
-<signal name="N$7">
-<contactref element="D8" pad="C"/>
-<contactref element="D9" pad="A"/>
-<wire x1="38.1" y1="66.04" x2="26.67" y2="54.61" width="0.254" layer="1"/>
-<wire x1="49.53" y1="66.04" x2="38.1" y2="66.04" width="0.254" layer="1"/>
-</signal>
-<signal name="N$8">
-<contactref element="D9" pad="C"/>
-<contactref element="D10" pad="A"/>
-<wire x1="26.67" y1="52.07" x2="26.67" y2="33.02" width="0.254" layer="1"/>
-</signal>
-<signal name="N$9">
-<contactref element="D10" pad="C"/>
-<contactref element="D11" pad="A"/>
-<wire x1="38.1" y1="19.05" x2="26.67" y2="30.48" width="0.254" layer="1"/>
-<wire x1="49.53" y1="19.05" x2="38.1" y2="19.05" width="0.254" layer="1"/>
-</signal>
-<signal name="N$10">
-<contactref element="D11" pad="C"/>
-<contactref element="D12" pad="A"/>
-<wire x1="74.93" y1="19.05" x2="52.07" y2="19.05" width="0.254" layer="1"/>
-<wire x1="74.93" y1="29.21" x2="74.93" y2="19.05" width="0.254" layer="1"/>
-</signal>
 <signal name="VCC">
-<contactref element="D7" pad="A"/>
-<contactref element="BAT1" pad="VCC@1"/>
-<wire x1="76.2" y1="50.8" x2="74.93" y2="52.07" width="0.254" layer="1"/>
-<wire x1="76.2" y1="48.514" x2="76.2" y2="50.8" width="0.254" layer="1"/>
+<contactref element="X1" pad="D+"/>
+<contactref element="LED3" pad="A"/>
+<contactref element="LED4" pad="A"/>
+<wire x1="73.66" y1="25.4" x2="81.28" y2="31.75" width="0.254" layer="1"/>
+<wire x1="81.28" y1="31.75" x2="81.28" y2="52.07" width="0.254" layer="1"/>
+<wire x1="73.66" y1="58.42" x2="53.34" y2="69.85" width="0.254" layer="1"/>
+<wire x1="53.34" y1="69.85" x2="48.26" y2="69.85" width="0.254" layer="1"/>
+<wire x1="48.26" y1="69.85" x2="24.13" y2="60.96" width="0.254" layer="1"/>
+<wire x1="24.13" y1="60.96" x2="24.13" y2="45.72" width="0.254" layer="1"/>
+<wire x1="24.13" y1="45.72" x2="20.28" y2="45.72" width="0.254" layer="1"/>
+<wire x1="81.28" y1="52.07" x2="73.66" y2="58.42" width="0.254" layer="1"/>
 </signal>
 <signal name="GND">
-<contactref element="D12" pad="C"/>
-<contactref element="BAT1" pad="GND"/>
-<wire x1="73.66" y1="33.02" x2="74.93" y2="31.75" width="0.254" layer="1"/>
-<wire x1="73.66" y1="39.37" x2="73.66" y2="33.02" width="0.254" layer="1"/>
-<wire x1="76.2" y1="41.91" x2="73.66" y2="39.37" width="0.254" layer="1"/>
+<contactref element="X1" pad="GND"/>
+<contactref element="R1" pad="P$1"/>
+<contactref element="R2" pad="P$1"/>
+<wire x1="27.94" y1="45.72" x2="27.94" y2="44.45" width="0.254" layer="1"/>
+<wire x1="27.94" y1="44.45" x2="27.94" y2="39.37" width="0.254" layer="1"/>
+<wire x1="20.28" y1="44.12" x2="27.94" y2="44.45" width="0.254" layer="1"/>
+</signal>
+<signal name="N$1">
+<contactref element="R2" pad="P$2"/>
+<contactref element="LED6" pad="K"/>
+<wire x1="27.94" y1="57.15" x2="27.94" y2="53.34" width="0.254" layer="1"/>
+</signal>
+<signal name="N$2">
+<contactref element="R1" pad="P$2"/>
+<contactref element="LED1" pad="K"/>
+<wire x1="27.94" y1="31.75" x2="27.94" y2="27.94" width="0.254" layer="1"/>
+</signal>
+<signal name="N$3">
+<contactref element="LED6" pad="A"/>
+<contactref element="LED5" pad="K"/>
+<wire x1="50.8" y1="66.04" x2="27.94" y2="59.69" width="0.254" layer="1"/>
+</signal>
+<signal name="N$4">
+<contactref element="LED5" pad="A"/>
+<contactref element="LED4" pad="K"/>
+<wire x1="73.66" y1="55.88" x2="50.8" y2="68.58" width="0.254" layer="1"/>
+</signal>
+<signal name="N$5">
+<contactref element="LED1" pad="A"/>
+<contactref element="LED2" pad="K"/>
+<wire x1="27.94" y1="25.4" x2="50.8" y2="20.32" width="0.254" layer="1"/>
+</signal>
+<signal name="N$6">
+<contactref element="LED2" pad="A"/>
+<contactref element="LED3" pad="K"/>
+<wire x1="50.8" y1="17.78" x2="73.66" y2="27.94" width="0.254" layer="1"/>
 </signal>
 </signals>
 </board>
