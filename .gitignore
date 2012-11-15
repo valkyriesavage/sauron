@@ -5,3 +5,9 @@
 *.1*
 *.xcodeproj*
 *#*
+*.aux
+*.bbl
+*.gz
+*.blg
+*.out
+*.pdf
