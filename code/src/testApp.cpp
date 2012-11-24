@@ -18,6 +18,8 @@ void testApp::setup(){
 
 	bLearnBakground = true;
 	threshold = 80;
+	
+	numBlobs = 3;//maybe we want to detect 3 input devices
 }
 
 //--------------------------------------------------------------
@@ -53,8 +55,8 @@ void testApp::update(){
 		grayDiff.threshold(threshold);
 
 		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-		// also, find holes is set to true so we will get interior contours as well....
-		contourFinder.findContours(grayDiff, 20, (340*240)/3, 10, true);	// find holes
+		//only considering numBlobs (i.e. number of input devices) number of blobs.
+		contourFinder.findContours(grayDiff, 20, (340*240)/3, numBlobs, false);	
 	}
 
 }
@@ -83,17 +85,7 @@ void testApp::draw(){
 	// this is how to get access to them:
     for (int i = 0; i < contourFinder.nBlobs; i++){
         contourFinder.blobs[i].draw(360,540);
-    }
-	//added by Colin. should draw rectangles over points of interest in the background subtraction image
-	//taken from http://www.openframeworks.cc/documentation/ofxOpenCv/ofxCvContourFinder.html
-    ofColor c(255, 255, 255);
-    for(int i = 0; i < contourFinder.nBlobs; i++) {
-        ofRectangle r = contourFinder.blobs.at(i).boundingRect;
-        r.x += 320; r.y += 240;
-        c.setHsb(i * 64, 255, 255);
-        ofSetColor(c);
-        ofRect(r);
-		char reportStr2[1024];
+
     }
 
 	// finally, a report:
@@ -120,12 +112,27 @@ void testApp::keyPressed(int key){
 			threshold --;
 			if (threshold < 0) threshold = 0;
 			break;
-//		case '0'://added by Colin to test out the setRoiFromPixels() method
-//			ofPixels p;
-//			ofLoadImage(p, grayDiff);
-//			grayDiff.setRoiFromPixels(p, 5, 5);
-//			break;
-
+		case '0'://added by Colin to test out the setRoiFromPixels() method
+			//lets get some information about the blob
+			for (int i = 0; i < contourFinder.nBlobs; i++){
+				//which of the numBlobs blobs we are measuring
+				cout << "blobID: " << i <<endl;
+				//area of the blob
+				cout << "area: "<< contourFinder.blobs[i].area<<endl;
+				//perimeter of the blob
+				cout << "perimeter: "<< contourFinder.blobs[i].length<<endl;
+				//ofPoint instance of center of blob
+				cout << "centroid: "<< contourFinder.blobs[i].centroid<<endl;
+				//number of points inside the blob
+				cout << "nPts: "<< contourFinder.blobs[i].nPts<<endl;
+				//vector of all of ofPoints in the blob
+				cout << "points vector: ";
+				for (int j = 0; j<contourFinder.blobs[i].pts.size(); j++) {
+					cout << contourFinder.blobs[i].pts[j];
+				}
+				cout << endl;
+			}
+			break;
 	}
 }
 

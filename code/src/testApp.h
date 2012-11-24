@@ -41,6 +41,8 @@ class testApp : public ofBaseApp{
 		int 				threshold;
 		bool				bLearnBakground;
 
+	
+	int numBlobs;//the number of blobs to consider. (i.e. the number of input devices we want to detect)
 
 };
 
