@@ -3,6 +3,10 @@
 //--------------------------------------------------------------
 void testApp::setup(){
 
+	#if defined (_WIN32)
+	vidGrabber.setDeviceID(1);
+	#endif
+
 	#ifdef _USE_LIVE_VIDEO
         vidGrabber.setVerbose(true);
         vidGrabber.initGrabber(320,240);
