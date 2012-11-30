@@ -1,8 +1,9 @@
 #pragma once
 
 #include "ofMain.h"
-
 #include "ofxOpenCv.h"
+
+#include "ComponentTracker.h"
 
 #define _USE_LIVE_VIDEO		// uncomment this to use a live camera
 								// otherwise, we'll use a movie file
@@ -41,8 +42,9 @@ class testApp : public ofBaseApp{
 		int 				threshold;
 		bool				bLearnBakground;
 
+		list<ComponentTracker> components;
+
 	
 	int numBlobs;//the number of blobs to consider. (i.e. the number of input devices we want to detect)
-
 };
 

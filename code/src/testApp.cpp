@@ -3,8 +3,8 @@
 //--------------------------------------------------------------
 void testApp::setup(){
 
-	#if defined (_WIN32)
-	vidGrabber.setDeviceID(1);
+	#if defined (_WIN32) // if we are on Valkyrie's computer, use the Eye camera rather than the FaceTime
+		vidGrabber.setDeviceID(1);
 	#endif
 
 	#ifdef _USE_LIVE_VIDEO
@@ -23,7 +23,15 @@ void testApp::setup(){
 	bLearnBakground = true;
 	threshold = 80;
 	
-	numBlobs = 3;//maybe we want to detect 3 input devices
+	numBlobs = 3; //maybe we want to detect 3 input devices
+
+	ComponentTracker button = ComponentTracker();
+	button.comptype = ComponentTracker.ComponentType.button;
+	ComponentTracker slider = ComponentTracker();
+	slider.comptype = ComponentTracker.ComponentType.slider;
+	
+	components.push_back(button);
+	components.push_back(slider);
 }
 
 //--------------------------------------------------------------
@@ -63,6 +71,26 @@ void testApp::update(){
 		contourFinder.findContours(grayDiff, 20, (340*240)/3, numBlobs, false);	
 	}
 
+	for (list<ComponentTracker>::iterator it = components.begin(); it != components.end(); it++) {
+		ComponentTracker cur = *it;
+		// give it the updated blob
+		cur.prevCentroid = cur.component.centroid;
+		
+		// we need to figure out if contourFinder.blobs[i] is always the same
+		// and if it will always match the order of our components
+		// if so, this will probably be something like
+		// cur.component = contourFinder.blobs[it] (but we need an external variable for counting here)
+
+		// decide if we saw something interesting
+		if (cur.comptype == ComponentTracker.ComponentType.button && cur.buttonEventDetected()) {
+				cout << "Holy crap you pushed the button" << endl;
+		} else if (cur.comptype == ComponentTracker.ComponentType.slider) {
+			int sliderPos;
+			if (cur.sliderEventDetected(&sliderPos)) {
+				cout << "Holy crap you slid the slider to " << sliderPos << endl;
+			}
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -89,7 +117,6 @@ void testApp::draw(){
 	// this is how to get access to them:
     for (int i = 0; i < contourFinder.nBlobs; i++){
         contourFinder.blobs[i].draw(360,540);
-
     }
 
 	// finally, a report:
@@ -98,7 +125,6 @@ void testApp::draw(){
 	char reportStr[1024];
 	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f", threshold, contourFinder.nBlobs, ofGetFrameRate());
 	ofDrawBitmapString(reportStr, 20, 600);
-
 }
 
 //--------------------------------------------------------------
