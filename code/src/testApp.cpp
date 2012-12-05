@@ -26,9 +26,11 @@ void testApp::setup(){
 	numBlobs = 3; //maybe we want to detect 3 input devices
 
 	ComponentTracker button = ComponentTracker();
-	button.comptype = ComponentTracker.ComponentType.button;
+	cout << "button " << ComponentTracker::button <<endl;
+	cout << "slider " << ComponentTracker::up <<endl;
+	button.comptype = ComponentTracker::button;
 	ComponentTracker slider = ComponentTracker();
-	slider.comptype = ComponentTracker.ComponentType.slider;
+	slider.comptype = ComponentTracker::slider;
 	
 	components.push_back(button);
 	components.push_back(slider);
@@ -82,9 +84,9 @@ void testApp::update(){
 		// cur.component = contourFinder.blobs[it] (but we need an external variable for counting here)
 
 		// decide if we saw something interesting
-		if (cur.comptype == ComponentTracker.ComponentType.button && cur.buttonEventDetected()) {
+		if (cur.comptype == ComponentTracker::button && cur.buttonEventDetected()) {
 				cout << "Holy crap you pushed the button" << endl;
-		} else if (cur.comptype == ComponentTracker.ComponentType.slider) {
+		} else if (cur.comptype == ComponentTracker::slider) {
 			int sliderPos;
 			if (cur.sliderEventDetected(&sliderPos)) {
 				cout << "Holy crap you slid the slider to " << sliderPos << endl;
