@@ -1,4 +1,6 @@
 #include "ofxOpenCv.h"
+#include "utilities.h"
+
 #pragma once
 class ComponentTracker {
 public:
@@ -6,12 +8,12 @@ public:
 	enum Direction {up, down, left, right};
 	
 	ComponentType comptype;
-	ofxCvBlob component;
-	ofPoint prevCentroid;
+	CvRect regionOfInterest;
+	int numBlobsNeeded;
 	
-	bool buttonEventDetected();
-	bool sliderEventDetected(int* sliderPosition);
-	bool dialEventDetected(int* dialPosition);
-	bool joystickEventDetected(int* xPosition, int* yPosition);
-	bool dpadEventDetected(Direction* direction);
+	bool buttonEventDetected(ofxCvContourFinder contourFinder);
+	bool sliderEventDetected(ofxCvContourFinder contourFinder, int* sliderPosition);
+	bool dialEventDetected(ofxCvContourFinder contourFinder, int* dialPosition);
+	bool joystickEventDetected(ofxCvContourFinder contourFinder, int* xPosition, int* yPosition);
+	bool dpadEventDetected(ofxCvContourFinder contourFinder, Direction* direction);
 };

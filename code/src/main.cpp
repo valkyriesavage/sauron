@@ -3,6 +3,7 @@
 
 #include "testApp.h"
 #include "ComponentTracker.h"
+#include "utilities.h"
 
 //========================================================================
 int main( ){

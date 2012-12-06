@@ -22,15 +22,15 @@ void testApp::setup(){
 
 	bLearnBakground = true;
 	threshold = 80;
-	
-	numBlobs = 3; //maybe we want to detect 3 input devices
 
 	ComponentTracker button = ComponentTracker();
-	cout << "button " << ComponentTracker::button <<endl;
-	cout << "slider " << ComponentTracker::up <<endl;
 	button.comptype = ComponentTracker::button;
+	button.regionOfInterest = CvRect(0, 0, 100, 100);
+	button.numBlobsNeeded = 2;
 	ComponentTracker slider = ComponentTracker();
 	slider.comptype = ComponentTracker::slider;
+	slider.regionOfInterest = CvRect(0, 0, 600, 200);
+	slider.numBlobsNeeded = 2;
 	
 	components.push_back(button);
 	components.push_back(slider);
@@ -68,29 +68,32 @@ void testApp::update(){
 		grayDiff.absDiff(grayBg, grayImage);
 		grayDiff.threshold(threshold);
 
-		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-		//only considering numBlobs (i.e. number of input devices) number of blobs.
-		contourFinder.findContours(grayDiff, 20, (340*240)/3, numBlobs, false);	
-	}
-
-	for (list<ComponentTracker>::iterator it = components.begin(); it != components.end(); it++) {
-		ComponentTracker cur = *it;
-		// give it the updated blob
-		cur.prevCentroid = cur.component.centroid;
+		for (list<ComponentTracker>::iterator it = components.begin(); it != components.end(); it++) {
+			ComponentTracker cur = *it;
 		
-		// we need to figure out if contourFinder.blobs[i] is always the same
-		// and if it will always match the order of our components
-		// if so, this will probably be something like
-		// cur.component = contourFinder.blobs[it] (but we need an external variable for counting here)
+			// just look at the ROI for that component
 
-		// decide if we saw something interesting
-		if (cur.comptype == ComponentTracker::button && cur.buttonEventDetected()) {
-				cout << "Holy crap you pushed the button" << endl;
-		} else if (cur.comptype == ComponentTracker::slider) {
-			int sliderPos;
-			if (cur.sliderEventDetected(&sliderPos)) {
-				cout << "Holy crap you slid the slider to " << sliderPos << endl;
+			cvSetImageROI(grayDiff, cur.regionOfInterest);
+		
+			// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
+			// only considering the number of blobs needed for this input device.
+			contourFinder.findContours(grayDiff, 20, (340*240)/3, cur.numBlobsNeeded, false);	
+
+			// decide if we saw something interesting
+			if (cur.comptype == ComponentTracker::button && cur.buttonEventDetected(contourFinder)) {
+					cout << "Holy crap you pushed the button" << endl;
+			} else if (cur.comptype == ComponentTracker::slider) {
+				int sliderPos;
+				if (cur.sliderEventDetected(contourFinder, &sliderPos)) {
+					cout << "Holy crap you slid the slider to " << sliderPos << endl;
+				}
+			} else if (cur.comptype == ComponentTracker::dial) {
+				int dialPos;
+				if (cur.dialEventDetected(contourFinder, &dialPos)) {
+					cout << "Holy crap you rotated the dial to " << dialPos << endl;
+				}
 			}
+		
 		}
 	}
 }
