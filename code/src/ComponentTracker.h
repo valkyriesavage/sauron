@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "ofxOpenCv.h"
 #include "utilities.h"
 
@@ -7,6 +9,7 @@ public:
 	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel};
 	enum Direction {up, down, left, right};
 	
+	ofxCvContourFinder contourFinder;
 	ComponentType comptype;
 	CvRect regionOfInterest;
 	int numBlobsNeeded;

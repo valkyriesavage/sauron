@@ -25,11 +25,22 @@ void testApp::setup(){
 
 	ComponentTracker button = ComponentTracker();
 	button.comptype = ComponentTracker::button;
-	button.regionOfInterest = CvRect(0, 0, 100, 100);
+	button.regionOfInterest = CvRect();
+	// TODO : give these nice values that actually work
+	button.regionOfInterest.x = 0;
+	button.regionOfInterest.y = 0;
+	button.regionOfInterest.height = 100;
+	button.regionOfInterest.width = 100;
 	button.numBlobsNeeded = 2;
+
 	ComponentTracker slider = ComponentTracker();
 	slider.comptype = ComponentTracker::slider;
-	slider.regionOfInterest = CvRect(0, 0, 600, 200);
+	slider.regionOfInterest = CvRect();
+	// TODO : the same thing here
+	slider.regionOfInterest.x = 0;
+	slider.regionOfInterest.y = 0;
+	slider.regionOfInterest.height = 200;
+	slider.regionOfInterest.width = 600;
 	slider.numBlobsNeeded = 2;
 	
 	components.push_back(button);
@@ -72,12 +83,11 @@ void testApp::update(){
 			ComponentTracker cur = *it;
 		
 			// just look at the ROI for that component
-
-			cvSetImageROI(grayDiff, cur.regionOfInterest);
+			cvSetImageROI(grayDiff.getCvImage(), cur.regionOfInterest);
 		
 			// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
 			// only considering the number of blobs needed for this input device.
-			contourFinder.findContours(grayDiff, 20, (340*240)/3, cur.numBlobsNeeded, false);	
+			cur.contourFinder.findContours(grayDiff, 20, (340*240)/3, cur.numBlobsNeeded, false);	
 
 			// decide if we saw something interesting
 			if (cur.comptype == ComponentTracker::button && cur.buttonEventDetected(contourFinder)) {
