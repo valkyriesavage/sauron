@@ -1160,7 +1160,7 @@ Source: &lt;a href="http://www.farnell.com/datasheets/391098.pdf"&gt; Data sheet
 </plain>
 <instances>
 <instance part="X1" gate="G$1" x="55.88" y="63.5"/>
-<instance part="P+1" gate="1" x="53.34" y="71.12"/>
+<instance part="P+1" gate="1" x="50.8" y="66.04" rot="R90"/>
 <instance part="P+2" gate="1" x="25.4" y="43.18" rot="R180"/>
 <instance part="GND1" gate="1" x="25.4" y="86.36" rot="R180"/>
 <instance part="GND2" gate="1" x="53.34" y="60.96"/>
@@ -1178,10 +1178,6 @@ Source: &lt;a href="http://www.farnell.com/datasheets/391098.pdf"&gt; Data sheet
 <nets>
 <net name="VCC" class="0">
 <segment>
-<pinref part="X1" gate="G$1" pin="D+"/>
-<pinref part="P+1" gate="1" pin="VCC"/>
-</segment>
-<segment>
 <pinref part="LED3" gate="G$1" pin="A"/>
 <pinref part="P+2" gate="1" pin="VCC"/>
 <wire x1="20.32" y1="50.8" x2="25.4" y2="50.8" width="0.2032" layer="91"/>
@@ -1189,6 +1185,11 @@ Source: &lt;a href="http://www.farnell.com/datasheets/391098.pdf"&gt; Data sheet
 <pinref part="LED4" gate="G$1" pin="A"/>
 <wire x1="30.48" y1="50.8" x2="25.4" y2="50.8" width="0.2032" layer="91"/>
 <junction x="25.4" y="50.8"/>
+</segment>
+<segment>
+<pinref part="X1" gate="G$1" pin="VBUS"/>
+<pinref part="P+1" gate="1" pin="VCC"/>
+<wire x1="50.8" y1="66.04" x2="53.34" y2="66.04" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="GND" class="0">

@@ -2,14 +2,14 @@ EAGLE AutoRouter Statistics:
 
 Job           : /Users/valkyrie/Documents/eagle/sauroneye/sauroneye.brd
 
-Start at      : 11:32:05 (12.11.12)
-End at        : 11:32:05 (12.11.12)
+Start at      : 15:06:02 (6.12.12)
+End at        : 15:06:02 (6.12.12)
 Elapsed time  : 00:00:00
 
-Signals       :     3   RoutingGrid: 50 mil  Layers: 2
-Connections   :    13   predefined:  13 ( 0 Vias )
+Signals       :     8   RoutingGrid: 50 mil  Layers: 2
+Connections   :    10   predefined:  10 ( 0 Vias )
 
-Router memory :   17160
+Router memory :   14256
 
 Passname          :     Route Optimize1 Optimize2 Optimize3 Optimize4
 
