@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.2">
+<eagle version="6.3">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -107,7 +107,7 @@
 <wire x1="83.49" y1="15.24" x2="83.49" y2="72.38" width="0" layer="20"/>
 <wire x1="83.49" y1="72.38" x2="12.7" y2="72.38" width="0" layer="20"/>
 <wire x1="12.7" y1="72.38" x2="12.7" y2="15.24" width="0" layer="20"/>
-<circle x="50.8" y="43.18" radius="18.288" width="0.4064" layer="20"/>
+<circle x="50.8" y="43.18" radius="8.382" width="0.4064" layer="16"/>
 <text x="13.97" y="16.51" size="1.778" layer="1" font="vector" ratio="15">Sauron v 0.1</text>
 <text x="59.69" y="16.51" size="1.778" layer="1" font="vector" ratio="15">Valkyrie Savage</text>
 <text x="68.58" y="19.05" size="1.778" layer="1" font="vector" ratio="15">Nov. 2012</text>
@@ -201,7 +201,7 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <class number="0" name="default" width="0" drill="0">
 </class>
 </classes>
-<designrules>
+<designrules name="default">
 <description language="de">&lt;b&gt;EAGLE Design Rules&lt;/b&gt;
 &lt;p&gt;
 Die Standard-Design-Rules sind so gewählt, dass sie für 
