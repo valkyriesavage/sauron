@@ -6,22 +6,17 @@ void testApp::setup(){
 	#if defined (_WIN32) // if we are on Valkyrie's computer, use the Eye camera rather than the FaceTime
 		vidGrabber.setDeviceID(1);
 	#endif
-
-	#ifdef _USE_LIVE_VIDEO
-        vidGrabber.setVerbose(true);
-        vidGrabber.initGrabber(320,240);
-	#else
-        vidPlayer.loadMovie("fingers.mov");
-        vidPlayer.play();
-	#endif
-
+    
+    vidGrabber.setVerbose(true);
+    vidGrabber.initGrabber(320,240);
+	
     colorImg.allocate(320,240);
 	grayImage.allocate(320,240);
 	grayBg.allocate(320,240);
 	grayDiff.allocate(320,240);
 
 	bLearnBakground = true;
-	threshold = 80;
+	threshold = 100;
 
 	ComponentTracker button = ComponentTracker();
 	button.comptype = ComponentTracker::button;
@@ -42,9 +37,43 @@ void testApp::setup(){
 	slider.regionOfInterest.height = 200;
 	slider.regionOfInterest.width = 600;
 	slider.numBlobsNeeded = 2;
+    
+    ComponentTracker dpad = ComponentTracker();
+	dpad.comptype = ComponentTracker::dpad;
+	dpad.regionOfInterest = CvRect();
+	// TODO : the same thing here
+	dpad.regionOfInterest.x = 0;
+	dpad.regionOfInterest.y = 0;
+	dpad.regionOfInterest.height = 200;
+	dpad.regionOfInterest.width = 600;
+	dpad.numBlobsNeeded = 4;
+    
+    ComponentTracker dial = ComponentTracker();
+	dial.comptype = ComponentTracker::dial;
+	dial.regionOfInterest = CvRect();
+	// TODO : the same thing here
+	dial.regionOfInterest.x = 0;
+	dial.regionOfInterest.y = 0;
+	dial.regionOfInterest.height = 200;
+	dial.regionOfInterest.width = 600;
+	dial.numBlobsNeeded = 2;
+    
+    ComponentTracker scrollWheel = ComponentTracker();
+	scrollWheel.comptype = ComponentTracker::scroll_wheel;
+	scrollWheel.regionOfInterest = CvRect();
+	// TODO : the same thing here
+	scrollWheel.regionOfInterest.x = 0;
+	scrollWheel.regionOfInterest.y = 0;
+	scrollWheel.regionOfInterest.height = 200;
+	scrollWheel.regionOfInterest.width = 600;
+	scrollWheel.numBlobsNeeded = 2;
 	
 	components.push_back(button);
 	components.push_back(slider);
+    components.push_back(dpad);
+    components.push_back(dial);
+	components.push_back(scrollWheel);
+
 }
 
 //--------------------------------------------------------------
@@ -53,21 +82,12 @@ void testApp::update(){
 
     bool bNewFrame = false;
 
-	#ifdef _USE_LIVE_VIDEO
-       vidGrabber.update();
-	   bNewFrame = vidGrabber.isFrameNew();
-    #else
-        vidPlayer.update();
-        bNewFrame = vidPlayer.isFrameNew();
-	#endif
+	vidGrabber.update();
+    bNewFrame = vidGrabber.isFrameNew();
 
 	if (bNewFrame){
 
-		#ifdef _USE_LIVE_VIDEO
-            colorImg.setFromPixels(vidGrabber.getPixels(), 320,240);
-	    #else
-            colorImg.setFromPixels(vidPlayer.getPixels(), 320,240);
-        #endif
+		colorImg.setFromPixels(vidGrabber.getPixels(), 320,240);
 
         grayImage = colorImg;
 		if (bLearnBakground == true){
@@ -90,19 +110,45 @@ void testApp::update(){
 			cur.contourFinder.findContours(grayDiff, 20, (340*240)/3, cur.numBlobsNeeded, false);	
 
 			// decide if we saw something interesting
-			if (cur.comptype == ComponentTracker::button && cur.buttonEventDetected(contourFinder)) {
+			if (cur.comptype == ComponentTracker::button && cur.buttonEventDetected()) {
 					cout << "Holy crap you pushed the button" << endl;
 			} else if (cur.comptype == ComponentTracker::slider) {
 				int sliderPos;
-				if (cur.sliderEventDetected(contourFinder, &sliderPos)) {
+				if (cur.sliderEventDetected(&sliderPos)) {
 					cout << "Holy crap you slid the slider to " << sliderPos << endl;
 				}
 			} else if (cur.comptype == ComponentTracker::dial) {
 				int dialPos;
-				if (cur.dialEventDetected(contourFinder, &dialPos)) {
+				if (cur.dialEventDetected(&dialPos)) {
 					cout << "Holy crap you rotated the dial to " << dialPos << endl;
 				}
-			}
+			} else if (cur.comptype == ComponentTracker::scroll_wheel) {
+                ComponentTracker::Direction scrollDirection;
+                if (cur.scrollWheelEventDetected(&scrollDirection)) {
+                    cout << "Holy crap you turned the scroll wheel ";
+                    if (scrollDirection == ComponentTracker::up) {
+                        cout << "up" << endl;
+                    } else {
+                        cout << "down" << endl;
+                    }
+                }
+            } else if (cur.comptype == ComponentTracker::dpad) {
+                ComponentTracker::Direction dpadDirection;
+                if (cur.scrollWheelEventDetected(&dpadDirection)) {
+                    cout << "Holy crap you pushed the dpad ";
+                    if (dpadDirection == ComponentTracker::up) {
+                        cout << "up" << endl;
+                    } else if (dpadDirection == ComponentTracker::down) {
+                        cout << "down" << endl;
+                    } else if (dpadDirection == ComponentTracker::right) {
+                        cout << "right" << endl;
+                    } else if (dpadDirection == ComponentTracker::left) {
+                        cout << "left" << endl;
+                    }
+                }
+            }
+            
+            cvResetImageROI(grayDiff.getCvImage());
 		
 		}
 	}

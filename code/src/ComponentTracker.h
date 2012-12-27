@@ -14,9 +14,10 @@ public:
 	CvRect regionOfInterest;
 	int numBlobsNeeded;
 	
-	bool buttonEventDetected(ofxCvContourFinder contourFinder);
-	bool sliderEventDetected(ofxCvContourFinder contourFinder, int* sliderPosition);
-	bool dialEventDetected(ofxCvContourFinder contourFinder, int* dialPosition);
-	bool joystickEventDetected(ofxCvContourFinder contourFinder, int* xPosition, int* yPosition);
-	bool dpadEventDetected(ofxCvContourFinder contourFinder, Direction* direction);
+	bool buttonEventDetected();
+	bool sliderEventDetected(int* sliderPosition);
+	bool dialEventDetected(int* dialPosition);
+    bool scrollWheelEventDetected(Direction* scrollDirection);
+	bool joystickEventDetected(int* xPosition, int* yPosition);
+	bool dpadEventDetected(Direction* direction);
 };

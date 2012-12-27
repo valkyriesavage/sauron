@@ -1,12 +1,13 @@
 #pragma once
 
 #include "ofMain.h"
+
 #include "ofxOpenCv.h"
 
-#include "ComponentTracker.h"
-#include "utilities.h"
+#define _USE_LIVE_VIDEO		// uncomment this to use a live camera
+								// otherwise, we'll use a movie file
 
-class testApp : public ofBaseApp{
+class testing : public ofBaseApp{
 
 	public:
 		void setup();
@@ -23,7 +24,11 @@ class testApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);		
 
-        ofVideoGrabber 		vidGrabber;
+        #ifdef _USE_LIVE_VIDEO
+		  ofVideoGrabber 		vidGrabber;
+		#else
+		  ofVideoPlayer 		vidPlayer;
+		#endif
 
         ofxCvColorImage			colorImg;
 
@@ -36,6 +41,6 @@ class testApp : public ofBaseApp{
 		int 				threshold;
 		bool				bLearnBakground;
 
-		list<ComponentTracker> components;
+
 };
 
