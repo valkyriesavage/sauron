@@ -21,6 +21,6 @@ int main( ){
     } else {
         // for whatever stupid reason, I can't call the app anything other than testApp,
         // but this calls SAURON
-        ofRunApp( new testApp());
+        ofRunApp(new testApp());
     }
 }

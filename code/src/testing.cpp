@@ -45,6 +45,7 @@ void testing::update(){
         grayImage = colorImg;
 		if (bLearnBakground == true){
 			grayBg = grayImage;		// the = sign copys the pixels from grayImage into grayBg (operator overloading)
+            previousBlobs.clear();
 			bLearnBakground = false;
 		}
 
@@ -55,6 +56,18 @@ void testing::update(){
 		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
 		// also, find holes is set to true so we will get interior contours as well....
 		contourFinder.findContours(grayDiff, 20, (340*240)/3, 10, true);	// find holes
+        
+        probableComponents.clear();
+        // now decide if we actually have something
+        if (!previousBlobs.empty()) {
+            for (int i = 0; i < contourFinder.blobs.size() && i < previousBlobs.size(); i++) {
+                if (contourFinder.blobs.at(i).centroid.distance(previousBlobs.at(i).centroid) > MOVE_THRESH) {
+                    probableComponents.push_back(contourFinder.blobs.at(i));
+                }
+            }
+        }
+        
+        previousBlobs = contourFinder.blobs;
 	}
 
 }
@@ -81,8 +94,9 @@ void testing::draw(){
 
 	// or, instead we can draw each blob individually,
 	// this is how to get access to them:
-    for (int i = 0; i < contourFinder.nBlobs; i++){
-        contourFinder.blobs[i].draw(360,540);
+    for (int i = 0; i < probableComponents.size(); i++){
+        probableComponents.at(i).draw(360,540);
+        cout << probableComponents.at(i).centroid << endl;
     }
 
 	// finally, a report:
@@ -92,6 +106,8 @@ void testing::draw(){
 	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f", threshold, contourFinder.nBlobs, ofGetFrameRate());
 	ofDrawBitmapString(reportStr, 20, 600);
 
+    // we need a little pause in here so that we can not get overwhelmed with numbers
+    //sleep(10);
 }
 
 //--------------------------------------------------------------
@@ -109,6 +125,9 @@ void testing::keyPressed(int key){
 			threshold --;
 			if (threshold < 0) threshold = 0;
 			break;
+        default:
+            char c = key;
+            cout << c;
 	}
 }
 

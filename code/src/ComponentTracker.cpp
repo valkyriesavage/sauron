@@ -1,5 +1,9 @@
 #include "ComponentTracker.h"
 
+ComponentTracker::ComponentTracker() {
+    
+}
+
 bool ComponentTracker::buttonEventDetected() {
 	return this->contourFinder.blobs.size() > 0;
 }
@@ -23,11 +27,23 @@ bool ComponentTracker::dialEventDetected(int* dialPosition) {
 	return true;
 }
 
-bool ComponentTracker::scrollWheelEventDetected( Direction* scrollDirection) {
+bool ComponentTracker::scrollWheelEventDetected(Direction* scrollDirection, int* scrollAmount) {
     if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
         return false;
     }
-    
+    if (this->previousBlobs.empty()) {
+        this->previousBlobs = this->contourFinder.blobs;
+        return false;
+    }
+    // determine whether the blobs have moved generally right or up or generally left or down
+    int xDiff = this->previousBlobs.at(0).centroid.x - this->contourFinder.blobs.at(0).centroid.x;
+    int yDiff = this->previousBlobs.at(0).centroid.y - this->contourFinder.blobs.at(0).centroid.y;
+    if(xDiff > 0) {
+        *scrollDirection = ComponentTracker::up;
+    } else {
+        *scrollDirection = ComponentTracker::down;
+    }
+    *scrollAmount = (int)this->previousBlobs.at(0).centroid.distance(this->contourFinder.blobs.at(0).centroid);
     return true;
 }
 
@@ -35,7 +51,34 @@ bool ComponentTracker::dpadEventDetected(Direction* direction) {
 	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
 		return false;
 	}
-	return false;
+    // determine whether the center of the four blobs' centers is off-center
+    double xCenter = this->regionOfInterest.x + this->regionOfInterest.width/2;
+    double yCenter = this->regionOfInterest.y + this->regionOfInterest.height/2;
+    
+    double xCenterBlobs = 0;
+    double yCenterBlobs = 0;
+    for (int i=0; i < this->contourFinder.blobs.size(); i++) {
+        xCenterBlobs += this->contourFinder.blobs.at(i).centroid.x;
+        yCenterBlobs += this->contourFinder.blobs.at(i).centroid.y;
+    }
+    xCenterBlobs = xCenterBlobs/this->contourFinder.blobs.size();
+    yCenterBlobs = yCenterBlobs/this->contourFinder.blobs.size();
+    
+    if(xCenterBlobs < xCenter) {
+        if(yCenterBlobs < yCenter) {
+            *direction = ComponentTracker::up;
+        } else {
+            *direction = ComponentTracker::right;
+        }
+    } else {
+        if(yCenterBlobs < yCenter) {
+            *direction = ComponentTracker::down;
+        } else {
+            *direction = ComponentTracker::left;
+        }
+    }
+
+	return true;
 }
 
 bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {

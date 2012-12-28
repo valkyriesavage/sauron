@@ -1,4 +1,5 @@
 #pragma once
+#include <vector.h>
 
 #include "ofMain.h"
 #include "ofxOpenCv.h"
@@ -36,6 +37,6 @@ class testApp : public ofBaseApp{
 		int 				threshold;
 		bool				bLearnBakground;
 
-		list<ComponentTracker> components;
+        std::vector<ComponentTracker*> components;
 };
 

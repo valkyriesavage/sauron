@@ -16,64 +16,43 @@ void testApp::setup(){
 	grayDiff.allocate(320,240);
 
 	bLearnBakground = true;
-	threshold = 100;
+	threshold = 80;
 
-	ComponentTracker button = ComponentTracker();
-	button.comptype = ComponentTracker::button;
-	button.regionOfInterest = CvRect();
-	// TODO : give these nice values that actually work
-	button.regionOfInterest.x = 0;
-	button.regionOfInterest.y = 0;
-	button.regionOfInterest.height = 100;
-	button.regionOfInterest.width = 100;
-	button.numBlobsNeeded = 2;
+	ComponentTracker* button = new ComponentTracker();
+	button->comptype = ComponentTracker::button;
+    // TODO : give these nice values that actually work
+	button->regionOfInterest = cvRect(0, 0, 100, 100);
+	button->numBlobsNeeded = 2;
 
-	ComponentTracker slider = ComponentTracker();
-	slider.comptype = ComponentTracker::slider;
-	slider.regionOfInterest = CvRect();
-	// TODO : the same thing here
-	slider.regionOfInterest.x = 0;
-	slider.regionOfInterest.y = 0;
-	slider.regionOfInterest.height = 200;
-	slider.regionOfInterest.width = 600;
-	slider.numBlobsNeeded = 2;
+	ComponentTracker* slider = new ComponentTracker();
+	slider->comptype = ComponentTracker::slider;
+    // TODO : the same thing here
+	slider->regionOfInterest = cvRect(0, 0, 200, 200);
+	slider->numBlobsNeeded = 2;
     
-    ComponentTracker dpad = ComponentTracker();
-	dpad.comptype = ComponentTracker::dpad;
-	dpad.regionOfInterest = CvRect();
+    ComponentTracker* dpad = new ComponentTracker();
+	dpad->comptype = ComponentTracker::dpad;
 	// TODO : the same thing here
-	dpad.regionOfInterest.x = 0;
-	dpad.regionOfInterest.y = 0;
-	dpad.regionOfInterest.height = 200;
-	dpad.regionOfInterest.width = 600;
-	dpad.numBlobsNeeded = 4;
+	dpad->regionOfInterest = cvRect(0, 0, 200, 200);
+	dpad->numBlobsNeeded = 4;
     
-    ComponentTracker dial = ComponentTracker();
-	dial.comptype = ComponentTracker::dial;
-	dial.regionOfInterest = CvRect();
+    ComponentTracker* dial = new ComponentTracker();
+	dial->comptype = ComponentTracker::dial;
 	// TODO : the same thing here
-	dial.regionOfInterest.x = 0;
-	dial.regionOfInterest.y = 0;
-	dial.regionOfInterest.height = 200;
-	dial.regionOfInterest.width = 600;
-	dial.numBlobsNeeded = 2;
+	dial->regionOfInterest = cvRect(0, 0, 200, 200);
+	dial->numBlobsNeeded = 2;
     
-    ComponentTracker scrollWheel = ComponentTracker();
-	scrollWheel.comptype = ComponentTracker::scroll_wheel;
-	scrollWheel.regionOfInterest = CvRect();
+    ComponentTracker* scrollWheel = new ComponentTracker();
+	scrollWheel->comptype = ComponentTracker::scroll_wheel;
 	// TODO : the same thing here
-	scrollWheel.regionOfInterest.x = 0;
-	scrollWheel.regionOfInterest.y = 0;
-	scrollWheel.regionOfInterest.height = 200;
-	scrollWheel.regionOfInterest.width = 600;
-	scrollWheel.numBlobsNeeded = 2;
+	scrollWheel->regionOfInterest = cvRect(0, 0, 200, 200);
+	scrollWheel->numBlobsNeeded = 2;
 	
 	components.push_back(button);
 	components.push_back(slider);
     components.push_back(dpad);
     components.push_back(dial);
 	components.push_back(scrollWheel);
-
 }
 
 //--------------------------------------------------------------
@@ -88,6 +67,11 @@ void testApp::update(){
 	if (bNewFrame){
 
 		colorImg.setFromPixels(vidGrabber.getPixels(), 320,240);
+        
+        grayBg.resetROI();
+        colorImg.resetROI();
+        grayImage.resetROI();
+        grayDiff.resetROI();
 
         grayImage = colorImg;
 		if (bLearnBakground == true){
@@ -99,32 +83,45 @@ void testApp::update(){
 		grayDiff.absDiff(grayBg, grayImage);
 		grayDiff.threshold(threshold);
 
-		for (list<ComponentTracker>::iterator it = components.begin(); it != components.end(); it++) {
-			ComponentTracker cur = *it;
+		for (int i = 0; i < components.size(); i++) {
+			ComponentTracker* cur = components.at(i);
 		
-			// just look at the ROI for that component
-			cvSetImageROI(grayDiff.getCvImage(), cur.regionOfInterest);
-		
-			// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-			// only considering the number of blobs needed for this input device.
-			cur.contourFinder.findContours(grayDiff, 20, (340*240)/3, cur.numBlobsNeeded, false);	
+            if(cur->comptype == ComponentTracker::scroll_wheel) {
+                // for the scroll wheel, we don't look at the difference.
+                // since we can't get a background without stripes in it, we just
+                // look at the raw image and look for blobs
+                cvSetImageROI(grayImage.getCvImage(), cur->regionOfInterest);
+                
+                // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
+                // only considering the number of blobs needed for this input device.
+                cur->contourFinder.findContours(grayImage, 20, (340*240)/3, cur->numBlobsNeeded, false);
+            } else {
+                // just look at the ROI for that component, in the grey diff
+                cvSetImageROI(grayDiff.getCvImage(), cur->regionOfInterest);
+                
+                // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
+                // only considering the number of blobs needed for this input device.
+                cur->contourFinder.findContours(grayDiff, 20, (340*240)/3, cur->numBlobsNeeded, false);
+            }
+	
 
 			// decide if we saw something interesting
-			if (cur.comptype == ComponentTracker::button && cur.buttonEventDetected()) {
+			if (cur->comptype == ComponentTracker::button && cur->buttonEventDetected()) {
 					cout << "Holy crap you pushed the button" << endl;
-			} else if (cur.comptype == ComponentTracker::slider) {
+			} else if (cur->comptype == ComponentTracker::slider) {
 				int sliderPos;
-				if (cur.sliderEventDetected(&sliderPos)) {
+				if (cur->sliderEventDetected(&sliderPos)) {
 					cout << "Holy crap you slid the slider to " << sliderPos << endl;
 				}
-			} else if (cur.comptype == ComponentTracker::dial) {
+			} else if (cur->comptype == ComponentTracker::dial) {
 				int dialPos;
-				if (cur.dialEventDetected(&dialPos)) {
+				if (cur->dialEventDetected(&dialPos)) {
 					cout << "Holy crap you rotated the dial to " << dialPos << endl;
 				}
-			} else if (cur.comptype == ComponentTracker::scroll_wheel) {
+			} else if (cur->comptype == ComponentTracker::scroll_wheel) {
                 ComponentTracker::Direction scrollDirection;
-                if (cur.scrollWheelEventDetected(&scrollDirection)) {
+                int scrollAmount = 0;
+                if (cur->scrollWheelEventDetected(&scrollDirection, &scrollAmount)) {
                     cout << "Holy crap you turned the scroll wheel ";
                     if (scrollDirection == ComponentTracker::up) {
                         cout << "up" << endl;
@@ -132,9 +129,9 @@ void testApp::update(){
                         cout << "down" << endl;
                     }
                 }
-            } else if (cur.comptype == ComponentTracker::dpad) {
+            } else if (cur->comptype == ComponentTracker::dpad) {
                 ComponentTracker::Direction dpadDirection;
-                if (cur.scrollWheelEventDetected(&dpadDirection)) {
+                if (cur->dpadEventDetected(&dpadDirection)) {
                     cout << "Holy crap you pushed the dpad ";
                     if (dpadDirection == ComponentTracker::up) {
                         cout << "up" << endl;
@@ -148,15 +145,16 @@ void testApp::update(){
                 }
             }
             
+            // need to reset this so we can move it around for the next component
             cvResetImageROI(grayDiff.getCvImage());
-		
+            // we don't need to reset the ROI on the raw gray image, since we use
+            // the same one every time
 		}
 	}
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
-
 	// draw the incoming, the grayscale, the bg and the thresholded difference
 	ofSetHexColor(0xffffff);
 	colorImg.draw(20,20);
@@ -171,15 +169,11 @@ void testApp::draw(){
 	ofRect(360,540,320,240);
 	ofSetHexColor(0xffffff);
 
-	// we could draw the whole contour finder
-	//contourFinder.draw(360,540);
-
-	// or, instead we can draw each blob individually,
-	// this is how to get access to them:
-    for (int i = 0; i < contourFinder.nBlobs; i++){
-        contourFinder.blobs[i].draw(360,540);
+	// we draw the blobs
+    for (int i = 0; i < components.size(); i++) {
+        ComponentTracker* cur = components.at(i);
+        cur->contourFinder.draw();
     }
-
 	// finally, a report:
 
 	ofSetHexColor(0xffffff);

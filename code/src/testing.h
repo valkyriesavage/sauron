@@ -37,7 +37,10 @@ class testing : public ofBaseApp{
 		ofxCvGrayscaleImage 	grayDiff;
 
         ofxCvContourFinder 	contourFinder;
+        std::vector<ofxCvBlob> previousBlobs;
+        std::vector<ofxCvBlob> probableComponents;
 
+        const int           MOVE_THRESH = 7;
 		int 				threshold;
 		bool				bLearnBakground;
 
