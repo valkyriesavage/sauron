@@ -7,7 +7,7 @@
 #include "ComponentTracker.h"
 #include "utilities.h"
 
-class testApp : public ofBaseApp{
+class Sauron : public ofBaseApp{
 
 	public:
 		void setup();

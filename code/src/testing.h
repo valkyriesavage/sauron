@@ -40,7 +40,7 @@ class testing : public ofBaseApp{
         std::vector<ofxCvBlob> previousBlobs;
         std::vector<ofxCvBlob> probableComponents;
 
-        const int           MOVE_THRESH = 7;
+        const int           MOVE_THRESH = 10;
 		int 				threshold;
 		bool				bLearnBakground;
 

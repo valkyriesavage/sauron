@@ -1,7 +1,7 @@
-#include "testApp.h"
+#include "Sauron.h"
 
 //--------------------------------------------------------------
-void testApp::setup(){
+void Sauron::setup(){
 
 	#if defined (_WIN32) // if we are on Valkyrie's computer, use the Eye camera rather than the FaceTime
 		vidGrabber.setDeviceID(1);
@@ -56,7 +56,7 @@ void testApp::setup(){
 }
 
 //--------------------------------------------------------------
-void testApp::update(){
+void Sauron::update(){
 	ofBackground(100,100,100);
 
     bool bNewFrame = false;
@@ -154,7 +154,7 @@ void testApp::update(){
 }
 
 //--------------------------------------------------------------
-void testApp::draw(){
+void Sauron::draw(){
 	// draw the incoming, the grayscale, the bg and the thresholded difference
 	ofSetHexColor(0xffffff);
 	colorImg.draw(20,20);
@@ -183,7 +183,7 @@ void testApp::draw(){
 }
 
 //--------------------------------------------------------------
-void testApp::keyPressed(int key){
+void Sauron::keyPressed(int key){
 
 	switch (key){
 		case ' ':
@@ -222,41 +222,41 @@ void testApp::keyPressed(int key){
 }
 
 //--------------------------------------------------------------
-void testApp::keyReleased(int key){
+void Sauron::keyReleased(int key){
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseMoved(int x, int y ){
+void Sauron::mouseMoved(int x, int y ){
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseDragged(int x, int y, int button){
+void Sauron::mouseDragged(int x, int y, int button){
 
 }
 
 //--------------------------------------------------------------
-void testApp::mousePressed(int x, int y, int button){
+void Sauron::mousePressed(int x, int y, int button){
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseReleased(int x, int y, int button){
+void Sauron::mouseReleased(int x, int y, int button){
 
 }
 
 //--------------------------------------------------------------
-void testApp::windowResized(int w, int h){
+void Sauron::windowResized(int w, int h){
 
 }
 
 //--------------------------------------------------------------
-void testApp::gotMessage(ofMessage msg){
+void Sauron::gotMessage(ofMessage msg){
 
 }
 
 //--------------------------------------------------------------
-void testApp::dragEvent(ofDragInfo dragInfo){ 
+void Sauron::dragEvent(ofDragInfo dragInfo){ 
 
 }
