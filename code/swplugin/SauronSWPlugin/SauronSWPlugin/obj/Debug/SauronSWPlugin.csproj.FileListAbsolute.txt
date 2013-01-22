@@ -1,0 +1,10 @@
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\bin\Debug\SauronSWPlugin.dll
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\bin\Debug\SauronSWPlugin.pdb
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\bin\Debug\SauronSWPlugin.tlb
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\bin\Debug\solidworkstools.dll
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\obj\Debug\SauronSWPlugin.dll
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\obj\Debug\SauronSWPlugin.pdb
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\obj\Debug\SauronSWPlugin.SWTaskpaneHost.resources
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\obj\Debug\GenerateResource.read.1.tlog
+C:\Users\Valkyrie\projects\sauron\code\swplugin\SauronSWPlugin\SauronSWPlugin\obj\Debug\GenerateResource.write.1.tlog
