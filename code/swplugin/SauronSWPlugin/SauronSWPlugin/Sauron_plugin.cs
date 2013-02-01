@@ -66,6 +66,7 @@ namespace SauronSWPlugin
         {
             mTaskpaneView = mSWApplication.CreateTaskpaneView2(string.Empty, "Woo! My first SwAddin");
             mTaskpaneHost = (SWTaskpaneHost)mTaskpaneView.AddControl(SWTaskpaneHost.SWTASKPANE_PROGID, "");
+            mTaskpaneHost.swApp = mSWApplication;
         }
 
         private void UITeardown()
