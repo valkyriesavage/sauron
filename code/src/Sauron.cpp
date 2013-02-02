@@ -267,30 +267,64 @@ void Sauron::dragEvent(ofDragInfo dragInfo){
 
 }
 
+/*
+do some local (or over web/websockets) to check whether this device has already been registered, in which case we can just load up the relevant information form our db
+ TODO: finish this method
+ */
 
 bool Sauron::isSauronRegistered(){
-//do some local (or over web/websockets) to check whether this device has already been registered, in which case we can just load up the relevant information form our db
 	//but for now, since we are making registration, we will just claim we are not registered
 	return false;
 }
 
+/*the function called in setup() is registration has not been performed.
+ function itself will perform a variety of operations to fultill registraion of this controller including:
+ - assigning it a unique id from the web
+ - getting information from (somewhere) with solidworks info (including which components are used, and how many, and maybe, as a bonus, relative positioninig (but we could do wihtout this))
+ - measuring and logging information (boundaries/detection setup) for the input components
+ */
 void Sauron::sauronRegister(){
 	if (isSauronRegistered()) {
 		//hey man, you've already registered this. TODO: setup some error here
 		return;
 	}
-	/*the function called in setup() is registration has not been performed.
-	 function itself will perform a variety of operations to fultill registraion of this controller including:
-	 *assigning it a unique id from the web
-	 *getting information from (somewhere) with solidworks info (including which components are used, and how many, and maybe, as a bonus, relative positioninig (but we could do wihtout this))
-	 *measuring and logging information (boundaries/detection setup) for the input components
-	 */
+
+	//asign id
+	Sid = getSauronId();
 	
+	//get component information
+	components = getSauronComponents();
+	
+	//register all the components
+	for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
+		registerComponent(*it);
+	}
 }
-void Sauron::sauronLoad(){
 
-/* sauronLoad looks in our database and loads up the necessary knowhow for this controller to get going.
+/* 
+ sauronLoad looks in our database and loads up the necessary knowhow for this controller to get going.
+ TODO: finish this method when we determine a way to save devices
  */
+void Sauron::sauronLoad(){}
+
+/*
+ assigns a unique id for Sauron devices
+ TODO: finish this method when determine a way to save devices
+ */
+int Sauron::getSauronId(){
+	return 0;//for now
 }
 
+/*
+ gets Sauron components from solidworks
+ */
+std::vector<ComponentTracker*> Sauron::getSauronComponents(){
+	std::vector<ComponentTracker*> a;
+	return a;
+}
 
+/*
+ depending on component type, does some gui bit for user to properly register this input component
+ TODO: finish this method. It's a switch statement between all the different component types. Each component type will have its own method.
+ */
+void Sauron::registerComponent(ComponentTracker*){}

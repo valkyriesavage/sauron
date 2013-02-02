@@ -24,9 +24,14 @@ class Sauron : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 	
-	bool isSauronRegistered();
-	void sauronRegister();
-	void sauronLoad();
+		bool isSauronRegistered();
+		void sauronRegister();
+		void sauronLoad();
+		int getSauronId();
+		std::vector<ComponentTracker*> getSauronComponents();
+		void registerComponent(ComponentTracker*);
+		
+		int Sid;
 
         ofVideoGrabber 		vidGrabber;
 
