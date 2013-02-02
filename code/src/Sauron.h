@@ -22,7 +22,11 @@ class Sauron : public ofBaseApp{
 		void mouseReleased(int x, int y, int button);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);		
+		void gotMessage(ofMessage msg);
+	
+	bool isSauronRegistered();
+	void sauronRegister();
+	void sauronLoad();
 
         ofVideoGrabber 		vidGrabber;
 
