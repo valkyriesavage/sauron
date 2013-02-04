@@ -353,7 +353,12 @@ void Sauron::registerButton(){
 	
 }	
 void Sauron::registerSlider(){
-		
+		//something like...
+	//move slider to one end and press space (hereby setting up the bgsubtraction
+	//move slider to other end and press something else to save the coordinates of that blob
+	//press space again
+	//move slider back to initial end (whatever end slider does not sit) and press something to save the coordinate.
+	//we should now have two points and we can do stuff with that.
 }
 
 void Sauron::registerDPad(){
