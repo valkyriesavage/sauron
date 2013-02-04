@@ -327,6 +327,41 @@ std::vector<ComponentTracker*> Sauron::getSauronComponents(){
  depending on component type, does some gui bit for user to properly register this input component
  TODO: finish this method. It's a switch statement between all the different component types. Each component type will have its own method.
  */
-void Sauron::registerComponent(ComponentTracker*){
-
+void Sauron::registerComponent(ComponentTracker* ct){
+	switch (ct->comptype) {
+		case 'button':
+			//do some button business
+			registerButton();
+			break;
+		case 'slider':
+			//do some slider business
+			registerSlider();
+			break;
+		case 'dpad':
+			//do some dpad business
+			registerDPad();
+			break;
+		case 'dial':
+			//do some dial business
+			registerDial();
+			break;
+		default:
+			break;
+	}
 }
+void Sauron::registerButton(){
+	
+}	
+void Sauron::registerSlider(){
+		
+}
+
+void Sauron::registerDPad(){
+	
+}
+void Sauron::registerDial(){
+	
+}
+	
+	
+
