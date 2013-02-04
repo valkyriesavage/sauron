@@ -290,7 +290,7 @@ void Sauron::sauronRegister(){
 	}
 
 	//asign id
-	Sid = getSauronId();
+	Sid = assignSauronId();
 	
 	//get component information
 	components = getSauronComponents();
@@ -311,7 +311,7 @@ void Sauron::sauronLoad(){}
  assigns a unique id for Sauron devices
  TODO: finish this method when determine a way to save devices
  */
-int Sauron::getSauronId(){
+int Sauron::assignSauronId(){
 	return 0;//for now
 }
 
@@ -327,4 +327,6 @@ std::vector<ComponentTracker*> Sauron::getSauronComponents(){
  depending on component type, does some gui bit for user to properly register this input component
  TODO: finish this method. It's a switch statement between all the different component types. Each component type will have its own method.
  */
-void Sauron::registerComponent(ComponentTracker*){}
+void Sauron::registerComponent(ComponentTracker*){
+
+}

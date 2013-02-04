@@ -27,7 +27,7 @@ class Sauron : public ofBaseApp{
 		bool isSauronRegistered();
 		void sauronRegister();
 		void sauronLoad();
-		int getSauronId();
+		int assignSauronId();
 		std::vector<ComponentTracker*> getSauronComponents();
 		void registerComponent(ComponentTracker*);
 		
