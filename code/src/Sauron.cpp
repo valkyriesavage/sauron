@@ -18,47 +18,16 @@ void Sauron::setup(){
 	bLearnBakground = true;
 	threshold = 80;
 
+	isRegistered = false;//for testing purposes
+
 	//check for registration
 	if (!isSauronRegistered()) {
 		sauronRegister();
 	}else{
 		sauronLoad();
 	}
-	ComponentTracker* button = new ComponentTracker();
-	button->comptype = ComponentTracker::button;
-    // TODO : give these nice values that actually work
-	button->regionOfInterest = cvRect(0, 0, 100, 100);
-	button->numBlobsNeeded = 2;
-
-	ComponentTracker* slider = new ComponentTracker();
-	slider->comptype = ComponentTracker::slider;
-    // TODO : the same thing here
-	slider->regionOfInterest = cvRect(0, 0, 200, 200);
-	slider->numBlobsNeeded = 2;
-    
-    ComponentTracker* dpad = new ComponentTracker();
-	dpad->comptype = ComponentTracker::dpad;
-	// TODO : the same thing here
-	dpad->regionOfInterest = cvRect(0, 0, 200, 200);
-	dpad->numBlobsNeeded = 4;
-    
-    ComponentTracker* dial = new ComponentTracker();
-	dial->comptype = ComponentTracker::dial;
-	// TODO : the same thing here
-	dial->regionOfInterest = cvRect(0, 0, 200, 200);
-	dial->numBlobsNeeded = 2;
-    
-    ComponentTracker* scrollWheel = new ComponentTracker();
-	scrollWheel->comptype = ComponentTracker::scroll_wheel;
-	// TODO : the same thing here
-	scrollWheel->regionOfInterest = cvRect(0, 0, 200, 200);
-	scrollWheel->numBlobsNeeded = 2;
 	
-	components.push_back(button);
-	components.push_back(slider);
-    components.push_back(dpad);
-    components.push_back(dial);
-	components.push_back(scrollWheel);
+
 }
 
 //--------------------------------------------------------------
@@ -88,74 +57,6 @@ void Sauron::update(){
 		// take the abs value of the difference between background and incoming and then threshold:
 		grayDiff.absDiff(grayBg, grayImage);
 		grayDiff.threshold(threshold);
-
-		for (int i = 0; i < components.size(); i++) {
-			ComponentTracker* cur = components.at(i);
-		
-            if(cur->comptype == ComponentTracker::scroll_wheel) {
-                // for the scroll wheel, we don't look at the difference.
-                // since we can't get a background without stripes in it, we just
-                // look at the raw image and look for blobs
-                cvSetImageROI(grayImage.getCvImage(), cur->regionOfInterest);
-                
-                // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-                // only considering the number of blobs needed for this input device.
-                cur->contourFinder.findContours(grayImage, 20, (340*240)/3, cur->numBlobsNeeded, false);
-            } else {
-                // just look at the ROI for that component, in the grey diff
-                cvSetImageROI(grayDiff.getCvImage(), cur->regionOfInterest);
-                
-                // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-                // only considering the number of blobs needed for this input device.
-                cur->contourFinder.findContours(grayDiff, 20, (340*240)/3, cur->numBlobsNeeded, false);
-            }
-	
-
-			// decide if we saw something interesting
-			if (cur->comptype == ComponentTracker::button && cur->buttonEventDetected()) {
-					cout << "Holy crap you pushed the button" << endl;
-			} else if (cur->comptype == ComponentTracker::slider) {
-				int sliderPos;
-				if (cur->sliderEventDetected(&sliderPos)) {
-					cout << "Holy crap you slid the slider to " << sliderPos << endl;
-				}
-			} else if (cur->comptype == ComponentTracker::dial) {
-				int dialPos;
-				if (cur->dialEventDetected(&dialPos)) {
-					cout << "Holy crap you rotated the dial to " << dialPos << endl;
-				}
-			} else if (cur->comptype == ComponentTracker::scroll_wheel) {
-                ComponentTracker::Direction scrollDirection;
-                int scrollAmount = 0;
-                if (cur->scrollWheelEventDetected(&scrollDirection, &scrollAmount)) {
-                    cout << "Holy crap you turned the scroll wheel ";
-                    if (scrollDirection == ComponentTracker::up) {
-                        cout << "up" << endl;
-                    } else {
-                        cout << "down" << endl;
-                    }
-                }
-            } else if (cur->comptype == ComponentTracker::dpad) {
-                ComponentTracker::Direction dpadDirection;
-                if (cur->dpadEventDetected(&dpadDirection)) {
-                    cout << "Holy crap you pushed the dpad ";
-                    if (dpadDirection == ComponentTracker::up) {
-                        cout << "up" << endl;
-                    } else if (dpadDirection == ComponentTracker::down) {
-                        cout << "down" << endl;
-                    } else if (dpadDirection == ComponentTracker::right) {
-                        cout << "right" << endl;
-                    } else if (dpadDirection == ComponentTracker::left) {
-                        cout << "left" << endl;
-                    }
-                }
-            }
-            
-            // need to reset this so we can move it around for the next component
-            cvResetImageROI(grayDiff.getCvImage());
-            // we don't need to reset the ROI on the raw gray image, since we use
-            // the same one every time
-		}
 	}
 }
 
@@ -175,11 +76,6 @@ void Sauron::draw(){
 	ofRect(360,540,320,240);
 	ofSetHexColor(0xffffff);
 
-	// we draw the blobs
-    for (int i = 0; i < components.size(); i++) {
-        ComponentTracker* cur = components.at(i);
-        cur->contourFinder.draw();
-    }
 	// finally, a report:
 
 	ofSetHexColor(0xffffff);
@@ -202,27 +98,6 @@ void Sauron::keyPressed(int key){
 		case '-':
 			threshold --;
 			if (threshold < 0) threshold = 0;
-			break;
-		case '0'://added by Colin to test out the setRoiFromPixels() method
-			//lets get some information about the blob
-			for (int i = 0; i < contourFinder.nBlobs; i++){
-				//which of the numBlobs blobs we are measuring
-				cout << "blobID: " << i <<endl;
-				//area of the blob
-				cout << "area: "<< contourFinder.blobs[i].area<<endl;
-				//perimeter of the blob
-				cout << "perimeter: "<< contourFinder.blobs[i].length<<endl;
-				//ofPoint instance of center of blob
-				cout << "centroid: "<< contourFinder.blobs[i].centroid<<endl;
-				//number of points inside the blob
-				cout << "nPts: "<< contourFinder.blobs[i].nPts<<endl;
-				//vector of all of ofPoints in the blob
-				cout << "points vector: ";
-				for (int j = 0; j<contourFinder.blobs[i].pts.size(); j++) {
-					cout << contourFinder.blobs[i].pts[j];
-				}
-				cout << endl;
-			}
 			break;
 	}
 }
@@ -274,7 +149,7 @@ do some local (or over web/websockets) to check whether this device has already 
 
 bool Sauron::isSauronRegistered(){
 	//but for now, since we are making registration, we will just claim we are not registered
-	return false;
+	return isRegistered;
 }
 
 /*the function called in setup() is registration has not been performed.
@@ -299,6 +174,7 @@ void Sauron::sauronRegister(){
 	for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
 		registerComponent(*it);
 	}
+	isRegistered = true;
 }
 
 /* 
@@ -319,8 +195,44 @@ int Sauron::assignSauronId(){
  gets Sauron components from solidworks
  */
 std::vector<ComponentTracker*> Sauron::getSauronComponents(){
-	std::vector<ComponentTracker*> a;
-	return a;
+	std::vector<ComponentTracker*> components;
+	
+	ComponentTracker* button = new ComponentTracker();
+	button->comptype = ComponentTracker::button;
+    // TODO : give these nice values that actually work
+	button->regionOfInterest = cvRect(0, 0, 100, 100);
+	button->numBlobsNeeded = 2;
+	
+	ComponentTracker* slider = new ComponentTracker();
+	slider->comptype = ComponentTracker::slider;
+    // TODO : the same thing here
+	slider->regionOfInterest = cvRect(0, 0, 200, 200);
+	slider->numBlobsNeeded = 2;
+    
+    ComponentTracker* dpad = new ComponentTracker();
+	dpad->comptype = ComponentTracker::dpad;
+	// TODO : the same thing here
+	dpad->regionOfInterest = cvRect(0, 0, 200, 200);
+	dpad->numBlobsNeeded = 4;
+    
+    ComponentTracker* dial = new ComponentTracker();
+	dial->comptype = ComponentTracker::dial;
+	// TODO : the same thing here
+	dial->regionOfInterest = cvRect(0, 0, 200, 200);
+	dial->numBlobsNeeded = 2;
+    
+    ComponentTracker* scrollWheel = new ComponentTracker();
+	scrollWheel->comptype = ComponentTracker::scroll_wheel;
+	// TODO : the same thing here
+	scrollWheel->regionOfInterest = cvRect(0, 0, 200, 200);
+	scrollWheel->numBlobsNeeded = 2;
+	
+	components.push_back(button);
+	components.push_back(slider);
+    components.push_back(dpad);
+    components.push_back(dial);
+	components.push_back(scrollWheel);
+	return components;
 }
 
 /*
@@ -329,42 +241,58 @@ std::vector<ComponentTracker*> Sauron::getSauronComponents(){
  */
 void Sauron::registerComponent(ComponentTracker* ct){
 	switch (ct->comptype) {
-		case 'button':
+		case ComponentTracker::button:
 			//do some button business
-			registerButton();
+			registerButton(ct);
 			break;
-		case 'slider':
+		case ComponentTracker::slider:
 			//do some slider business
-			registerSlider();
+			registerSlider(ct);
 			break;
-		case 'dpad':
+		case ComponentTracker::dpad:
 			//do some dpad business
-			registerDPad();
+			registerDPad(ct);
 			break;
-		case 'dial':
+		case ComponentTracker::dial:
 			//do some dial business
-			registerDial();
+			registerDial(ct);
 			break;
 		default:
 			break;
 	}
 }
-void Sauron::registerButton(){
+void Sauron::registerButton(ComponentTracker* ct){
 	
 }	
-void Sauron::registerSlider(){
+void Sauron::registerSlider(ComponentTracker* cur){
 		//something like...
+	
 	//move slider to one end and press space (hereby setting up the bgsubtraction
+	cout << "Move the slider to one end and press 'enter' in the console";
+	wait_once();
+	bLearnBakground = true;
+	cout << "Move slider to the other end and press 'enter' in the console";
+	wait_once();
+	//capture blob center
+
+	// just look at the ROI for that component, in the grey diff
+	cvSetImageROI(grayDiff.getCvImage(), cur->regionOfInterest);
+	
+	// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
+	// only considering the number of blobs needed for this input device.
+	cur->contourFinder.findContours(grayDiff, 20, (340*240)/3, 1, false);
+//	cout << "blob center is: " << contourFinder.blobs[0].centroid;
+	
 	//move slider to other end and press something else to save the coordinates of that blob
 	//press space again
 	//move slider back to initial end (whatever end slider does not sit) and press something to save the coordinate.
 	//we should now have two points and we can do stuff with that.
 }
 
-void Sauron::registerDPad(){
+void Sauron::registerDPad(ComponentTracker* ct){
 	
 }
-void Sauron::registerDial(){
+void Sauron::registerDial(ComponentTracker* ct){
 	
 }
 	

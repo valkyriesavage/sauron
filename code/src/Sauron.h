@@ -9,6 +9,7 @@
 
 class Sauron : public ofBaseApp{
 
+	bool isRegistered;
 	public:
 		void setup();
 		void update();
@@ -31,10 +32,10 @@ class Sauron : public ofBaseApp{
 		std::vector<ComponentTracker*> getSauronComponents();
 		void registerComponent(ComponentTracker*);
 		
-		void registerButton();
-		void registerSlider();
-		void registerDPad();
-		void registerDial();
+		void registerButton(ComponentTracker* ct);
+		void registerSlider(ComponentTracker* ct);
+		void registerDPad(ComponentTracker* ct);
+		void registerDial(ComponentTracker* ct);
 	
 		int Sid;
 
