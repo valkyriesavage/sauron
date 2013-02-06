@@ -9,3 +9,8 @@ ofVec3f centerOf(CvRect rect) {
 
 	return center;
 }
+
+void wait_once(){
+	string s;
+	getline(cin, s);
+}
