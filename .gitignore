@@ -17,3 +17,7 @@
 *Release*
 *.cache
 *.suo*
+*.settings*
+*Settings*
+*.user*
+*.config*

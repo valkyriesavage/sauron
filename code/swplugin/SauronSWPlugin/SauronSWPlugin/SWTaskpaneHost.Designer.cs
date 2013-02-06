@@ -79,6 +79,7 @@
             this.insert_camera.TabIndex = 5;
             this.insert_camera.Text = "insert camera";
             this.insert_camera.UseVisualStyleBackColor = true;
+            this.insert_camera.Click += new System.EventHandler(this.insert_camera_Click);
             // 
             // register
             // 
