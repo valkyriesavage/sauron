@@ -51,7 +51,9 @@ class Sauron : public ofBaseApp{
 
 		int 				threshold;
 		bool				bLearnBakground;
+	bool registering;//true if in the process of registering
 
         std::vector<ComponentTracker*> components;
+		std::vector<ofxCvBlob> blobsCaptured;//assists with registration
 };
 

@@ -25,4 +25,6 @@ public:
     bool scrollWheelEventDetected(Direction* scrollDirection, int* scrollAmount);
 	bool joystickEventDetected(int* xPosition, int* yPosition);
 	bool dpadEventDetected(Direction* direction);
+	
+	void setROI(std::vector<ofPoint> bounds);
 };

@@ -90,3 +90,10 @@ bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
 	*yPosition = 0;
 	return false;
 }
+
+void ComponentTracker::setROI(std::vector<ofPoint> bounds){
+	for(std::vector<ofPoint>::size_type i = 0; i != bounds.size(); i++) {
+		cout << "bound " << i << ": " << bounds[i]<< endl;
+	}
+
+}

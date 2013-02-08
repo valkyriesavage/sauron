@@ -19,14 +19,9 @@ void Sauron::setup(){
 	threshold = 80;
 
 	isRegistered = false;//for testing purposes
-
-	//check for registration
-	if (!isSauronRegistered()) {
-		sauronRegister();
-	}else{
-		sauronLoad();
-	}
-	
+	registering = false;
+	int numComponents = 4;
+	components.reserve(numComponents);
 
 }
 
@@ -57,31 +52,42 @@ void Sauron::update(){
 		// take the abs value of the difference between background and incoming and then threshold:
 		grayDiff.absDiff(grayBg, grayImage);
 		grayDiff.threshold(threshold);
+		contourFinder.findContours(grayDiff, 5, (340*240)/4, 4, false, true);
 	}
 }
 
 //--------------------------------------------------------------
 void Sauron::draw(){
-	// draw the incoming, the grayscale, the bg and the thresholded difference
-	ofSetHexColor(0xffffff);
-	colorImg.draw(20,20);
-	grayImage.draw(360,20);
-	grayBg.draw(20,280);
-	grayDiff.draw(360,280);
-
-	// then draw the contours:
-
-	ofFill();
-	ofSetHexColor(0x333333);
-	ofRect(360,540,320,240);
-	ofSetHexColor(0xffffff);
-
-	// finally, a report:
-
-	ofSetHexColor(0xffffff);
-	char reportStr[1024];
-	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f", threshold, contourFinder.nBlobs, ofGetFrameRate());
-	ofDrawBitmapString(reportStr, 20, 600);
+    // draw the incoming, the grayscale, the bg and the thresholded difference
+    ofSetHexColor(0xffffff);
+    colorImg.draw(20,20);
+    grayImage.draw(360,20);
+    grayBg.draw(20,280);
+    grayDiff.draw(360,280);
+	
+    // then draw the contours:
+	
+    ofFill();
+    ofSetHexColor(0x333333);
+    ofRect(360,540,320,240);
+    ofSetHexColor(0xffffff);
+	
+    // we could draw the whole contour finder
+    //contourFinder.draw(360,540);
+	
+    // or, instead we can draw each blob individually,
+    // this is how to get access to them:
+    for (int i = 0; i < contourFinder.nBlobs; i++){
+        contourFinder.blobs[i].draw(360,540);
+    }
+	
+    // finally, a report:
+	
+    ofSetHexColor(0xffffff);
+    char reportStr[1024];
+    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f", threshold, contourFinder.nBlobs, ofGetFrameRate());
+    ofDrawBitmapString(reportStr, 20, 600);
+	
 }
 
 //--------------------------------------------------------------
@@ -98,6 +104,9 @@ void Sauron::keyPressed(int key){
 		case '-':
 			threshold --;
 			if (threshold < 0) threshold = 0;
+			break;
+		case 'r':
+			sauronRegister();
 			break;
 	}
 }
@@ -163,7 +172,7 @@ void Sauron::sauronRegister(){
 		//hey man, you've already registered this. TODO: setup some error here
 		return;
 	}
-
+	registering = true;
 	//asign id
 	Sid = assignSauronId();
 	
@@ -175,6 +184,7 @@ void Sauron::sauronRegister(){
 		registerComponent(*it);
 	}
 	isRegistered = true;
+	registering = false;
 }
 
 /* 
@@ -264,29 +274,26 @@ void Sauron::registerComponent(ComponentTracker* ct){
 void Sauron::registerButton(ComponentTracker* ct){
 	
 }	
-void Sauron::registerSlider(ComponentTracker* cur){
-		//something like...
+void Sauron::registerSlider(ComponentTracker* ct){
+
 	
 	//move slider to one end and press space (hereby setting up the bgsubtraction
-	cout << "Move the slider to one end and press 'enter' in the console";
-	wait_once();
-	bLearnBakground = true;
-	cout << "Move slider to the other end and press 'enter' in the console";
-	wait_once();
-	//capture blob center
+//	cout << "Move the slider to one end and press 'enter' in the console";
+//	wait_once();
+//	bLearnBakground = true;
+//	cout << "Move slider to the other end and press 'c' in the app, then 'enter' in the console";
+//	wait_once();
 
-	// just look at the ROI for that component, in the grey diff
-	cvSetImageROI(grayDiff.getCvImage(), cur->regionOfInterest);
-	
-	// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-	// only considering the number of blobs needed for this input device.
-	cur->contourFinder.findContours(grayDiff, 20, (340*240)/3, 1, false);
-//	cout << "blob center is: " << contourFinder.blobs[0].centroid;
-	
-	//move slider to other end and press something else to save the coordinates of that blob
-	//press space again
-	//move slider back to initial end (whatever end slider does not sit) and press something to save the coordinate.
+	//capture blob center
+	std::vector<ofPoint> componentBounds;
+	for(int i = 0; i < contourFinder.nBlobs; i++) {
+		ofxCvBlob blob = contourFinder.blobs.at(i);
+		componentBounds.push_back(blob.centroid);
+	}	
+	//there should now be two blobs, capture both of them.
 	//we should now have two points and we can do stuff with that.
+	
+	ct->setROI(componentBounds);
 }
 
 void Sauron::registerDPad(ComponentTracker* ct){
