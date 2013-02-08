@@ -26,7 +26,7 @@ namespace SauronSWPlugin
             {
                 rk.SetValue(null, 1); // Load at startup
                 rk.SetValue("Title", "Sauron");
-                rk.SetValue("Description", "machine vision-ization for your models");
+                rk.SetValue("Description", "computer vision-ize your models");
             }
         }
         [ComUnregisterFunction]
@@ -64,7 +64,7 @@ namespace SauronSWPlugin
 
         private void UISetup()
         {
-            mTaskpaneView = mSWApplication.CreateTaskpaneView2(string.Empty, "Woo! My first SwAddin");
+            mTaskpaneView = mSWApplication.CreateTaskpaneView2(string.Empty, "sauron: computer vision-ize your models");
             mTaskpaneHost = (SWTaskpaneHost)mTaskpaneView.AddControl(SWTaskpaneHost.SWTASKPANE_PROGID, "");
             mTaskpaneHost.swApp = mSWApplication;
         }

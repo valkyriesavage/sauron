@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Data;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
+
 using SolidWorks.Interop.sldworks;
 using SolidWorks.Interop.swcommands;
 using SolidWorks.Interop.swconst;
@@ -13,7 +17,8 @@ using SolidWorks.Interop.swpublished;
 using SolidWorksTools;
 using System.Runtime.InteropServices;
 
-//using Bespoke.Common;
+using Bespoke.Common.Osc;
+using Transmitter;
 
 namespace SauronSWPlugin
 {
@@ -24,19 +29,51 @@ namespace SauronSWPlugin
         public const string SWTASKPANE_PROGID = "Sauron.SWTaskPane_SwPlugin";
         public SldWorks swApp;
         public ModelDoc2 swDoc = null;
+        public AssemblyDoc swAssembly = null;
+        public SelectionMgr swSelectionMgr = null;
+        public ConfigurationManager swConfMgr = null;
+        public Configuration swConf = null;
 
         public bool testing = false;
         public bool registering = false;
 
         private String[] ourComponents = {"button-4post","dial","joystick-all-pieces","slider","scroll-wheel","dpad"};
 
+        private static readonly int Port = 5103;
+        private static readonly string AliveMethod = "/osctest/alive";
+        IPEndPoint sourceEndPoint;
+
         public SWTaskpaneHost()
         {
             InitializeComponent();
+            initOSC();
         }
 
-        private void getModelDoc() {
+        private void initOSC()
+        {
+            sourceEndPoint = new IPEndPoint(IPAddress.Loopback, Port);
+        }
+
+        private void sendMessage(String data) {
+            OscBundle bundle = new OscBundle(sourceEndPoint);
+
+            OscMessage message = new OscMessage(sourceEndPoint, AliveMethod);
+            message.Append(data);
+            bundle.Append(message);
+
+            bundle.Send();
+        }
+
+        private void getModelDoc()
+        {
             swDoc = ((ModelDoc2)(swApp.ActiveDoc));
+            if (swDoc.GetType() == (int)swDocumentTypes_e.swDocASSEMBLY)
+            {
+                swAssembly = ((AssemblyDoc)(swDoc));
+            }
+            swSelectionMgr = ((SelectionMgr)(swDoc.SelectionManager));
+            swConfMgr = ((ConfigurationManager)swDoc.ConfigurationManager);
+            swConf = ((Configuration)swConfMgr.ActiveConfiguration);
         }
 
         private double inchesToMeters(double inches)
@@ -44,88 +81,106 @@ namespace SauronSWPlugin
             return inches/2.54/100;
         }
 
+        private string randomString(int strlen)
+        {
+            string ret = "";
+            Random rand = new Random();
+            for (int i = 0; i < strlen; i++)
+            {
+                int r = rand.Next(26) + 65;
+                ret = ret + (char)r;
+            }
+
+            return ret;
+        }
+
+        private void lengthenExtrusion(Feature feature, Component2 swComponent, string configuration)
+        {
+            Random rand = new Random();
+            String[] configurationContainer = { configuration };
+            ExtrudeFeatureData2 extrusion = feature.GetDefinition();
+            extrusion.SetDepth(true, inchesToMeters(rand.Next(20)));
+            extrusion.SetChangeToConfigurations((int)swInConfigurationOpts_e.swThisConfiguration, configurationContainer);
+            feature.ModifyDefinition(extrusion, swDoc, swComponent);
+            swDoc.ForceRebuild3(true);
+            swComponent.DeSelect();
+        }
+
+        public void TraverseFeatures(Feature swFeat, List<FeatureIdentifier> toModify)
+        {
+            while ((swFeat != null))
+            {
+                if (swFeat.Name.Equals("flag"))
+                {
+                    FeatureIdentifier fi = new FeatureIdentifier();
+                    fi.feature = swFeat;
+                    fi.component = null;
+                    toModify.Add(fi);
+                }
+
+                swFeat = (Feature)swFeat.GetNextFeature();
+            }
+        }
+
+        public void TraverseComponentFeatures(Component2 swComp, List<FeatureIdentifier> found)
+        {
+            Feature swFeat;
+            swFeat = (Feature)swComp.FirstFeature();
+            TraverseFeatures(swFeat, found);
+            foreach (FeatureIdentifier fi in found)
+            {
+                if (fi.component == null)
+                {
+                    fi.component = swComp;
+                }
+            }
+        }
+
+        private void FindModifiable(Component2 swComp, List<FeatureIdentifier> found)
+        {
+            object[] vChildComp;
+            Component2 swChildComp;
+            int i;
+
+            vChildComp = (object[])swComp.GetChildren();
+            for (i = 0; i < vChildComp.Length; i++)
+            {
+                swChildComp = (Component2)vChildComp[i];
+                if (swChildComp.Name2.StartsWith("button-4post"))
+                {
+                    TraverseComponentFeatures(swChildComp, found);
+                }
+            }
+        }
+
+        private string createAndSetConfiguration(Component2 swComponent)
+        {
+            string configName = "SAURON-" + randomString(15);
+            swDoc.AddConfiguration2(configName, "automatically generated configuration", "", true, false, false, true, 256);
+
+            // set that configuration to be active
+            swComponent.ReferencedConfiguration = configName;
+
+            return configName;
+        }
+
         private void processFeature_Click(object sender, EventArgs e)
         {
             getModelDoc();
+            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
 
-            // this ideally creates a configuration of the part... so that we can modify it without clobbering
-            // all the other instances of the same part
-            bool boolstatus = swDoc.Extension.SelectByID2("button-4post.SLDPRT", "COMPONENT", 0, 0, 0, false, 0, null, 0);
-            boolstatus = swDoc.AddConfiguration2("button-4post-somenamething", "", "", true, false, false, true, 256);
+            // first traverse the tree, searching for features within "button-4post" called "flag", but in general
+            FindModifiable(swConf.GetRootComponent3(true), found);
             
-            // this piece of code will draw a circle at the center of the selected plane
-            bool updateEditRebuild = true;
-            SketchPoint refPoint = swDoc.FeatureManager.InsertReferencePoint((int)swRefPointType_e.swRefPointFaceCenter,
-                                                                             (int)swRefPointAlongCurveType_e.swRefPointAlongCurveEvenlyDistributed,
-                                                                             0,
-                                                                             1);
-            swDoc.SketchManager.InsertSketch(updateEditRebuild);
-            double diameter = inchesToMeters(0.05);
-            swDoc.SketchManager.CreateCircle(refPoint.X, refPoint.Y, refPoint.Z,
-                                             refPoint.X + diameter, refPoint.Y + diameter, refPoint.Z);
+            foreach (FeatureIdentifier f in found) {
+                string configuration = createAndSetConfiguration(f.component);
+                lengthenExtrusion(f.feature, f.component, configuration);
+            }
+        }
 
-            // this piece of code will theoretically extrude the circle...
-            bool singleEnded = true;
-            bool flipSideToCut = false;
-            bool flipDirectionExtrude = false;
-            int endSideOne = (int)swEndConditions_e.swEndCondThroughNext;
-            int endSideTwo = (int)swEndConditions_e.swEndCondBlind;
-            double depthSideOne = inchesToMeters(3.5);
-            double depthSideTwo = 0;
-            bool draftSideOne = false;
-            bool draftSideTwo = false;
-            bool draftDirSideOne = false;
-            bool draftDirSideTwo = false;
-            double draftAngleSideOne = 0;
-            double draftAngleSideTwo = 0;
-            bool offsetReverseOne = false;
-            bool offsetReverseTwo = false;
-            bool translateSurfaceOne = false;
-            bool translateSurfaceTwo = false;
-            bool merge = true;
-            bool useScope = true;
-            bool useAutoSelect = true;
-            int startCondition = (int)swStartConditions_e.swStartOffset;
-            double offset = 0;
-            bool flipOffset = false;
-
-            Feature extrusion = swDoc.FeatureManager.FeatureExtrusion2(singleEnded, flipSideToCut, flipDirectionExtrude,
-                                                                       endSideOne, endSideTwo, depthSideOne, depthSideTwo,
-                                                                       draftSideOne, draftSideTwo, draftDirSideOne, draftDirSideTwo, draftAngleSideOne, draftAngleSideTwo,
-                                                                       offsetReverseOne, offsetReverseTwo,
-                                                                       translateSurfaceOne, translateSurfaceTwo,
-                                                                       merge, useScope, useAutoSelect, startCondition, offset, flipOffset);
-
-
-            // this is copy/pasted from a recorded macro which creates an extrusion at the center of the bottom of the button
-            // and then fillets it
-            boolstatus = swDoc.Extension.SelectByID2("", "FACE", 0.0036873572009881173, -0.011430000000018481, 0.00042013598232415461, false, 0, null, 0);
-            swDoc.SketchManager.InsertSketch(true);
-            swDoc.ClearSelection2(true);
-            SketchSegment skSegment = null;
-            skSegment = ((SketchSegment)(swDoc.SketchManager.CreateCircle(0, 0, 0, -0.001332, -0.002868, 0)));
-            swDoc.ClearSelection2(true);
-            swDoc.SketchManager.InsertSketch(true);
-            swDoc.SketchManager.InsertSketch(true);
-            swDoc.ClearSelection2(true);
-            boolstatus = swDoc.Extension.SelectByID2("Sketch5", "SKETCH", 0, 0, 0, false, 0, null, 0);
-            Feature myFeature = null;
-            myFeature = ((Feature)(swDoc.FeatureManager.FeatureExtrusion2(true, false, false, 0, 0, 0.0127, 0.0127, false, false, false, false, 0.017453292519943334, 0.017453292519943334, false, false, false, false, true, true, true, 0, 0, false)));
-            swDoc.ISelectionManager.EnableContourSelection = false;
-            boolstatus = swDoc.DeSelectByID("Boss-Extrude2", "BODYFEATURE", 0, 0, 0);
-            boolstatus = swDoc.Extension.SelectByID2("", "EDGE", -0.0013848236446278861, -0.011469979298169619, -0.0021007600423104122, true, 1, null, 0);
-            swDoc.ClearSelection2(true);
-            boolstatus = swDoc.Extension.SelectByID2("", "EDGE", -0.0013848236446278861, -0.011469979298169619, -0.0021007600423104122, false, 1, null, 0);
-            Array radiiArray0 = null;
-            double[] radiis0 = new double[1];
-            Array setBackArray0 = null;
-            double[] setBacks0 = new double[0];
-            Array pointArray0 = null;
-            double[] points0 = new double[0];
-            radiiArray0 = radiis0;
-            setBackArray0 = setBacks0;
-            pointArray0 = points0;
-            myFeature = ((Feature)(swDoc.FeatureManager.FeatureFillet(195, 0.00254, 0, 0, radiiArray0, setBackArray0, pointArray0)));
+        private void stuff()
+        {
+            // a place for me to copy/paste from macros and not hurt anything
         }
 
 
@@ -139,62 +194,81 @@ namespace SauronSWPlugin
             {
                 testing = false;
                 test_mode.Text = enter_test;
+                sendMessage("endtest");
             }
             else
             {
                 testing = true;
                 test_mode.Text = exit_test;
+                sendMessage("starttest");
             }
         }
 
         private void register_Click(object sender, EventArgs e)
         {
             getModelDoc();
-            String exit_registration = "done registering";
-            String enter_registration = "register on print";
-            if (registering)
+            // This piece of code is good for getting the names of all the components in the document
+            bool traverse = false;
+            bool searchFlag = false;
+            bool addReadOnlyInfo = false;
+            String[] allComponents = swDoc.GetDependencies2(traverse, searchFlag, addReadOnlyInfo);
+            foreach (String compName in allComponents)
             {
-                registering = false;
-                register.Text = enter_registration;
-            }
-            else
-            {
-                registering = true;
-                register.Text = exit_registration;
-                // This piece of code is good for getting the names of all the components in the document
-                bool traverse = false;
-                bool searchFlag = false;
-                bool addReadOnlyInfo = false;
-                String[] allComponents = swDoc.GetDependencies2(traverse, searchFlag, addReadOnlyInfo);
-                foreach (String compName in allComponents)
+                foreach (String ourComponent in ourComponents)
                 {
-                    foreach (String ourComponent in ourComponents)
+                    if (ourComponent.Equals(compName))
                     {
-                        if (ourComponent.Equals(compName))
-                        {
-                            swApp.SendMsgToUser2("please actuate " + compName + ", then click OK",
-                                                 (int)swMessageBoxIcon_e.swMbQuestion,
-                                                 (int)swMessageBoxBtn_e.swMbOk);
-                            // we want to process this appropriately: send it to Colin
-                            // how do we get the actual part once we have the name?
-                            //bool boolstatus = swDoc.Extension.SelectByID2("button-4post.SLDPRT", "COMPONENT", 0, 0, 0, false, 0, null, 0);
-                        }
+                        swApp.SendMsgToUser2("please actuate " + compName + ", then click OK",
+                                             (int)swMessageBoxIcon_e.swMbQuestion,
+                                             (int)swMessageBoxBtn_e.swMbOk);
+                        // we want to process this appropriately: send it to Colin
+                        sendMessage(compName);
+                        // how do we get the actual part once we have the name?
+                        //bool boolstatus = swDoc.Extension.SelectByID2(compName, "COMPONENT", 0, 0, 0, false, 0, null, 0);
                     }
                 }
             }
-            
-            /*if (swApp.ActiveDoc != null) // && swApp.ActiveDoc.IS AN ASSEMBLY? )
-            {
-                int index = 0;
-                int ignoreMarks = -1;
-                Feature selected = swApp.ActiveDoc.SelectionManager.getSelectedObject6(index, ignoreMarks);
-                swApp.SendMsgToUser2(selected.Name, (int)swMessageBoxIcon_e.swMbInformation, (int)swMessageBoxBtn_e.swMbOk);
-            }*/
         }
 
         private void insert_camera_Click(object sender, EventArgs e)
         {
             getModelDoc();
+            string FOV_file = "C:\\Users\\Valkyrie\\projects\\sauron\\solidworks\\point-grey-fov.SLDPRT";
+            int loadErrs = 0;
+            int loadWarns = 0;
+            swApp.OpenDoc6(FOV_file,
+                           (int)swDocumentTypes_e.swDocPART,
+                           (int)swOpenDocOptions_e.swOpenDocOptions_Silent,
+                           "",
+                           ref loadErrs, ref loadWarns);
+            if (loadErrs > 0)
+            {
+                swApp.SendMsgToUser2("something went wrong, try again",
+                                     (int)swMessageBoxIcon_e.swMbWarning,
+                                     (int)swMessageBoxBtn_e.swMbOk);
+            }
+            double x = 0;
+            double y = 0;
+            double z = 0;
+            swAssembly.AddComponent(FOV_file,
+                                    x, y, z);
+            swApp.CloseDoc(FOV_file);
+        }
+
+        private void testPart_Click(object sender, EventArgs e)
+        {
+            getModelDoc();
+
+            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
+
+            // first traverse the tree, searching for features within "button-4post" called "flag", but in general
+            FindModifiable(swConf.GetRootComponent3(true), found);
+
+            foreach (FeatureIdentifier f in found)
+            {
+                string configuration = createAndSetConfiguration(f.component);
+                lengthenExtrusion(f.feature, f.component, configuration);
+            }
         }
     }
 }

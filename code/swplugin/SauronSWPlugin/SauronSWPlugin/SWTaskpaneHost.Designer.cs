@@ -35,6 +35,7 @@
             this.insert_camera = new System.Windows.Forms.Button();
             this.register = new System.Windows.Forms.Button();
             this.test_mode = new System.Windows.Forms.Button();
+            this.testPart = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -67,7 +68,7 @@
             this.processFeature.Name = "processFeature";
             this.processFeature.Size = new System.Drawing.Size(139, 49);
             this.processFeature.TabIndex = 4;
-            this.processFeature.Text = "process this feature";
+            this.processFeature.Text = "process features";
             this.processFeature.UseVisualStyleBackColor = true;
             this.processFeature.Click += new System.EventHandler(this.processFeature_Click);
             // 
@@ -101,10 +102,21 @@
             this.test_mode.UseVisualStyleBackColor = true;
             this.test_mode.Click += new System.EventHandler(this.test_mode_Click);
             // 
+            // testPart
+            // 
+            this.testPart.Location = new System.Drawing.Point(44, 310);
+            this.testPart.Name = "testPart";
+            this.testPart.Size = new System.Drawing.Size(139, 49);
+            this.testPart.TabIndex = 8;
+            this.testPart.Text = "test on single part";
+            this.testPart.UseVisualStyleBackColor = true;
+            this.testPart.Click += new System.EventHandler(this.testPart_Click);
+            // 
             // SWTaskpaneHost
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.testPart);
             this.Controls.Add(this.test_mode);
             this.Controls.Add(this.register);
             this.Controls.Add(this.insert_camera);
@@ -128,5 +140,6 @@
         private System.Windows.Forms.Button insert_camera;
         private System.Windows.Forms.Button register;
         private System.Windows.Forms.Button test_mode;
+        private System.Windows.Forms.Button testPart;
     }
 }

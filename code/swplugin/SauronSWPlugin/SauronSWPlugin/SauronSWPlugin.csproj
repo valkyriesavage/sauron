@@ -32,6 +32,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Bespoke.Common, Version=5.0.0.0, Culture=neutral, PublicKeyToken=843a094264521388, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\libraries\OscFramework_2.0\Executables\Framework\Any CPU\Bespoke.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Bespoke.Common.Osc, Version=0.0.0.0, Culture=neutral, PublicKeyToken=843a094264521388, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\libraries\OscFramework_2.0\Executables\Framework\Any CPU\Bespoke.Common.Osc.dll</HintPath>
+    </Reference>
     <Reference Include="SolidWorks.Interop.sldworks">
       <HintPath>..\..\..\..\..\..\..\..\Program Files\SolidWorks Corp\SolidWorks\SolidWorks.Interop.sldworks.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
@@ -60,8 +68,12 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Transmitter">
+      <HintPath>..\..\..\..\..\libraries\OscFramework_2.0\Executables\Samples\OscDemo\Transmitter\Transmitter.exe</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FeatureIdentifier.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
