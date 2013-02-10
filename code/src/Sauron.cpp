@@ -77,10 +77,17 @@ void Sauron::draw(){
 	
     // or, instead we can draw each blob individually,
     // this is how to get access to them:
+	
+	if(!isRegistered){
     for (int i = 0; i < contourFinder.nBlobs; i++){
         contourFinder.blobs[i].draw(360,540);
     }
-	
+	}else {//if we are registered then use the contourFinders around the components
+		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
+			(*it)->contourFinder.draw((*it)->ROI);
+		}
+	}
+
     // finally, a report:
 	
     ofSetHexColor(0xffffff);
@@ -275,25 +282,17 @@ void Sauron::registerButton(ComponentTracker* ct){
 	
 }	
 void Sauron::registerSlider(ComponentTracker* ct){
-
-	
-	//move slider to one end and press space (hereby setting up the bgsubtraction
-//	cout << "Move the slider to one end and press 'enter' in the console";
-//	wait_once();
-//	bLearnBakground = true;
-//	cout << "Move slider to the other end and press 'c' in the app, then 'enter' in the console";
-//	wait_once();
-
-	//capture blob center
-	std::vector<ofPoint> componentBounds;
+	//capture blob bounds (bgsubtraction should have already been set up with two blobs on either extreme side)
+	std::vector<ofRectangle> componentBounds;
 	for(int i = 0; i < contourFinder.nBlobs; i++) {
 		ofxCvBlob blob = contourFinder.blobs.at(i);
-		componentBounds.push_back(blob.centroid);
+		componentBounds.push_back(blob.boundingRect);
 	}	
 	//there should now be two blobs, capture both of them.
 	//we should now have two points and we can do stuff with that.
 	
 	ct->setROI(componentBounds);
+	ct->numBlobsNeeded = 2;
 }
 
 void Sauron::registerDPad(ComponentTracker* ct){

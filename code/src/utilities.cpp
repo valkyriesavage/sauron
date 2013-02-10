@@ -25,3 +25,11 @@ ofRectangle makeBoundingBox(std::vector<ofRectangle> bounds){
 	}
 	return boundingBox;
 }
+
+//ofRectangle CvRectToofRectangle(CvRect cv){
+//	return new ofRectangle(cv.x, cv.y, cv.width, cv.height);
+//}
+//
+//CvRect ofRectangleToCvRect(ofRectangle of){
+//	return CvRect(of.x, of.y, of.width, of.height);
+//}

@@ -15,6 +15,7 @@ public:
 	ofxCvContourFinder contourFinder;
 	ComponentType comptype;
 	CvRect regionOfInterest;
+	ofRectangle ROI;//there's a bit of ambiguity with regionOfInterest. Not sure why regionOfInterest is a CvRect rather than a ofRectangle
 	int numBlobsNeeded;
     
     std::vector<ofxCvBlob> previousBlobs;
@@ -26,5 +27,6 @@ public:
 	bool joystickEventDetected(int* xPosition, int* yPosition);
 	bool dpadEventDetected(Direction* direction);
 	
-	void setROI(std::vector<ofPoint> bounds);
+	void setROI(std::vector<ofRectangle> bounds);
+	void setContourFinder(ofRectangle ROI, int numBlobs);
 };
