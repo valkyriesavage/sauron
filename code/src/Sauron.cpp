@@ -78,14 +78,24 @@ void Sauron::draw(){
     // or, instead we can draw each blob individually,
     // this is how to get access to them:
 	
-	if(!isRegistered){
+
     for (int i = 0; i < contourFinder.nBlobs; i++){
         contourFinder.blobs[i].draw(360,540);
-    }
-	}else {//if we are registered then use the contourFinders around the components
-		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
-			(*it)->contourFinder.draw((*it)->ROI);
+	}
+	if (isRegistered){
+//		this only deals with sliders (horizontal ones, at that)! and only if there is one! hence the components[0]
+		ofRectangle sliderBox = components[0]->ROI;
+		cout << "components" << sliderBox.getPosition()<<endl;
+		cout << "width" <<sliderBox.getWidth() << endl;
+		for (int i = 0; i < contourFinder.nBlobs; i++){
+			//if the blob is in the area of the component lets keep it
+			ofxCvBlob blob = contourFinder.blobs[i];
+			if ((sliderBox).inside((blob.centroid))){
+				cout << "blob center" << blob.centroid<<endl;
+				cout << "distance from origin " <<(blob.centroid.x-sliderBox.x)/sliderBox.getWidth()<<endl;
+			}
 		}
+		
 	}
 
     // finally, a report:
@@ -217,38 +227,38 @@ std::vector<ComponentTracker*> Sauron::getSauronComponents(){
 	ComponentTracker* button = new ComponentTracker();
 	button->comptype = ComponentTracker::button;
     // TODO : give these nice values that actually work
-	button->regionOfInterest = cvRect(0, 0, 100, 100);
-	button->numBlobsNeeded = 2;
+//	button->regionOfInterest = cvRect(0, 0, 100, 100);
+//	button->numBlobsNeeded = 2;
 	
 	ComponentTracker* slider = new ComponentTracker();
 	slider->comptype = ComponentTracker::slider;
     // TODO : the same thing here
-	slider->regionOfInterest = cvRect(0, 0, 200, 200);
-	slider->numBlobsNeeded = 2;
+//	slider->regionOfInterest = cvRect(0, 0, 200, 200);
+//	slider->numBlobsNeeded = 2;
     
     ComponentTracker* dpad = new ComponentTracker();
 	dpad->comptype = ComponentTracker::dpad;
 	// TODO : the same thing here
-	dpad->regionOfInterest = cvRect(0, 0, 200, 200);
-	dpad->numBlobsNeeded = 4;
+//	dpad->regionOfInterest = cvRect(0, 0, 200, 200);
+//	dpad->numBlobsNeeded = 4;
     
     ComponentTracker* dial = new ComponentTracker();
 	dial->comptype = ComponentTracker::dial;
 	// TODO : the same thing here
-	dial->regionOfInterest = cvRect(0, 0, 200, 200);
-	dial->numBlobsNeeded = 2;
+//	dial->regionOfInterest = cvRect(0, 0, 200, 200);
+//	dial->numBlobsNeeded = 2;
     
     ComponentTracker* scrollWheel = new ComponentTracker();
 	scrollWheel->comptype = ComponentTracker::scroll_wheel;
 	// TODO : the same thing here
-	scrollWheel->regionOfInterest = cvRect(0, 0, 200, 200);
-	scrollWheel->numBlobsNeeded = 2;
+//	scrollWheel->regionOfInterest = cvRect(0, 0, 200, 200);
+//	scrollWheel->numBlobsNeeded = 2;
 	
-	components.push_back(button);
+	//components.push_back(button);
 	components.push_back(slider);
-    components.push_back(dpad);
-    components.push_back(dial);
-	components.push_back(scrollWheel);
+//    components.push_back(dpad);
+//    components.push_back(dial);
+//	components.push_back(scrollWheel);
 	return components;
 }
 
