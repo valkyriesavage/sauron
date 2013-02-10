@@ -19,8 +19,9 @@ void wait_once(){
  makeBoundingBox takes a vector of ofRectangles and returns an ofRectangles that surrounds all of those in the vector
  */
 ofRectangle makeBoundingBox(std::vector<ofRectangle> bounds){
-	ofRectangle boundingBox = ofRectangle();
-	for (std::vector<ofRectangle>::iterator it = bounds.begin(); it != bounds.end(); ++it){
+	std::vector<ofRectangle>::iterator it = bounds.begin();
+	ofRectangle boundingBox = *it;
+	for (it; it != bounds.end(); ++it){
 		boundingBox.growToInclude(*it);
 	}
 	return boundingBox;
