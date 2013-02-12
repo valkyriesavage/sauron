@@ -82,6 +82,7 @@ void Sauron::draw(){
     for (int i = 0; i < contourFinder.nBlobs; i++){
         contourFinder.blobs[i].draw(360,540);
 	}
+	float distanceFromCenter = 0;
 	if (isRegistered){
 //		this only deals with sliders (horizontal ones, at that)! and only if there is one! hence the components[0]
 		ofRectangle sliderBox = components[0]->ROI;
@@ -91,8 +92,12 @@ void Sauron::draw(){
 			//if the blob is in the area of the component lets keep it
 			ofxCvBlob blob = contourFinder.blobs[i];
 			if ((sliderBox).inside((blob.centroid))){
-				cout << "blob center" << blob.centroid<<endl;
-				cout << "distance from origin " <<(blob.centroid.x-sliderBox.x)/sliderBox.getWidth()<<endl;
+				float dfc = (blob.centroid.x-sliderBox.x)/sliderBox.getWidth();
+				if (dfc > distanceFromCenter){
+				distanceFromCenter = dfc;
+				}
+				//cout << "blob center" << blob.centroid<<endl;
+				//cout << "distance from origin " << i << ": " <<distanceFromCenter<<endl;
 			}
 		}
 		
@@ -102,8 +107,10 @@ void Sauron::draw(){
 	
     ofSetHexColor(0xffffff);
     char reportStr[1024];
-    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f", threshold, contourFinder.nBlobs, ofGetFrameRate());
+    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\ndistance from origin: %f",
+			threshold, contourFinder.nBlobs, ofGetFrameRate(), distanceFromCenter);
     ofDrawBitmapString(reportStr, 20, 600);
+	
 	
 }
 
