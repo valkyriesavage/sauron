@@ -211,27 +211,6 @@ namespace SauronSWPlugin
             }
         }
 
-        private string copyDocumentForNewConfiguration(Component2 swComponent)
-        {
-            string componentName = stripIdentifier(swComponent.Name);
-
-            string newDocName = "SAURON-" + componentName + "-" + randomString() + ".SLDPRT";
-            string newDocFolder = String.Format("SAURON-{0}", componentName);
-            System.IO.Directory.CreateDirectory(newDocFolder);
-            
-            string newDocLocation = String.Format("{0}\\{1}\\{2}", BASE_SW_FOLDER, newDocFolder, newDocName);
-            string oldDocLocation = String.Format("{0}\\{1}.SLDPRT", BASE_SW_FOLDER, componentName);
-            System.IO.File.Copy(oldDocLocation, newDocLocation, true);
-
-            // select the part, then replace it in the assembly with the new copy
-            swComponent.Select(false);
-            swApp.SendMsgToUser2(String.Format("please replace part {0} \n with generated part \n {1} \n in \n {2}", swComponent.Name, newDocName, newDocFolder),
-                                 1, 1);
-            //swAssembly.ReplaceComponents(newDocLocation, "default", false, true);
-
-            return newDocName;
-        }
-
         private IConfiguration createNewConfiguration(Component2 swComponent)
         {
             string componentName = stripIdentifier(swComponent.Name);
@@ -247,21 +226,6 @@ namespace SauronSWPlugin
             swDoc.EditRebuild3();
             
             return newConfig;
-        }
-
-        private void create_dupes_Click(object sender, EventArgs e)
-        {
-            getModelDoc();
-            getFOV();
-
-            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
-
-            // traverse the tree, searching for components with features called "flag"
-            findModifiable(swConf.GetRootComponent3(true), found);
-
-            foreach (FeatureIdentifier f in found)
-            {
-            }
         }
 
         private void processFeature_Click(object sender, EventArgs e)

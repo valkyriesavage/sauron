@@ -36,7 +36,6 @@
             this.register = new System.Windows.Forms.Button();
             this.test_mode = new System.Windows.Forms.Button();
             this.testPart = new System.Windows.Forms.Button();
-            this.create_dupes = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -65,7 +64,7 @@
             // 
             // processFeature
             // 
-            this.processFeature.Location = new System.Drawing.Point(44, 154);
+            this.processFeature.Location = new System.Drawing.Point(44, 98);
             this.processFeature.Name = "processFeature";
             this.processFeature.Size = new System.Drawing.Size(139, 49);
             this.processFeature.TabIndex = 4;
@@ -85,7 +84,7 @@
             // 
             // register
             // 
-            this.register.Location = new System.Drawing.Point(44, 209);
+            this.register.Location = new System.Drawing.Point(44, 153);
             this.register.Name = "register";
             this.register.Size = new System.Drawing.Size(139, 49);
             this.register.TabIndex = 6;
@@ -95,7 +94,7 @@
             // 
             // test_mode
             // 
-            this.test_mode.Location = new System.Drawing.Point(44, 264);
+            this.test_mode.Location = new System.Drawing.Point(44, 208);
             this.test_mode.Name = "test_mode";
             this.test_mode.Size = new System.Drawing.Size(139, 49);
             this.test_mode.TabIndex = 7;
@@ -113,21 +112,10 @@
             this.testPart.UseVisualStyleBackColor = true;
             this.testPart.Click += new System.EventHandler(this.testPart_Click);
             // 
-            // create_dupes
-            // 
-            this.create_dupes.Location = new System.Drawing.Point(44, 98);
-            this.create_dupes.Name = "create_dupes";
-            this.create_dupes.Size = new System.Drawing.Size(139, 49);
-            this.create_dupes.TabIndex = 9;
-            this.create_dupes.Text = "copy features";
-            this.create_dupes.UseVisualStyleBackColor = true;
-            this.create_dupes.Click += new System.EventHandler(this.create_dupes_Click);
-            // 
             // SWTaskpaneHost
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.create_dupes);
             this.Controls.Add(this.testPart);
             this.Controls.Add(this.test_mode);
             this.Controls.Add(this.register);
@@ -153,6 +141,5 @@
         private System.Windows.Forms.Button register;
         private System.Windows.Forms.Button test_mode;
         private System.Windows.Forms.Button testPart;
-        private System.Windows.Forms.Button create_dupes;
     }
 }
