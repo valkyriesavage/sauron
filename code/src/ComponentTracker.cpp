@@ -94,3 +94,6 @@ bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
 void ComponentTracker::setROI(std::vector<ofRectangle> bounds){
 	ROI = makeBoundingBox(bounds);
 }
+float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
+	return	sqrt(pow((ROI.x-blob.centroid.x), 2) + pow(ROI.y-blob.centroid.y, 2));
+}

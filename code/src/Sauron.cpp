@@ -85,21 +85,32 @@ void Sauron::draw(){
 	float distanceFromCenter = 0;
 	if (isRegistered){
 //		this only deals with sliders (horizontal ones, at that)! and only if there is one! hence the components[0]
-		ofRectangle sliderBox = components[0]->ROI;
-		cout << "components" << sliderBox.getPosition()<<endl;
-		cout << "width" <<sliderBox.getWidth() << endl;
-		for (int i = 0; i < contourFinder.nBlobs; i++){
-			//if the blob is in the area of the component lets keep it
-			ofxCvBlob blob = contourFinder.blobs[i];
-			if ((sliderBox).inside((blob.centroid))){
-				float dfc = (blob.centroid.x-sliderBox.x)/sliderBox.getWidth();
-				if (dfc > distanceFromCenter){
-				distanceFromCenter = dfc;
-				}
-				//cout << "blob center" << blob.centroid<<endl;
-				//cout << "distance from origin " << i << ": " <<distanceFromCenter<<endl;
+		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
+			ComponentTracker* c = *it;
+			switch (c->comptype) {
+				case ComponentTracker::slider:
+					for (int i = 0; i < contourFinder.nBlobs; i++){
+						//if the blob is in the area of the component lets keep it
+						ofxCvBlob blob = contourFinder.blobs[i];
+						if ((c->ROI).inside((blob.centroid))){
+							float dfc =	c->calculateSliderProgress(blob);
+							if (dfc > distanceFromCenter){
+								distanceFromCenter = dfc;
+								//calculate for the 'zero' case (slider in zero position)
+							}
+							//cout << "blob center" << blob.centroid<<endl;
+							//cout << "distance from origin " << i << ": " <<distanceFromCenter<<endl;
+						}
+					}
+					break;
+				case ComponentTracker::dial:
+					//dial prgress calc here TODO
+					break;
+				default:
+					break;
 			}
 		}
+
 		
 	}
 
@@ -113,6 +124,7 @@ void Sauron::draw(){
 	
 	
 }
+
 
 //--------------------------------------------------------------
 void Sauron::keyPressed(int key){
@@ -316,6 +328,13 @@ void Sauron::registerDPad(ComponentTracker* ct){
 	
 }
 void Sauron::registerDial(ComponentTracker* ct){
+	ofRectangle[] componentBounds = ofRectangle[2];
+	for(int i = 0; i < contourFinder.nBlobs; i++) {
+		ofxCvBlob blob = contourFinder.blobs.at(i);
+		componentBounds[i] = blob.boundingRect;
+	}	
+	ct->setROI(componentBounds);
+	ct->numBlobsNeeded = 2;
 	
 }
 	

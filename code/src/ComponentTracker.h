@@ -29,4 +29,5 @@ public:
 	
 	void setROI(std::vector<ofRectangle> bounds);
 	void setContourFinder(ofRectangle ROI, int numBlobs);
+	float calculateSliderProgress(ofxCvBlob blob);
 };
