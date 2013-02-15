@@ -22,32 +22,38 @@ namespace SauronSWPlugin
 
         public ComponentIdentifier(Component2 component)
         {
+            this.component = component;
             OSC_string = "";
             if (component.Name2.Contains("button"))
             {
-                OSC_string = "/button/" + buttonCount;
+                this.OSC_string = "/button/" + buttonCount;
                 buttonCount++;
             }
             else if (component.Name2.Contains("slider"))
             {
-                OSC_string = "/slider/" + sliderCount;
+                this.OSC_string = "/slider/" + sliderCount;
                 sliderCount++;
             }
             else if (component.Name2.Contains("dial"))
             {
-                OSC_string = "/slider/" + dialCount;
+                this.OSC_string = "/slider/" + dialCount;
                 dialCount++;
             }
             else if (component.Name2.Contains("joystick"))
             {
-                OSC_string = "/slider/" + joystickCount;
+                this.OSC_string = "/slider/" + joystickCount;
                 joystickCount++;
             }
             else if (component.Name2.Contains("scrollwheel"))
             {
-                OSC_string = "/slider/" + scrollwheelCount;
+                this.OSC_string = "/slider/" + scrollwheelCount;
                 scrollwheelCount++;
             }
+        }
+
+        public string toString()
+        {
+            return this.OSC_string;
         }
     }
 }

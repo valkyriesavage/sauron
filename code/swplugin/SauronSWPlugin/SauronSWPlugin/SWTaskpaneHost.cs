@@ -42,10 +42,11 @@ namespace SauronSWPlugin
         private String FOV = "fov";
 
         private static readonly int Port = 5103;
-        private static readonly string AliveMethod = "/osctest/alive";
         IPEndPoint sourceEndPoint;
 
         private Component2 fieldOfView;
+
+        private List<ComponentIdentifier> componentsForSensing = new List<ComponentIdentifier>();
 
         public SWTaskpaneHost()
         {
@@ -58,7 +59,7 @@ namespace SauronSWPlugin
             sourceEndPoint = new IPEndPoint(IPAddress.Loopback, Port);
         }
 
-        private void sendMessage(String data) {
+        private void sendMessage(String address, String data) {
             if (data == null)
             {
                 return;
@@ -66,7 +67,7 @@ namespace SauronSWPlugin
 
             OscBundle bundle = new OscBundle(sourceEndPoint);
 
-            OscMessage message = new OscMessage(sourceEndPoint, AliveMethod);
+            OscMessage message = new OscMessage(sourceEndPoint, address);
             message.Append(data);
             bundle.Append(message);
 
@@ -126,28 +127,27 @@ namespace SauronSWPlugin
             return partname;
         }
 
-        private void lengthenExtrusion(Feature feature, Component2 swComponent, IConfiguration configToEdit)
+        private void lengthenExtrusion(Feature extrusion_feature, Component2 swComponent, IConfiguration configToEdit)
         {
-            Random rand = new Random();
-            String[] configurationContainer = { "default" };
-            ExtrudeFeatureData2 extrusion = feature.GetDefinition();
+            String[] configurationContainer = { configToEdit.Name };
+            ExtrudeFeatureData2 extrusion = extrusion_feature.GetDefinition();
             extrusion.AccessSelections(swAssembly, swComponent);
-            swComponent.Select2(false, 1<<0);
-            fieldOfView.Select2(true, 1<<1);
             extrusion.SetEndCondition(true, (int)swEndConditions_e.swEndCondUpToBody);
-            extrusion.SetEndConditionReference(true, fieldOfView);
+
+            FeatureIdentifier FOV_trapezoid = findFeature(swConf.GetRootComponent3(true), fieldOfView.Name, "FOV");
+            extrusion.SetEndConditionReference(true, FOV_trapezoid.feature);
             extrusion.SetChangeToConfigurations((int)swInConfigurationOpts_e.swThisConfiguration, configurationContainer);
-            feature.ModifyDefinition(extrusion, swDoc, swComponent);
-            swDoc.ForceRebuild3(true);
-            swComponent.DeSelect();
-            fieldOfView.DeSelect();
+            extrusion_feature.ModifyDefinition(extrusion, swDoc, swComponent);
+            
+            swDoc.EditRebuild3();
+            swDoc.ForceRebuild3(false);
         }
 
-        public void traverseFeatures(Feature swFeat, List<FeatureIdentifier> toModify)
+        public void traverseFeatures(Feature swFeat, List<FeatureIdentifier> toModify, String featureName="flag")
         {
             while ((swFeat != null))
             {
-                if (swFeat.Name.Equals("flag"))
+                if (swFeat.Name.Equals(featureName))
                 {
                     FeatureIdentifier fi = new FeatureIdentifier();
                     fi.feature = swFeat;
@@ -173,6 +173,18 @@ namespace SauronSWPlugin
             }
         }
 
+        public void traverseComponentFeatures(Component2 swComp, List<FeatureIdentifier> found, String featureName)
+        {
+            Feature swFeat;
+            swFeat = (Feature)swComp.FirstFeature();
+            traverseFeatures(swFeat, found, featureName);
+            FeatureIdentifier fi = found.ElementAt(0);
+            if (fi.component != null)
+            {
+                fi.component = swComp;
+            }
+        }
+
         private Component2 findComponent(Component2 swComp, String searchFor)
         {
             object[] vChildComp;
@@ -187,6 +199,29 @@ namespace SauronSWPlugin
                 {
                     return swChildComp;
                 }
+            }
+            return null;
+        }
+
+        private FeatureIdentifier findFeature(Component2 swComp, String componentName, String featureName)
+        {
+            object[] vChildComp;
+            Component2 swChildComp;
+            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
+            int i;
+
+            vChildComp = (object[])swComp.GetChildren();
+            for (i = 0; i < vChildComp.Length; i++)
+            {
+                swChildComp = (Component2)vChildComp[i];
+                if (swChildComp.Name2.Equals(componentName))
+                {
+                    traverseComponentFeatures(swChildComp, found, featureName);
+                }
+            }
+            if (found.Count > 0)
+            {
+                return found.ElementAt(0);
             }
             return null;
         }
@@ -217,7 +252,6 @@ namespace SauronSWPlugin
             string newConfigName = "SAURON-" + randomString();
 
             IModelDoc2 component = swComponent.GetModelDoc2();
-
             IConfiguration newConfig = component.AddConfiguration3(newConfigName,
                                                                    "automatically generated configuration",
                                                                    "",
@@ -228,19 +262,20 @@ namespace SauronSWPlugin
             return newConfig;
         }
 
-        private void processFeature_Click(object sender, EventArgs e)
+        private void processFeatures_Click(object sender, EventArgs e)
         {
+            // do the basic setup for the function
             getModelDoc();
             getFOV();
 
-            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
-
             // traverse the tree, searching for components with features called "flag"
+            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
             findModifiable(swConf.GetRootComponent3(true), found);
             
             foreach (FeatureIdentifier f in found) {
                 IConfiguration newConfig = createNewConfiguration(f.component);
                 lengthenExtrusion(f.feature, f.component, newConfig);
+                componentsForSensing.Add(new ComponentIdentifier(f.component));
             }
         }
 
@@ -249,39 +284,7 @@ namespace SauronSWPlugin
             // a place for me to copy/paste from macros and not hurt anything
             getModelDoc();
 
-            // copy/paste to extrude the buttons up to the body of the controller...
-            // it merges them, though, sadly, and doesn't seem to be complete
-            bool boolstatus = false;
-            boolstatus = swDoc.Extension.SelectByID2("flag@button-4post-4@xbox-controller",
-                                                     "BODYFEATURE",
-                                                     0,
-                                                     0,
-                                                     0,
-                                                     false,
-                                                     0,
-                                                     null,
-                                                     0);
-            boolstatus = swDoc.Extension.SelectByID2("base@button-4post-4@xbox-controller",
-                                                     "SOLIDBODY",
-                                                     0,
-                                                     0,
-                                                     0,
-                                                     true,
-                                                     0,
-                                                     null,
-                                                     0);
-            boolstatus = swDoc.Extension.SelectByID2("right/left holes@xbox-body-joystick-4-buttons-dpad-1@xbox-controller",
-                                                     "SOLIDBODY",
-                                                     -0.037559268647044064,
-                                                     0.070797231901956081,
-                                                     0.0096568896531579185,
-                                                     true,
-                                                     1,
-                                                     null,
-                                                     0);
-            swDoc.ISelectionManager.EnableContourSelection = false;
-            swAssembly.AssemblyPartToggle();
-            swAssembly.EditAssembly();
+            
         }
 
         private void test_mode_Click(object sender, EventArgs e)
@@ -293,38 +296,30 @@ namespace SauronSWPlugin
             {
                 testing = false;
                 test_mode.Text = enter_test;
-                sendMessage("endtest");
+                sendMessage("/test/", "end");
             }
             else
             {
                 testing = true;
                 test_mode.Text = exit_test;
-                sendMessage("starttest");
+                sendMessage("/test/", "start");
             }
         }
 
         private void register_Click(object sender, EventArgs e)
         {
             getModelDoc();
-            bool traverse = false;
-            bool searchFlag = false;
-            bool addReadOnlyInfo = false;
-            String[] allComponents = swDoc.GetDependencies2(traverse, searchFlag, addReadOnlyInfo);
-            foreach (String compName in allComponents)
+            foreach (ComponentIdentifier c in componentsForSensing)
             {
-                foreach (String ourComponent in ourComponents)
-                {
-                    if (ourComponent.Equals(compName))
-                    {
-                        swApp.SendMsgToUser2("please actuate " + compName + ", then click OK",
-                                             (int)swMessageBoxIcon_e.swMbQuestion,
-                                             (int)swMessageBoxBtn_e.swMbOk);
-                        // we want to process this appropriately: send it to Colin
-                        sendMessage(compName);
-                        // how do we get the actual part once we have the name?
-                        //bool boolstatus = swDoc.Extension.SelectByID2(compName, "COMPONENT", 0, 0, 0, false, 0, null, 0);
-                    }
-                }
+                // we want to process this appropriately: send it to Colin
+                sendMessage(c.OSC_string, "register");
+
+                // now ask the user to register it
+                swApp.SendMsgToUser2("please actuate " + c.component.Name + ", then click OK",
+                                     (int)swMessageBoxIcon_e.swMbQuestion,
+                                     (int)swMessageBoxBtn_e.swMbOk);
+
+                sendMessage(c.OSC_string, "done");
             }
         }
 
@@ -363,8 +358,32 @@ namespace SauronSWPlugin
         private void testPart_Click(object sender, EventArgs e)
         {
             getModelDoc();
+            getFOV();
 
-            // tests that we want to perform on a single model, rather than in the assembly
+            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
+
+            // traverse the tree, searching for components with features called "flag"
+            findModifiable(swConf.GetRootComponent3(true), found);
+
+            foreach (FeatureIdentifier f in found)
+            {
+                IConfiguration configToEdit = createNewConfiguration(f.component);
+                String[] configurationContainer = { configToEdit.Name };
+                ExtrudeFeatureData2 extrusion = f.feature.GetDefinition();
+                extrusion.AccessSelections(swAssembly, f.component);
+
+                FeatureIdentifier FOV_trapezoid = findFeature(swConf.GetRootComponent3(true), fieldOfView.Name, "FOV");
+                int refType = 0;
+                swApp.SendMsgToUser2("looking at " + f.component.Name + "->" + f.feature.Name, 1, 1);
+                swApp.SendMsgToUser2("end condition is " + extrusion.GetEndCondition(true).ToString() + " with upToBody being " + (int)swEndConditions_e.swEndCondUpToBody, 1, 1);
+                Object p = extrusion.GetEndConditionReference(true, out refType);
+                swApp.SendMsgToUser2(p.ToString() + " with type " + refType, 1, 1);
+
+                extrusion.ReleaseSelectionAccess();
+
+                swDoc.EditRebuild3();
+                swDoc.ForceRebuild3(false);
+            }
         }
     }
 }

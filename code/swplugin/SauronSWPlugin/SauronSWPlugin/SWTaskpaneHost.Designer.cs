@@ -31,7 +31,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.processFeature = new System.Windows.Forms.Button();
+            this.processFeatures = new System.Windows.Forms.Button();
             this.insert_camera = new System.Windows.Forms.Button();
             this.register = new System.Windows.Forms.Button();
             this.test_mode = new System.Windows.Forms.Button();
@@ -62,15 +62,15 @@
             this.label3.Size = new System.Drawing.Size(0, 13);
             this.label3.TabIndex = 2;
             // 
-            // processFeature
+            // processFeatures
             // 
-            this.processFeature.Location = new System.Drawing.Point(44, 98);
-            this.processFeature.Name = "processFeature";
-            this.processFeature.Size = new System.Drawing.Size(139, 49);
-            this.processFeature.TabIndex = 4;
-            this.processFeature.Text = "process features";
-            this.processFeature.UseVisualStyleBackColor = true;
-            this.processFeature.Click += new System.EventHandler(this.processFeature_Click);
+            this.processFeatures.Location = new System.Drawing.Point(44, 98);
+            this.processFeatures.Name = "processFeatures";
+            this.processFeatures.Size = new System.Drawing.Size(139, 49);
+            this.processFeatures.TabIndex = 4;
+            this.processFeatures.Text = "process features";
+            this.processFeatures.UseVisualStyleBackColor = true;
+            this.processFeatures.Click += new System.EventHandler(this.processFeatures_Click);
             // 
             // insert_camera
             // 
@@ -108,7 +108,7 @@
             this.testPart.Name = "testPart";
             this.testPart.Size = new System.Drawing.Size(139, 49);
             this.testPart.TabIndex = 8;
-            this.testPart.Text = "test on single part";
+            this.testPart.Text = "test something";
             this.testPart.UseVisualStyleBackColor = true;
             this.testPart.Click += new System.EventHandler(this.testPart_Click);
             // 
@@ -120,7 +120,7 @@
             this.Controls.Add(this.test_mode);
             this.Controls.Add(this.register);
             this.Controls.Add(this.insert_camera);
-            this.Controls.Add(this.processFeature);
+            this.Controls.Add(this.processFeatures);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -136,7 +136,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Button processFeature;
+        private System.Windows.Forms.Button processFeatures;
         private System.Windows.Forms.Button insert_camera;
         private System.Windows.Forms.Button register;
         private System.Windows.Forms.Button test_mode;
