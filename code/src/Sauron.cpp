@@ -84,7 +84,6 @@ void Sauron::draw(){
 	}
 	float distanceFromCenter = 0;
 	if (isRegistered){
-//		this only deals with sliders (horizontal ones, at that)! and only if there is one! hence the components[0]
 		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
 			ComponentTracker* c = *it;
 			switch (c->comptype) {
@@ -98,8 +97,6 @@ void Sauron::draw(){
 								distanceFromCenter = dfc;
 								//calculate for the 'zero' case (slider in zero position)
 							}
-							//cout << "blob center" << blob.centroid<<endl;
-							//cout << "distance from origin " << i << ": " <<distanceFromCenter<<endl;
 						}
 					}
 					break;
@@ -118,7 +115,7 @@ void Sauron::draw(){
 	
     ofSetHexColor(0xffffff);
     char reportStr[1024];
-    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\ndistance from origin: %f",
+    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider distance from origin: %f",
 			threshold, contourFinder.nBlobs, ofGetFrameRate(), distanceFromCenter);
     ofDrawBitmapString(reportStr, 20, 600);
 	
@@ -328,7 +325,7 @@ void Sauron::registerDPad(ComponentTracker* ct){
 	
 }
 void Sauron::registerDial(ComponentTracker* ct){
-	ofRectangle[] componentBounds = ofRectangle[2];
+	ofRectangle[] componentBounds = ofRectangle[2];//TODO gotta change this to vectors
 	for(int i = 0; i < contourFinder.nBlobs; i++) {
 		ofxCvBlob blob = contourFinder.blobs.at(i);
 		componentBounds[i] = blob.boundingRect;

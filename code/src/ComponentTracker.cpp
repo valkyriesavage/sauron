@@ -92,8 +92,44 @@ bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
 }
 
 void ComponentTracker::setROI(std::vector<ofRectangle> bounds){
+	switch (comptype) {
+		case slider:
+			setSliderROI(bounds);break;
+		case dial:
+			setDialROI( bounds);break;
+		case button:
+			setButtonROI(bounds);
+			break;
+		case dpad:
+			setDpadROI(bounds);
+			break;
+		default:
+			break;
+	}
+	
+}
+void ComponentTracker::setSliderROI(std::vector<ofRectangle> bounds){
+	//bounds should have two ofRectangles
 	ROI = makeBoundingBox(bounds);
 }
+
+void ComponentTracker::setDialROI(std::vector<ofRectangle> bounds){
+	//bounds should have one ofRectangle
+	if (bounds.size() != 1){
+		cout << "dial registration error setting roi";	
+	}
+	ROI = ofRectangle();
+	ROI = bounds[0];
+	
+	float maxPossibleRadius = max(ROI.getHeight(), ROI.getWidth())/2;
+	
+	ofPoint center=  ROI.getCenter();
+	ROI.setFromCenter(center.x, center.y, maxPossibleRadius, maxPossibleRadius);
+}
+
+void ComponentTracker::setButtonROI(std::vector<ofRectangle> bounds){}
+void ComponentTracker::setDpadROI(std::vector<ofRectangle> bounds){}
+
 float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
-	return	sqrt(pow((ROI.x-blob.centroid.x), 2) + pow(ROI.y-blob.centroid.y, 2));
+	return	sqrt(pow((ROI.x-blob.centroid.x), 2) + pow(ROI.y-blob.centroid.y, 2))/max(ROI.height, ROI.width);
 }

@@ -28,6 +28,10 @@ public:
 	bool dpadEventDetected(Direction* direction);
 	
 	void setROI(std::vector<ofRectangle> bounds);
+	void setSliderROI(std::vector<ofRectangle> bounds);
+	void setDialROI(std::vector<ofRectangle> bounds);
+	void setButtonROI(std::vector<ofRectangle> bounds);
+	void setDpadROI(std::vector<ofRectangle> bounds);
 	void setContourFinder(ofRectangle ROI, int numBlobs);
 	float calculateSliderProgress(ofxCvBlob blob);
 };
