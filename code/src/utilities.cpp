@@ -34,3 +34,13 @@ ofRectangle makeBoundingBox(std::vector<ofRectangle> bounds){
 //CvRect ofRectangleToCvRect(ofRectangle of){
 //	return CvRect(of.x, of.y, of.width, of.height);
 //}
+
+float distanceFormula(float x1, float y1, float x2, float y2){
+	return sqrt(pow(x2-x1, 2) + pow(y1-y2, 2));
+}
+
+ofPoint	midpoint(ofPoint p1, ofPoint p2){
+	ofPoint result;
+	result.set(abs(p1.x-p2.x), abs(p1.y-p2.y), 0.0f);
+	return result;
+}

@@ -77,7 +77,6 @@ void Sauron::draw(){
 	
     // or, instead we can draw each blob individually,
     // this is how to get access to them:
-	
 
     for (int i = 0; i < contourFinder.nBlobs; i++){
         contourFinder.blobs[i].draw(360,540);
@@ -101,21 +100,27 @@ void Sauron::draw(){
 					}
 					break;
 				case ComponentTracker::dial:
-					//dial prgress calc here TODO
+					for (int i = 0; i < contourFinder.nBlobs; i++){
+						//if the blob is in the area of the component lets keep it
+						ofxCvBlob blob = contourFinder.blobs[i];
+						if ((c->ROI).inside((blob.centroid))){
+							//there should be two blobs, 
+							//and only one of them will actually be interesting for us, 
+							//as it is the progress. How shall we determine which is which?
+							}
+						}
 					break;
 				default:
 					break;
 			}
 		}
-
-		
 	}
 
     // finally, a report:
 	
     ofSetHexColor(0xffffff);
     char reportStr[1024];
-    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider distance from origin: %f",
+    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider completion %: %f",
 			threshold, contourFinder.nBlobs, ofGetFrameRate(), distanceFromCenter);
     ofDrawBitmapString(reportStr, 20, 600);
 	
@@ -203,7 +208,7 @@ bool Sauron::isSauronRegistered(){
 void Sauron::sauronRegister(){
 	if (isSauronRegistered()) {
 		//hey man, you've already registered this. TODO: setup some error here
-		return;
+//		return; but for now, reregistration is possible
 	}
 	registering = true;
 	//asign id
@@ -325,11 +330,11 @@ void Sauron::registerDPad(ComponentTracker* ct){
 	
 }
 void Sauron::registerDial(ComponentTracker* ct){
-	ofRectangle[] componentBounds = ofRectangle[2];//TODO gotta change this to vectors
+	std::vector<ofRectangle> componentBounds;
 	for(int i = 0; i < contourFinder.nBlobs; i++) {
 		ofxCvBlob blob = contourFinder.blobs.at(i);
-		componentBounds[i] = blob.boundingRect;
-	}	
+		componentBounds.push_back(blob.boundingRect);
+	}		
 	ct->setROI(componentBounds);
 	ct->numBlobsNeeded = 2;
 	

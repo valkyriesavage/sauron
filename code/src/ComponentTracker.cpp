@@ -114,22 +114,27 @@ void ComponentTracker::setSliderROI(std::vector<ofRectangle> bounds){
 }
 
 void ComponentTracker::setDialROI(std::vector<ofRectangle> bounds){
-	//bounds should have one ofRectangle
-	if (bounds.size() != 1){
+	//bounds should have two ofRectangles
+	if (bounds.size() != 2){
 		cout << "dial registration error setting roi";	
 	}
 	ROI = ofRectangle();
-	ROI = bounds[0];
 	
-	float maxPossibleRadius = max(ROI.getHeight(), ROI.getWidth())/2;
+	ofPoint p1 = bounds[0].getCenter();
+	ofPoint p2 = bounds[1].getCenter();
 	
-	ofPoint center=  ROI.getCenter();
-	ROI.setFromCenter(center.x, center.y, maxPossibleRadius, maxPossibleRadius);
+	float maxPossibleRadius = distanceFormula(p1.x, 
+											  p1.y, 
+											  p2.x, 
+											  p2.y)/2;
+	
+	ofPoint center=  midpoint(p1, p2);
+	ROI.setFromCenter(center.x, center.y, maxPossibleRadius*2, maxPossibleRadius*2);//setFromCenter takes width and height as latter args
 }
 
 void ComponentTracker::setButtonROI(std::vector<ofRectangle> bounds){}
 void ComponentTracker::setDpadROI(std::vector<ofRectangle> bounds){}
 
 float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
-	return	sqrt(pow((ROI.x-blob.centroid.x), 2) + pow(ROI.y-blob.centroid.y, 2))/max(ROI.height, ROI.width);
+	return	distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
 }

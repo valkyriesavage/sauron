@@ -10,3 +10,7 @@ ofRectangle makeBoundingBox(std::vector<ofRectangle> bounds);
 ofRectangle CvRectToofRectangle(CvRect cv);
 
 CvRect ofRectangleToCvRect(ofRectangle of);
+
+float distanceFormula(float x1, float y1, float x2, float y2);
+
+ofPoint	midpoint(ofPoint p1, ofPoint p2);
