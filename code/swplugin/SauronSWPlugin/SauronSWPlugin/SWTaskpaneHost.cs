@@ -35,6 +35,7 @@ namespace SauronSWPlugin
         public SelectionMgr swSelectionMgr = null;
         public ConfigurationManager swConfMgr = null;
         public Configuration swConf = null;
+        public Measure measure = null;
 
         public bool testing = false;
 
@@ -84,6 +85,8 @@ namespace SauronSWPlugin
             swSelectionMgr = ((SelectionMgr)(swDoc.SelectionManager));
             swConfMgr = ((ConfigurationManager)swDoc.ConfigurationManager);
             swConf = ((Configuration)swConfMgr.ActiveConfiguration);
+            measure = swDoc.Extension.CreateMeasure();
+            measure.ArcOption = 1; // minimum distance
         }
 
         private void getFOV()
@@ -93,7 +96,12 @@ namespace SauronSWPlugin
 
         private double inchesToMeters(double inches)
         {
-            return inches/2.54/100;
+            return inches * 2.54 / 100;
+        }
+
+        private double metersToInches(double meters)
+        {
+            return meters * 100 / 2.54;
         }
 
         private string randomString()
@@ -127,20 +135,30 @@ namespace SauronSWPlugin
             return partname;
         }
 
-        private void lengthenExtrusion(Feature extrusion_feature, Component2 swComponent, IConfiguration configToEdit)
+        private void lengthenExtrusion(Feature extrusionFeature, Component2 swComponent, IConfiguration configToEdit)
         {
             String[] configurationContainer = { configToEdit.Name };
-            ExtrudeFeatureData2 extrusion = extrusion_feature.GetDefinition();
+            ExtrudeFeatureData2 extrusion = extrusionFeature.GetDefinition();
             extrusion.AccessSelections(swAssembly, swComponent);
-            extrusion.SetEndCondition(true, (int)swEndConditions_e.swEndCondUpToBody);
 
+            // try getting faces and determining if the features intersect using IntersectSurface
+            int faceCount = extrusionFeature.GetFaceCount();
+            Face2 face = extrusionFeature.IGetFaces2(ref faceCount);
+
+            /*double point1, point2, distance;
+            distance = swDoc.IClosestDistance(fieldOfView, swComponent, out point1, out point2);
+            extrusion.SetDepth(true, metersToInches(distance));*/
+
+            /*extrusion.SetEndCondition(true, (int)swEndConditions_e.swEndCondUpToBody);
             FeatureIdentifier FOV_trapezoid = findFeature(swConf.GetRootComponent3(true), fieldOfView.Name, "FOV");
-            extrusion.SetEndConditionReference(true, FOV_trapezoid.feature);
+            extrusion.SetEndConditionReference(true, FOV_trapezoid.feature);*/
+
             extrusion.SetChangeToConfigurations((int)swInConfigurationOpts_e.swThisConfiguration, configurationContainer);
-            extrusion_feature.ModifyDefinition(extrusion, swDoc, swComponent);
+            extrusionFeature.ModifyDefinition(extrusion, swDoc, swComponent);
             
             swDoc.EditRebuild3();
-            swDoc.ForceRebuild3(false);
+            swDoc.ForceRebuild3(true);
+            swComponent.DeSelect();
         }
 
         public void traverseFeatures(Feature swFeat, List<FeatureIdentifier> toModify, String featureName="flag")
@@ -277,6 +295,9 @@ namespace SauronSWPlugin
                 lengthenExtrusion(f.feature, f.component, newConfig);
                 componentsForSensing.Add(new ComponentIdentifier(f.component));
             }
+
+            // cast rays from the camera and see what we get!
+            
         }
 
         private void stuff()
