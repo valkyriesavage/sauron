@@ -1,62 +1,66 @@
 #pragma once
-#include <vector.h>
+#include <vector>
+#include <stdio.h>
+#include <string.h>
 
 #include "ofMain.h"
 #include "ofxOpenCv.h"
+#include "ofxOsc.h"
+#include "ofxOscReceiver.h"
+#include "ofxOscMessage.h"
 
 #include "ComponentTracker.h"
 #include "utilities.h"
 
+#define PORT 5001
+#define HOST "localhost"
+
 class Sauron : public ofBaseApp{
 
-	bool isRegistered;
 	public:
-		void setup();
-		void update();
-		void draw();
-		
-		void keyPressed(int key);
-		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void windowResized(int w, int h);
-		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);
-	
-		bool isSauronRegistered();
-		void sauronRegister();
-		void sauronLoad();
-		int assignSauronId();
-		std::vector<ComponentTracker*> getSauronComponents();
-		void registerComponent(ComponentTracker*);
-		
-		void registerButton(ComponentTracker* ct);
-		void registerSlider(ComponentTracker* ct);
-		void registerDPad(ComponentTracker* ct);
-		void registerDial(ComponentTracker* ct);
-	
-		int Sid;
+	void setup();
+	void update();
+	void draw();
 
-        ofVideoGrabber 		vidGrabber;
+	void keyPressed(int key);
 
-        ofxCvColorImage			colorImg;
+	bool isSauronRegistered();
+	void sauronRegister();
+	void sauronLoad();
+	int assignSauronId();
+	std::vector<ComponentTracker*> getSauronComponents();
+	void registerComponent(ComponentTracker*);
 
-        ofxCvGrayscaleImage 	grayImage;
-		ofxCvGrayscaleImage 	grayBg;
-		ofxCvGrayscaleImage 	grayDiff;
+	void registerButton(ComponentTracker* ct);
+	void registerSlider(ComponentTracker* ct);
+	void registerDPad(ComponentTracker* ct);
+	void registerDial(ComponentTracker* ct);
 
-        ofxCvContourFinder 	contourFinder;
+	int Sid;
 
-		int 				threshold;
-		bool				bLearnBakground;
-		bool registering;//true if in the process of registering
+	ofVideoGrabber 		vidGrabber;
 
-        std::vector<ComponentTracker*> components;
-		std::vector<ofxCvBlob> blobsCaptured;//assists with registration
+	ofxCvColorImage			colorImg;
 
-		float sliderProgress;
-		float dialProgress;
+	ofxCvGrayscaleImage 	grayImage;
+	ofxCvGrayscaleImage 	grayBg;
+	ofxCvGrayscaleImage 	grayDiff;
+
+	ofxCvContourFinder 	contourFinder;
+
+	int 				threshold;
+	bool				bLearnBakground;
+	bool				registering;
+	bool				isRegistered;
+	bool				testing;
+
+	std::vector<ComponentTracker*> components;
+	std::vector<ofxCvBlob> blobsCaptured;//assists with registration
+
+	float sliderProgress;
+	float dialProgress;
+
+	ofxOscReceiver receiver;
+	ofxOscSender sender;
 };
 
