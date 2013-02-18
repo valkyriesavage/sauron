@@ -98,11 +98,9 @@ void ComponentTracker::setROI(std::vector<ofRectangle> bounds){
 		case dial:
 			setDialROI( bounds);break;
 		case button:
-			setButtonROI(bounds);
-			break;
+			setButtonROI(bounds);break;
 		case dpad:
-			setDpadROI(bounds);
-			break;
+			setDpadROI(bounds);break;
 		default:
 			break;
 	}

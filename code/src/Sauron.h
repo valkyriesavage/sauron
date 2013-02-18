@@ -55,5 +55,8 @@ class Sauron : public ofBaseApp{
 
         std::vector<ComponentTracker*> components;
 		std::vector<ofxCvBlob> blobsCaptured;//assists with registration
+
+		float sliderProgress;
+		float dialProgress;
 };
 

@@ -22,6 +22,8 @@ void Sauron::setup(){
 	registering = false;
 	int numComponents = 4;
 	components.reserve(numComponents);
+	
+	sliderProgress = 0.0f;
 
 }
 
@@ -53,6 +55,42 @@ void Sauron::update(){
 		grayDiff.absDiff(grayBg, grayImage);
 		grayDiff.threshold(threshold);
 		contourFinder.findContours(grayDiff, 5, (340*240)/4, 4, false, true);
+
+		float distanceFromCenter = 0.0f;
+		if (isRegistered){
+			for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
+				ComponentTracker* c = *it;
+				switch (c->comptype) {
+					case ComponentTracker::slider:
+						for (int i = 0; i < contourFinder.nBlobs; i++){
+							//if the blob is in the area of the component lets keep it
+							ofxCvBlob blob = contourFinder.blobs[i];
+							if ((c->ROI).inside((blob.centroid))){
+								float dfc =	c->calculateSliderProgress(blob);
+								if (dfc > distanceFromCenter){
+									sliderProgress = dfc;
+									//calculate for the 'zero' case (slider in zero position)
+								}
+							}
+						}
+						break;
+					case ComponentTracker::dial:
+						for (int i = 0; i < contourFinder.nBlobs; i++){
+							//if the blob is in the area of the component lets keep it
+							ofxCvBlob blob = contourFinder.blobs[i];
+							if ((c->ROI).inside((blob.centroid))){
+								//there should be two blobs, 
+								//and only one of them will actually be interesting for us, 
+								//as it is the progress. How shall we determine which is which?
+							}
+						}
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		
 	}
 }
 
@@ -81,47 +119,14 @@ void Sauron::draw(){
     for (int i = 0; i < contourFinder.nBlobs; i++){
         contourFinder.blobs[i].draw(360,540);
 	}
-	float distanceFromCenter = 0;
-	if (isRegistered){
-		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
-			ComponentTracker* c = *it;
-			switch (c->comptype) {
-				case ComponentTracker::slider:
-					for (int i = 0; i < contourFinder.nBlobs; i++){
-						//if the blob is in the area of the component lets keep it
-						ofxCvBlob blob = contourFinder.blobs[i];
-						if ((c->ROI).inside((blob.centroid))){
-							float dfc =	c->calculateSliderProgress(blob);
-							if (dfc > distanceFromCenter){
-								distanceFromCenter = dfc;
-								//calculate for the 'zero' case (slider in zero position)
-							}
-						}
-					}
-					break;
-				case ComponentTracker::dial:
-					for (int i = 0; i < contourFinder.nBlobs; i++){
-						//if the blob is in the area of the component lets keep it
-						ofxCvBlob blob = contourFinder.blobs[i];
-						if ((c->ROI).inside((blob.centroid))){
-							//there should be two blobs, 
-							//and only one of them will actually be interesting for us, 
-							//as it is the progress. How shall we determine which is which?
-							}
-						}
-					break;
-				default:
-					break;
-			}
-		}
-	}
+
 
     // finally, a report:
 	
     ofSetHexColor(0xffffff);
     char reportStr[1024];
-    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider completion %: %f",
-			threshold, contourFinder.nBlobs, ofGetFrameRate(), distanceFromCenter);
+    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider completion percentage: %f",
+			threshold, contourFinder.nBlobs, ofGetFrameRate(), sliderProgress);
     ofDrawBitmapString(reportStr, 20, 600);
 	
 	
