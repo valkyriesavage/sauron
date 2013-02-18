@@ -24,6 +24,7 @@ void Sauron::setup(){
 	components.reserve(numComponents);
 	
 	sliderProgress = 0.0f;
+	dialProgress = 0.0f;
 
 }
 
@@ -57,6 +58,7 @@ void Sauron::update(){
 		contourFinder.findContours(grayDiff, 5, (340*240)/4, 4, false, true);
 
 		float distanceFromCenter = 0.0f;
+		std:vector<ofxCvBlob> dialBlobs;
 		if (isRegistered){
 			for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
 				ComponentTracker* c = *it;
@@ -69,21 +71,21 @@ void Sauron::update(){
 								float dfc =	c->calculateSliderProgress(blob);
 								if (dfc > distanceFromCenter){
 									sliderProgress = dfc;
-									//calculate for the 'zero' case (slider in zero position)
+									//calculate for the 'zero' case (slider in zero position
 								}
 							}
 						}
 						break;
 					case ComponentTracker::dial:
+						dialBlobs.clear();
 						for (int i = 0; i < contourFinder.nBlobs; i++){
 							//if the blob is in the area of the component lets keep it
 							ofxCvBlob blob = contourFinder.blobs[i];
 							if ((c->ROI).inside((blob.centroid))){
-								//there should be two blobs, 
-								//and only one of them will actually be interesting for us, 
-								//as it is the progress. How shall we determine which is which?
+								dialBlobs.push_back(blob);
 							}
 						}
+						dialProgress = c->calculateDialProgress(dialBlobs);
 						break;
 					default:
 						break;
@@ -125,8 +127,8 @@ void Sauron::draw(){
 	
     ofSetHexColor(0xffffff);
     char reportStr[1024];
-    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider completion percentage: %f",
-			threshold, contourFinder.nBlobs, ofGetFrameRate(), sliderProgress);
+    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider completion percentage: %f\ndial completion angle: %f",
+			threshold, contourFinder.nBlobs, ofGetFrameRate(), sliderProgress, dialProgress);
     ofDrawBitmapString(reportStr, 20, 600);
 	
 	
@@ -281,9 +283,9 @@ std::vector<ComponentTracker*> Sauron::getSauronComponents(){
 //	scrollWheel->numBlobsNeeded = 2;
 	
 	//components.push_back(button);
-	components.push_back(slider);
+//	components.push_back(slider);
 //    components.push_back(dpad);
-//    components.push_back(dial);
+    components.push_back(dial);
 //	components.push_back(scrollWheel);
 	return components;
 }
