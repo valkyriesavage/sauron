@@ -34,5 +34,5 @@ public:
 	void setDpadROI(std::vector<ofRectangle> bounds);
 	void setContourFinder(ofRectangle ROI, int numBlobs);
 	float calculateSliderProgress(ofxCvBlob blob);
-
+	float calculateDialProgress(std::vector<ofxCvBlob> blobs);
 };

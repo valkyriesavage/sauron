@@ -114,20 +114,15 @@ void ComponentTracker::setSliderROI(std::vector<ofRectangle> bounds){
 void ComponentTracker::setDialROI(std::vector<ofRectangle> bounds){
 	//bounds should have two ofRectangles
 	if (bounds.size() != 2){
-		cout << "dial registration error setting roi";	
+		cout << "dial registration error setting roi" << bounds.size()<<endl;	
 	}
 	ROI = ofRectangle();
 	
-	ofPoint p1 = bounds[0].getCenter();
-	ofPoint p2 = bounds[1].getCenter();
-	
-	float maxPossibleRadius = distanceFormula(p1.x, 
-											  p1.y, 
-											  p2.x, 
-											  p2.y)/2;
-	
-	ofPoint center=  midpoint(p1, p2);
-	ROI.setFromCenter(center.x, center.y, maxPossibleRadius*2, maxPossibleRadius*2);//setFromCenter takes width and height as latter args
+	//get the most disparate points
+	ofRectangle r1 = bounds[0];
+	ofRectangle r2 = bounds[1];
+	ROI.growToInclude(min(r1.getMinX(), r2.getMinX()), min(r1.getMinY(), r2.getMinY()));
+	ROI.growToInclude(max(r1.getMaxX(), r2.getMaxX()), max(r1.getMaxY(), r2.getMaxY()));
 }
 
 void ComponentTracker::setButtonROI(std::vector<ofRectangle> bounds){}
@@ -135,4 +130,22 @@ void ComponentTracker::setDpadROI(std::vector<ofRectangle> bounds){}
 
 float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
 	return	distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
+}
+
+/*
+ calculateDialProgress() returns the angle between the two blobs (which are points on the 'circumference' of the ROI (ROI is still a rectangle
+ so 'circumference' isn't technically correct, but it's close enough for our purposes)). The first blob is the 'initial point' from the background subtraction
+ and the latter is the moving part.
+ */
+float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
+		if (blobs.size() !=2) {
+			cout<<"error blobs passed into calculateDialProgress: " << blobs.size() << endl;
+			return 0.0f;
+		} 
+	ofPoint p1 = blobs[0].centroid;
+	ofPoint p2 = blobs[1].centroid;
+	float r = ROI.width/2;
+
+	return acos((2*pow(r, 2)- pow(distanceFormula(p1.x, p1.y, p2.x, p2.y), 2))/(2*pow(r, 2)));
+	
 }

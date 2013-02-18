@@ -27,14 +27,6 @@ ofRectangle makeBoundingBox(std::vector<ofRectangle> bounds){
 	return boundingBox;
 }
 
-//ofRectangle CvRectToofRectangle(CvRect cv){
-//	return new ofRectangle(cv.x, cv.y, cv.width, cv.height);
-//}
-//
-//CvRect ofRectangleToCvRect(ofRectangle of){
-//	return CvRect(of.x, of.y, of.width, of.height);
-//}
-
 float distanceFormula(float x1, float y1, float x2, float y2){
 	return sqrt(pow(x2-x1, 2) + pow(y1-y2, 2));
 }
