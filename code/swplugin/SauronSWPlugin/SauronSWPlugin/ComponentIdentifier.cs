@@ -23,6 +23,7 @@ namespace SauronSWPlugin
         public ComponentIdentifier(Component2 component)
         {
             this.component = component;
+
             OSC_string = "";
             if (component.Name2.Contains("button"))
             {
@@ -54,6 +55,24 @@ namespace SauronSWPlugin
         public string toString()
         {
             return this.OSC_string;
+        }
+
+        public bool equals(Object o)
+        {
+            if (o.GetType() == this.GetType())
+            {
+                ComponentIdentifier ci = (ComponentIdentifier)o;
+                if (ci.toString().Equals(this.toString()))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool isAddressedAs(String address)
+        {
+            return this.toString().Equals(address);
         }
     }
 }
