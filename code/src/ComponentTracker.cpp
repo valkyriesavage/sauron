@@ -162,19 +162,21 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 }
 
 ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs){
-	float meanDistance = 0;
+	float meanDistance = 0.0f;
 	//minimum number of blobs problem	
-	float totalDistance = 0;
+	float totalDistance = 0.0f;
+	
+	int movementThreshhold = 10;
 	for(int i = 0; i < previousBlobs.size(); i++) {
 		totalDistance += distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
 	}
 	
 	meanDistance =  totalDistance /previousBlobs.size();	
 	
-	
-	if (meanDistance >0) {
+	this->previousBlobs = blobs;
+	if (meanDistance >movementThreshhold) {
 		return ComponentTracker::up;
-	}else if (meanDistance < 0) {
+	}else if (meanDistance < -movementThreshhold) {
 		return ComponentTracker::down;
 	}else {
 		return ComponentTracker::none;

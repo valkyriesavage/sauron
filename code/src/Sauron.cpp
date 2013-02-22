@@ -2,10 +2,12 @@
 
 //--------------------------------------------------------------
 void Sauron::setup(){
-
+	vidGrabber.setDeviceID(3);//Colin likes using the marooned USB port
 #if defined (_WIN32) // if we are on Valkyrie's computer, use the Eye camera rather than the FaceTime
 	vidGrabber.setDeviceID(1);
 #endif
+	
+	
 
 	vidGrabber.setVerbose(true);
 	vidGrabber.initGrabber(320,240);
@@ -25,6 +27,7 @@ void Sauron::setup(){
 
 	sliderProgress = 0.0f;
 	dialProgress = 0.0f;
+	scrollWheelDirection = ComponentTracker::none;
 
 	receiver.setup(PORT);
 	sender.setup(HOST, PORT+1);
@@ -93,7 +96,7 @@ void Sauron::update(){
 					}
 					dialProgress = c->calculateDialProgress(dialBlobs);
 					break;
-					case ComponentTracker::scroll_wheel:
+				case ComponentTracker::scroll_wheel:
 						scrollWheelDirection = c->calculateScrollWheelDirection(contourFinderGrayImage.blobs);
 					break;
 
