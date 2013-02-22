@@ -163,24 +163,30 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 
 ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs){
 	float meanDistance = 0.0f;
-	//minimum number of blobs problem	
 	float totalDistance = 0.0f;
+	int movementThreshhold = 2;//based on empirical evidence. 
 	
-	int movementThreshhold = 10;
 	for(int i = 0; i < previousBlobs.size(); i++) {
-		totalDistance += distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
+		float xDisp = blobs[i].centroid.x - previousBlobs[i].centroid.x;
+		float yDisp = blobs[i].centroid.y - previousBlobs[i].centroid.y;
+		if (((abs(xDisp) > abs(yDisp)) && xDisp > 0) || ((abs(yDisp) > abs(xDisp)) && yDisp > 0)) {//yes I know, hacky.
+			totalDistance += distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
+			//I guess we don't technically need to do this here, but it'll set up nicely for measuring scrollwheel movement later.
+		}else {
+			totalDistance -= distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
+		}
 	}
 	
 	meanDistance =  totalDistance /previousBlobs.size();	
 	
-	this->previousBlobs = blobs;
-	if (meanDistance >movementThreshhold) {
+	this->previousBlobs = blobs;//gotta replace our previous blobs
+	
+	if (meanDistance >movementThreshhold) {//for now, 'up' is reletively defined. 
 		return ComponentTracker::up;
 	}else if (meanDistance < -movementThreshhold) {
 		return ComponentTracker::down;
 	}else {
 		return ComponentTracker::none;
 	}
-
 }
 		
