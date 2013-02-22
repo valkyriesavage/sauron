@@ -8,7 +8,7 @@
 class ComponentTracker {
 public:
 	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel};
-	enum Direction {up, down, left, right};
+	enum Direction {up, down, left, right, none};
     
     ComponentTracker();
 	
@@ -32,7 +32,9 @@ public:
 	void setDialROI(std::vector<ofRectangle> bounds);
 	void setButtonROI(std::vector<ofRectangle> bounds);
 	void setDpadROI(std::vector<ofRectangle> bounds);
+	void setScrollWheelROI(std::vector<ofRectangle> bounds);
 	void setContourFinder(ofRectangle ROI, int numBlobs);
 	float calculateSliderProgress(ofxCvBlob blob);
 	float calculateDialProgress(std::vector<ofxCvBlob> blobs);
+	ComponentTracker::Direction calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs);
 };

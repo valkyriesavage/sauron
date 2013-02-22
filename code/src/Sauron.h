@@ -35,6 +35,7 @@ class Sauron : public ofBaseApp{
 	void registerSlider(ComponentTracker* ct);
 	void registerDPad(ComponentTracker* ct);
 	void registerDial(ComponentTracker* ct);
+	void registerScrollWheel(ComponentTracker* ct);
 
 	int Sid;
 
@@ -47,6 +48,8 @@ class Sauron : public ofBaseApp{
 	ofxCvGrayscaleImage 	grayDiff;
 
 	ofxCvContourFinder 	contourFinder;
+	
+	ofxCvContourFinder	contourFinderGrayImage;
 
 	int 				threshold;
 	bool				bLearnBakground;
@@ -59,6 +62,7 @@ class Sauron : public ofBaseApp{
 
 	float sliderProgress;
 	float dialProgress;
+	ComponentTracker::Direction scrollWheelDirection;
 
 	ofxOscReceiver receiver;
 	ofxOscSender sender;

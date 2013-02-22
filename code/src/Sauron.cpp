@@ -59,6 +59,10 @@ void Sauron::update(){
 		grayDiff.threshold(threshold);
 		contourFinder.findContours(grayDiff, 5, (340*240)/4, 4, false, true);
 
+		grayImage.threshold(threshold);
+		contourFinderGrayImage.findContours(grayDiff, 5, (340*240)/4, 4, false, true);
+		
+		
 		float distanceFromCenter = 0.0f;
 		std:vector<ofxCvBlob> dialBlobs;
 		if (isRegistered){
@@ -89,8 +93,12 @@ void Sauron::update(){
 					}
 					dialProgress = c->calculateDialProgress(dialBlobs);
 					break;
-				default:
+					case ComponentTracker::scroll_wheel:
+						scrollWheelDirection = c->calculateScrollWheelDirection(contourFinderGrayImage.blobs);
 					break;
+
+					default:
+				break;
 				}
 			}
 
@@ -197,13 +205,17 @@ void Sauron::draw(){
 	for (int i = 0; i < contourFinder.nBlobs; i++){
 		contourFinder.blobs[i].draw(360,540);
 	}
+	
+	for (int i = 0; i < contourFinderGrayImage.nBlobs; i++){
+		contourFinderGrayImage.blobs[i].draw(360,20);
+	}
 
 	// finally, a report:
 
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
-	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider completion percentage: %f\ndial completion angle: %f",
-		threshold, contourFinder.nBlobs, ofGetFrameRate(), sliderProgress, dialProgress);
+	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider completion percentage: %f\ndial completion angle: %f\nScroll Wheel Direction: %i",
+		threshold, contourFinder.nBlobs, ofGetFrameRate(), sliderProgress, dialProgress, scrollWheelDirection);
 	ofDrawBitmapString(reportStr, 20, 600);
 
 
@@ -320,8 +332,8 @@ std::vector<ComponentTracker*> Sauron::getSauronComponents(){
 	//components.push_back(button);
 	//	components.push_back(slider);
 	//    components.push_back(dpad);
-	components.push_back(dial);
-	//	components.push_back(scrollWheel);
+	//components.push_back(dial);
+	components.push_back(scrollWheel);
 	return components;
 }
 
@@ -347,6 +359,9 @@ void Sauron::registerComponent(ComponentTracker* ct){
 		//do some dial business
 		registerDial(ct);
 		break;
+		case ComponentTracker::scroll_wheel:
+			registerScrollWheel(ct);
+			break;
 	default:
 		break;
 	}
@@ -387,4 +402,15 @@ void Sauron::registerDial(ComponentTracker* ct){
 	}		
 	ct->setROI(componentBounds);
 	ct->numBlobsNeeded = 2;
+}
+
+void Sauron::registerScrollWheel(ComponentTracker* ct){
+	std::vector<ofRectangle> componentBounds;
+	for(int i = 0; i < contourFinder.nBlobs; i++) {
+		ofxCvBlob blob = contourFinder.blobs.at(i);
+		componentBounds.push_back(blob.boundingRect);
+	}	
+
+	ct->setROI(componentBounds);
+	ct->numBlobsNeeded = 2;//pending
 }

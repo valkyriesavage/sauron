@@ -101,6 +101,8 @@ void ComponentTracker::setROI(std::vector<ofRectangle> bounds){
 			setButtonROI(bounds);break;
 		case dpad:
 			setDpadROI(bounds);break;
+		case scroll_wheel:
+			setScrollWheelROI(bounds);break;
 		default:
 			break;
 	}
@@ -127,7 +129,15 @@ void ComponentTracker::setDialROI(std::vector<ofRectangle> bounds){
 
 void ComponentTracker::setButtonROI(std::vector<ofRectangle> bounds){}
 void ComponentTracker::setDpadROI(std::vector<ofRectangle> bounds){}
-
+void ComponentTracker::setScrollWheelROI(std::vector<ofRectangle> bounds){
+	ROI = ofRectangle();
+	
+	//get the most disparate points
+	for(std::vector<ofRectangle>::iterator it = bounds.begin(); it != bounds.end(); ++it) {
+		ofRectangle rect = *it;
+		ROI.growToInclude(rect.x, rect.y);
+	}
+}
 float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
 	return	distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
 }
@@ -136,6 +146,7 @@ float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
  calculateDialProgress() returns the angle between the two blobs (which are points on the 'circumference' of the ROI (ROI is still a rectangle
  so 'circumference' isn't technically correct, but it's close enough for our purposes)). The first blob is the 'initial point' from the background subtraction
  and the latter is the moving part.
+ Formula from http://math.stackexchange.com/questions/185829/how-do-you-find-an-angle-between-two-points-on-the-edge-of-a-circle
  */
 float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 		if (blobs.size() !=2) {
@@ -149,3 +160,25 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 	return acos((2*pow(r, 2)- pow(distanceFormula(p1.x, p1.y, p2.x, p2.y), 2))/(2*pow(r, 2)));
 	
 }
+
+ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs){
+	float meanDistance = 0;
+	//minimum number of blobs problem	
+	float totalDistance = 0;
+	for(int i = 0; i < previousBlobs.size(); i++) {
+		totalDistance += distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
+	}
+	
+	meanDistance =  totalDistance /previousBlobs.size();	
+	
+	
+	if (meanDistance >0) {
+		return ComponentTracker::up;
+	}else if (meanDistance < 0) {
+		return ComponentTracker::down;
+	}else {
+		return ComponentTracker::none;
+	}
+
+}
+		
