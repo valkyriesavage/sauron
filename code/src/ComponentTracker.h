@@ -8,15 +8,19 @@
 class ComponentTracker {
 public:
 	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel};
-	enum Direction {up, down, left, right, none};
-    
-    ComponentTracker();
 	
+	enum Direction {up, down, left, right, none};
+	
+
+    ComponentTracker();
+	string getComponentType();
 	ofxCvContourFinder contourFinder;
 	ComponentType comptype;
 	CvRect regionOfInterest;
 	ofRectangle ROI;//there's a bit of ambiguity with regionOfInterest. Not sure why regionOfInterest is a CvRect rather than a ofRectangle
 	int numBlobsNeeded;
+	int id;
+	float delta;
     
     std::vector<ofxCvBlob> previousBlobs;
 	
@@ -37,4 +41,7 @@ public:
 	float calculateSliderProgress(ofxCvBlob blob);
 	float calculateDialProgress(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs);
+	
+	float getDelta();
+	void setDelta(float f);
 };

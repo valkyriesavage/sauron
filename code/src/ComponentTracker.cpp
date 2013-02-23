@@ -1,7 +1,35 @@
 #include "ComponentTracker.h"
 
 ComponentTracker::ComponentTracker() {
-    
+}
+
+//static const char *ComponentTypeStrings = {"button", "slider", "dial", "joystick", "dpad", "scroll_wheel"};
+
+
+string ComponentTracker::getComponentType(){
+	switch (this->comptype) {
+		case ComponentTracker::button:
+			return "button";
+			break;
+		case ComponentTracker::slider:
+			return "slider";
+			break;
+		case ComponentTracker::dial:
+			return "dial";
+			break;
+		case ComponentTracker::joystick:
+			return "joystick";
+			break;
+		case ComponentTracker::dpad:
+			return "dpad";
+			break;
+		case ComponentTracker::scroll_wheel:
+			return "scroll_wheel";
+			break;
+		default:
+			return "unknown_component";
+			break;
+	}
 }
 
 bool ComponentTracker::buttonEventDetected() {
@@ -189,4 +217,11 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 		return ComponentTracker::none;
 	}
 }
-		
+
+float ComponentTracker::getDelta(){
+	return delta;
+}
+
+void ComponentTracker::setDelta(float f){
+	this->delta = f;
+}

@@ -55,7 +55,7 @@ class Sauron : public ofBaseApp{
 	bool				bLearnBakground;
 	bool				registering;
 	bool				isRegistered;
-	bool				testing;
+	bool				testing;//just since we are testing testing
 
 	std::vector<ComponentTracker*> components;
 	std::vector<ofxCvBlob> blobsCaptured;//assists with registration
