@@ -74,30 +74,22 @@ void Sauron::update(){
 			sauronRegister();
 		}
 		
-		float distanceFromCenter = 0.0f;
-	std:vector<ofxCvBlob> dialBlobs;
+		std:vector<ofxCvBlob> dialBlobs;
 		if (isRegistered){
 			for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
 				ComponentTracker* c = *it;
 				switch (c->comptype) {
 					case ComponentTracker::slider:
 						for (int i = 0; i < contourFinder.nBlobs; i++){
-								//if the blob is in the area of the component lets keep it
 							ofxCvBlob blob = contourFinderGrayImage.blobs[i];
 							if ((c->ROI).inside((blob.centroid))){
-								float dfc =	c->calculateSliderProgress(blob);
-								if (dfc > distanceFromCenter){
-									sliderProgress = dfc;
-										//calculate for the 'zero' case (slider in zero position)
-								}
+								sliderProgress = c->calculateSliderProgress(blob);
 							}
 						}
 						c->setDelta(sliderProgress);
 						break;
 					case ComponentTracker::dial:
-						dialBlobs.clear();
 						for (int i = 0; i < contourFinder.nBlobs; i++){
-								//if the blob is in the area of the component lets keep it
 							ofxCvBlob blob = contourFinderGrayImage.blobs[i];
 							if ((c->ROI).inside((blob.centroid))){
 								dialBlobs.push_back(blob);
@@ -295,7 +287,7 @@ void Sauron::sauronRegister(){
 	ComponentTracker* component = getSauronComponent();
 	if (currentRegisteringComponent->id != component->id){
 		currentRegisteringComponent = component;
-		components.push_back(currentRegisteringComponent);
+		components.push_back(component);
 	}
 	registerComponent(currentRegisteringComponent);
 }
@@ -315,43 +307,28 @@ ComponentTracker* Sauron::getSauronComponent(){
 	ComponentTracker* button = new ComponentTracker();
 	button->comptype = ComponentTracker::button;
 	button->id = 0;
-		// TODO : give these nice values that actually work
-		//	button->regionOfInterest = cvRect(0, 0, 100, 100);
-		//	button->numBlobsNeeded = 2;
 	
 	ComponentTracker* slider = new ComponentTracker();
 	slider->comptype = ComponentTracker::slider;
 	slider->id = 0;
-		// TODO : the same thing here
-		//	slider->regionOfInterest = cvRect(0, 0, 200, 200);
-		//	slider->numBlobsNeeded = 2;
 	
 	ComponentTracker* dpad = new ComponentTracker();
 	dpad->comptype = ComponentTracker::dpad;
 	dpad->id = 0;
-		// TODO : the same thing here
-		//	dpad->regionOfInterest = cvRect(0, 0, 200, 200);
-		//	dpad->numBlobsNeeded = 4;
 	
 	ComponentTracker* dial = new ComponentTracker();
 	dial->comptype = ComponentTracker::dial;
 	dial->id = 0;
-		// TODO : the same thing here
-		//	dial->regionOfInterest = cvRect(0, 0, 200, 200);
-		//	dial->numBlobsNeeded = 2;
 	
 	ComponentTracker* scrollWheel = new ComponentTracker();
 	scrollWheel->comptype = ComponentTracker::scroll_wheel;
 	scrollWheel->id = 0;
-		// TODO : the same thing here
-		//	scrollWheel->regionOfInterest = cvRect(0, 0, 200, 200);
-		//	scrollWheel->numBlobsNeeded = 2;
 	
 		//component = button;
-		//component = slider;
+		component = slider;
 		//    component = dpad;
 		//component = dial;
-	component = scrollWheel;
+	//component = scrollWheel;
 	return component;
 }
 
@@ -405,7 +382,7 @@ void Sauron::registerSlider(ComponentTracker* ct){
 		//we should now have two points and we can do stuff with that.
 	
 	ct->setROI(componentBounds);
-	ct->numBlobsNeeded = 2;
+	ct->numBlobsNeeded = 1;
 }
 
 void Sauron::registerDPad(ComponentTracker* ct){
@@ -419,7 +396,7 @@ void Sauron::registerDial(ComponentTracker* ct){
 		componentBounds.push_back(blob.boundingRect);
 	}		
 	ct->setROI(componentBounds);
-	ct->numBlobsNeeded = 2;
+	ct->numBlobsNeeded = 1;
 }
 
 void Sauron::registerScrollWheel(ComponentTracker* ct){
@@ -430,5 +407,5 @@ void Sauron::registerScrollWheel(ComponentTracker* ct){
 	}	
 	
 	ct->setROI(componentBounds);
-	ct->numBlobsNeeded = 2;//pending
+	ct->numBlobsNeeded = 3;//pending
 }
