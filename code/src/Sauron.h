@@ -2,7 +2,7 @@
 #include <vector>
 #include <stdio.h>
 #include <string.h>
-
+#include <algorithm>
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxOsc.h"
@@ -28,7 +28,7 @@ class Sauron : public ofBaseApp{
 	void sauronRegister();
 	void sauronLoad();
 	int assignSauronId();
-	std::vector<ComponentTracker*> getSauronComponents();
+	ComponentTracker* getSauronComponent();
 	void registerComponent(ComponentTracker*);
 
 	void registerButton(ComponentTracker* ct);
@@ -36,8 +36,6 @@ class Sauron : public ofBaseApp{
 	void registerDPad(ComponentTracker* ct);
 	void registerDial(ComponentTracker* ct);
 	void registerScrollWheel(ComponentTracker* ct);
-
-	int Sid;
 
 	ofVideoGrabber 		vidGrabber;
 
@@ -58,6 +56,7 @@ class Sauron : public ofBaseApp{
 	bool				testing;//just since we are testing testing
 
 	std::vector<ComponentTracker*> components;
+	ComponentTracker* currentRegisteringComponent;
 	std::vector<ofxCvBlob> blobsCaptured;//assists with registration
 
 	float sliderProgress;

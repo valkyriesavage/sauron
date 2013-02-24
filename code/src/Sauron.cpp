@@ -33,7 +33,9 @@ void Sauron::setup(){
 	receiver.setup(PORT);
 	sender.setup(HOST, PORT+1);
 	
-	testing = true;//testing testing
+	testing = false;
+	
+	currentRegisteringComponent = &ComponentTracker();
 }
 
 	//--------------------------------------------------------------
@@ -68,6 +70,9 @@ void Sauron::update(){
 		grayImage.threshold(threshold);
 		contourFinderGrayImage.findContours(grayDiff, 5, (340*240)/4, 4, false, true);
 		
+		if(registering){
+			sauronRegister();
+		}
 		
 		float distanceFromCenter = 0.0f;
 	std:vector<ofxCvBlob> dialBlobs;
@@ -78,12 +83,12 @@ void Sauron::update(){
 					case ComponentTracker::slider:
 						for (int i = 0; i < contourFinder.nBlobs; i++){
 								//if the blob is in the area of the component lets keep it
-							ofxCvBlob blob = contourFinder.blobs[i];
+							ofxCvBlob blob = contourFinderGrayImage.blobs[i];
 							if ((c->ROI).inside((blob.centroid))){
 								float dfc =	c->calculateSliderProgress(blob);
 								if (dfc > distanceFromCenter){
 									sliderProgress = dfc;
-										//calculate for the 'zero' case (slider in zero position
+										//calculate for the 'zero' case (slider in zero position)
 								}
 							}
 						}
@@ -93,7 +98,7 @@ void Sauron::update(){
 						dialBlobs.clear();
 						for (int i = 0; i < contourFinder.nBlobs; i++){
 								//if the blob is in the area of the component lets keep it
-							ofxCvBlob blob = contourFinder.blobs[i];
+							ofxCvBlob blob = contourFinderGrayImage.blobs[i];
 							if ((c->ROI).inside((blob.centroid))){
 								dialBlobs.push_back(blob);
 							}
@@ -229,8 +234,8 @@ void Sauron::draw(){
 	
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
-	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nslider completion percentage: %f\ndial completion angle: %f\nScroll Wheel Direction: %i",
-			threshold, contourFinder.nBlobs, ofGetFrameRate(), sliderProgress, dialProgress, scrollWheelDirection);
+	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %f\nDial completion angle: %f\nScroll Wheel Direction: %i",
+			threshold, contourFinder.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection);
 	ofDrawBitmapString(reportStr, 20, 600);
 	
 	
@@ -253,13 +258,18 @@ void Sauron::keyPressed(int key){
 			if (threshold < 0) threshold = 0;
 			break;
 		case 'r':
-			sauronRegister();
+			registering = !registering;
+			break;
+		case 'd':
+			registering = false;
+			isRegistered = true;
 			break;
 	}
 }
 
 /*
- do some local (or over web/websockets) to check whether this device has already been registered, in which case we can just load up the relevant information form our db
+ do some local (or over web/websockets) to check whether this device has already been registered,
+ in which case we can just load up the relevant information form our db
  TODO: finish this method
  */
 
@@ -271,7 +281,8 @@ bool Sauron::isSauronRegistered(){
 /*the function called in setup() is registration has not been performed.
  function itself will perform a variety of operations to fultill registraion of this controller including:
  - assigning it a unique id from the web
- - getting information from (somewhere) with solidworks info (including which components are used, and how many, and maybe, as a bonus, relative positioninig (but we could do wihtout this))
+ - getting information from (somewhere) with solidworks info (including which components are used,
+ and how many, and maybe, as a bonus, relative positioninig (but we could do wihtout this))
  - measuring and logging information (boundaries/detection setup) for the input components
  */
 void Sauron::sauronRegister(){
@@ -279,19 +290,14 @@ void Sauron::sauronRegister(){
 			//hey man, you've already registered this. TODO: setup some error here
 			//		return; but for now, reregistration is possible
 	}
-	registering = true;
-		//asign id
-	Sid = assignSauronId();
-	
-		//get component information
-	components = getSauronComponents();
-	
-		//register all the components
-	for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
-		registerComponent(*it);
+
+		//register the current component
+	ComponentTracker* component = getSauronComponent();
+	if (currentRegisteringComponent->id != component->id){
+		currentRegisteringComponent = component;
+		components.push_back(currentRegisteringComponent);
 	}
-	isRegistered = true;
-	registering = false;
+	registerComponent(currentRegisteringComponent);
 }
 
 /* 
@@ -301,55 +307,52 @@ void Sauron::sauronRegister(){
 void Sauron::sauronLoad(){}
 
 /*
- assigns a unique id for Sauron devices
- TODO: finish this method when determine a way to save devices
- */
-int Sauron::assignSauronId(){
-	return 0;//for now
-}
-
-/*
  gets Sauron components from solidworks
  */
-std::vector<ComponentTracker*> Sauron::getSauronComponents(){
-	std::vector<ComponentTracker*> components;
+ComponentTracker* Sauron::getSauronComponent(){
+	ComponentTracker* component;
 	
 	ComponentTracker* button = new ComponentTracker();
 	button->comptype = ComponentTracker::button;
+	button->id = 0;
 		// TODO : give these nice values that actually work
 		//	button->regionOfInterest = cvRect(0, 0, 100, 100);
 		//	button->numBlobsNeeded = 2;
 	
 	ComponentTracker* slider = new ComponentTracker();
 	slider->comptype = ComponentTracker::slider;
+	slider->id = 0;
 		// TODO : the same thing here
 		//	slider->regionOfInterest = cvRect(0, 0, 200, 200);
 		//	slider->numBlobsNeeded = 2;
 	
 	ComponentTracker* dpad = new ComponentTracker();
 	dpad->comptype = ComponentTracker::dpad;
+	dpad->id = 0;
 		// TODO : the same thing here
 		//	dpad->regionOfInterest = cvRect(0, 0, 200, 200);
 		//	dpad->numBlobsNeeded = 4;
 	
 	ComponentTracker* dial = new ComponentTracker();
 	dial->comptype = ComponentTracker::dial;
+	dial->id = 0;
 		// TODO : the same thing here
 		//	dial->regionOfInterest = cvRect(0, 0, 200, 200);
 		//	dial->numBlobsNeeded = 2;
 	
 	ComponentTracker* scrollWheel = new ComponentTracker();
 	scrollWheel->comptype = ComponentTracker::scroll_wheel;
+	scrollWheel->id = 0;
 		// TODO : the same thing here
 		//	scrollWheel->regionOfInterest = cvRect(0, 0, 200, 200);
 		//	scrollWheel->numBlobsNeeded = 2;
 	
-		//components.push_back(button);
-		//	components.push_back(slider);
-		//    components.push_back(dpad);
-		//components.push_back(dial);
-	components.push_back(scrollWheel);
-	return components;
+		//component = button;
+		//component = slider;
+		//    component = dpad;
+		//component = dial;
+	component = scrollWheel;
+	return component;
 }
 
 /*

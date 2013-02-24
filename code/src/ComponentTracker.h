@@ -44,4 +44,6 @@ public:
 	
 	float getDelta();
 	void setDelta(float f);
+	
+	bool ROIUnset();
 };

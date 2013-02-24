@@ -1,11 +1,10 @@
 #include "ComponentTracker.h"
 
 ComponentTracker::ComponentTracker() {
+	id = -1;
+	ROI = ofRectangle();
 }
-
-//static const char *ComponentTypeStrings = {"button", "slider", "dial", "joystick", "dpad", "scroll_wheel"};
-
-
+	
 string ComponentTracker::getComponentType(){
 	switch (this->comptype) {
 		case ComponentTracker::button:
@@ -137,33 +136,32 @@ void ComponentTracker::setROI(std::vector<ofRectangle> bounds){
 	
 }
 void ComponentTracker::setSliderROI(std::vector<ofRectangle> bounds){
-	//bounds should have two ofRectangles
-	ROI = makeBoundingBox(bounds);
+	if(ROIUnset()){
+		ROI = makeBoundingBox(bounds);
+	}else{
+		bounds.push_back(ROI);
+		ROI = makeBoundingBox(bounds);
+	}
 }
 
 void ComponentTracker::setDialROI(std::vector<ofRectangle> bounds){
-	//bounds should have two ofRectangles
-	if (bounds.size() != 2){
-		cout << "dial registration error setting roi" << bounds.size()<<endl;	
+	if(ROIUnset()){
+		ROI = makeBoundingBox(bounds);
+	}else{
+		bounds.push_back(ROI);
+		ROI = makeBoundingBox(bounds);
 	}
-	ROI = ofRectangle();
-	
-	//get the most disparate points
-	ofRectangle r1 = bounds[0];
-	ofRectangle r2 = bounds[1];
-	ROI.growToInclude(min(r1.getMinX(), r2.getMinX()), min(r1.getMinY(), r2.getMinY()));
-	ROI.growToInclude(max(r1.getMaxX(), r2.getMaxX()), max(r1.getMaxY(), r2.getMaxY()));
 }
 
 void ComponentTracker::setButtonROI(std::vector<ofRectangle> bounds){}
 void ComponentTracker::setDpadROI(std::vector<ofRectangle> bounds){}
+
 void ComponentTracker::setScrollWheelROI(std::vector<ofRectangle> bounds){
-	ROI = ofRectangle();
-	
-	//get the most disparate points
-	for(std::vector<ofRectangle>::iterator it = bounds.begin(); it != bounds.end(); ++it) {
-		ofRectangle rect = *it;
-		ROI.growToInclude(rect.x, rect.y);
+	if(ROIUnset()){
+		ROI = makeBoundingBox(bounds);
+	}else{
+		bounds.push_back(ROI);
+		ROI = makeBoundingBox(bounds);
 	}
 }
 float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
@@ -172,18 +170,19 @@ float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
 
 /*
  calculateDialProgress() returns the angle between the two blobs (which are points on the 'circumference' of the ROI (ROI is still a rectangle
- so 'circumference' isn't technically correct, but it's close enough for our purposes)). The first blob is the 'initial point' from the background subtraction
- and the latter is the moving part.
+ so 'circumference' isn't technically correct, but it's close enough for our purposes)). 
+ The first blob is the 'initial point' from the background subtraction and the latter is the moving part.
  Formula from http://math.stackexchange.com/questions/185829/how-do-you-find-an-angle-between-two-points-on-the-edge-of-a-circle
  */
 float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
-		if (blobs.size() !=2) {
+		if (blobs.size() !=1) {
 			cout<<"error blobs passed into calculateDialProgress: " << blobs.size() << endl;
-			return 0.0f;
+			return -1.0f;
 		} 
 	ofPoint p1 = blobs[0].centroid;
-	ofPoint p2 = blobs[1].centroid;
+	ofPoint p2 = ROI.getCenter();
 	float r = ROI.width/2;
+	p2.y = p2.y + r;
 
 	return acos((2*pow(r, 2)- pow(distanceFormula(p1.x, p1.y, p2.x, p2.y), 2))/(2*pow(r, 2)));
 	
@@ -194,7 +193,7 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	float totalDistance = 0.0f;
 	int movementThreshhold = 2;//based on empirical evidence. 
 	
-	for(int i = 0; i < previousBlobs.size(); i++) {
+	for(int i = 0; i < min(blobs.size(), previousBlobs.size()); i++) {
 		float xDisp = blobs[i].centroid.x - previousBlobs[i].centroid.x;
 		float yDisp = blobs[i].centroid.y - previousBlobs[i].centroid.y;
 		if (((abs(xDisp) > abs(yDisp)) && xDisp > 0) || ((abs(yDisp) > abs(xDisp)) && yDisp > 0)) {//yes I know, hacky.
@@ -224,4 +223,8 @@ float ComponentTracker::getDelta(){
 
 void ComponentTracker::setDelta(float f){
 	this->delta = f;
+}
+
+bool ComponentTracker::ROIUnset(){
+	return ROI.width == 0 && ROI.height == 0;
 }
