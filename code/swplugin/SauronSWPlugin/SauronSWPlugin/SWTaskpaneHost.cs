@@ -126,14 +126,14 @@ namespace SauronSWPlugin
         private void getFOV()
         {
             Component2 fieldOfView = findComponent(swConf.GetRootComponent3(true), Camera.FOV);
-
+            
             // figure out the rays' source, i.e. the centre of the camera sensor
             // see https://forum.solidworks.com/thread/60491
             swDoc.Extension.SelectByID2("centre of vision@" + fieldOfView.GetSelectByIDString(),
                                         "DATUMPOINT", 0, 0, 0, false, 0, null, 0);
             IFeature centreOfVisionFeature = swSelectionMgr.GetSelectedObject6(1, -1) as IFeature;
             IRefPoint centreOfVisionPoint = centreOfVisionFeature.GetSpecificFeature2() as IRefPoint;
-            IMathPoint centreOfVision = centreOfVisionPoint.GetRefPoint();
+            IMathPoint centreOfVision = centreOfVisionPoint.GetRefPoint() as IMathPoint;
             swDoc.ClearSelection2(true);
 
             // now figure out the direction the camera points
@@ -148,11 +148,18 @@ namespace SauronSWPlugin
             MathVector cameraDirection = normalVector.MultiplyTransform(cameraTransform);
             swDoc.ClearSelection2(true);
 
-            camera = new Camera(fieldOfView, mathUtils.CreatePoint(centreOfVision.ArrayData), cameraDirection);
+            camera = new Camera(fieldOfView, mathUtils.CreatePoint((double[])centreOfVision.ArrayData), cameraDirection);
 
-            /*
             double[] cameraDirData = (double[])cameraDirection.ArrayData;
             double[] cameraOriginData = (double[])centreOfVision.ArrayData;
+            swDoc.Insert3DSketch2(true);
+            swDoc.CreateLine2(cameraOriginData[0], cameraOriginData[1], cameraOriginData[2], cameraDirData[0], cameraDirData[1], cameraDirData[2]);
+            swDoc.Insert3DSketch2(true);
+            Feature sketch = swSelectionMgr.GetSelectedObject6(1, 0);
+            sketch.Name = "camera ray";
+            swDoc.ClearSelection2(true);
+
+            /*
             swApp.SendMsgToUser2("camera is at " + cameraOriginData[0] + "," + cameraOriginData[1] + "," + cameraOriginData[2] + " with direction " + cameraDirData[0] + "," + cameraDirData[1] + "," + cameraDirData[2], 1, 1); 
             */       
         }
@@ -198,6 +205,20 @@ namespace SauronSWPlugin
             return partname;
         }
 
+        private void updateExtrudeDepth(IFeature feat, double depth)
+        {
+            IComponent2 comp = (feat as IEntity).IGetComponent2();
+
+            IDisplayDimension dispDim = (IDisplayDimension)feat.GetFirstDisplayDimension();
+            IDimension dim = dispDim.IGetDimension();
+
+            dim.SetSystemValue3(depth,
+                (int)swSetValueInConfiguration_e.swSetValue_InSpecificConfigurations,
+                new string[] { comp.ReferencedConfiguration });
+
+            swApp.IActiveDoc2.EditRebuild3();
+        }
+
         private void setDepthInConfig(Component2 swComponent, IConfiguration configToEdit, IFeature extrusionFeature, double depth)
         {
             ExtrudeFeatureData2 extrusion = (ExtrudeFeatureData2)extrusionFeature.GetDefinition();
@@ -212,13 +233,6 @@ namespace SauronSWPlugin
                                                 new string[] { });
 
             extrusion.ReleaseSelectionAccess();
-            /*
-            IDisplayDimension dispDim = (IDisplayDimension)extrusionFeature.GetFirstDisplayDimension();
-            IDimension dim = dispDim.IGetDimension();
-
-            dim.SetSystemValue3(depth,
-                                (int)swSetValueInConfiguration_e.swSetValue_InSpecificConfigurations,
-                                new string[] { swComponent.ReferencedConfiguration });*/
 
             swDoc.EditRebuild3();
             swDoc.ForceRebuild3(true);
@@ -228,7 +242,7 @@ namespace SauronSWPlugin
 
         private bool lengthenFlag(Component2 swComponent, IConfiguration configToEdit)
         {
-            double threshold = inchesToMeters(.1);
+            double threshold = inchesToMeters(.05);
             IFeature extrusionFeature = swComponent.FeatureByName("flag");
             
             if (extrusionFeature == null)
@@ -244,11 +258,15 @@ namespace SauronSWPlugin
             double defaultDepth = inchesToMeters(.15);
 
             double distance;
-            swComponent.Select(false);
-            camera.fieldOfView.Select(true);
-            measure.Calculate(null);
-            distance = Math.Sqrt(measure.DeltaX * measure.DeltaX + measure.DeltaY * measure.DeltaY + measure.DeltaZ * measure.DeltaZ) + originalDepth;
-            setDepthInConfig(swComponent, configToEdit, extrusionFeature, distance);
+            //swComponent.Select(false);
+            //camera.fieldOfView.Select(true);
+            //measure.Calculate(null);
+            double pt1, pt2;
+            distance = swDoc.IClosestDistance(swComponent, camera.fieldOfView, out pt1, out pt2);
+            //distance = Math.Sqrt(measure.DeltaX * measure.DeltaX + measure.DeltaY * measure.DeltaY + measure.DeltaZ * measure.DeltaZ) + originalDepth;
+            //setDepthInConfig(swComponent, configToEdit, extrusionFeature, distance);
+            swApp.SendMsgToUser2(/*"distance from measure = " + distance + */" and distance from iclosestdistance = " + distance, 1, 1);
+            updateExtrudeDepth(extrusionFeature, distance);
 
             swAssembly.EditRebuild();
             swDoc.ForceRebuild3(false);
@@ -260,26 +278,28 @@ namespace SauronSWPlugin
             swAssembly.EditAssembly();
             swDoc.ClearSelection2(true);
 
-            if (!(measure.Distance < threshold))
+            if (!(swDoc.IClosestDistance(swComponent, camera.fieldOfView, out pt1, out pt2) < threshold))
             {
-                setDepthInConfig(swComponent, configToEdit, extrusionFeature, defaultDepth);
-                swApp.SendMsgToUser2("backed off " + swComponent.Name + " : we aren't intersecting the FOV", 1, 1);
+                //setDepthInConfig(swComponent, configToEdit, extrusionFeature, defaultDepth);
+                updateExtrudeDepth(extrusionFeature, defaultDepth);
+                swApp.SendMsgToUser2("backed off " + swComponent.Name + " : we aren't intersecting the FOV (" + swDoc.IClosestDistance(swComponent, camera.fieldOfView, out pt1, out pt2) + ")", 1, 1);
                 return false;
             }
 
             // we are intersecting successfully, but we need to make sure to check we aren't intersecting anything else...
             foreach (Component2 otherComponent in allSolidComponents)
             {
-                if (otherComponent.Equals(swComponent))
+                if (otherComponent.Equals(swComponent) || otherComponent.Equals(camera.fieldOfView))
                 {
                     continue;
                 }
-                otherComponent.Select(false);
+                /*otherComponent.Select(false);
                 swComponent.Select(true);
-                measure.Calculate(null);
-                if (measure.Distance < threshold)
+                measure.Calculate(null);*/
+                if (/*measure.Distance*/swDoc.IClosestDistance(otherComponent, swComponent, out pt1, out pt2) < threshold)
                 {
-                    setDepthInConfig(swComponent, configToEdit, extrusionFeature, defaultDepth);
+                    //setDepthInConfig(swComponent, configToEdit, extrusionFeature, defaultDepth);
+                    updateExtrudeDepth(extrusionFeature, defaultDepth);
                     swApp.SendMsgToUser2("backed off " + swComponent.Name + " : we intersected with " + otherComponent.Name, 1, 1);
                     return false;
                 }
@@ -317,7 +337,11 @@ namespace SauronSWPlugin
             {
                 Body2 body = (Body2)vBody;
                 Face2 face = body.GetFirstFace();
-                swApp.SendMsgToUser2("we have bodiesInfo = " + bodiesInfo[i] + " body = " + body.Name, 1, 1);
+
+                if (!body.Name.Contains("flag"))
+                {
+                    continue;
+                }
 
                 while (face != null && intersectionPoint == null)
                 {
@@ -568,7 +592,6 @@ namespace SauronSWPlugin
                                                                    0);
             swComponent.ReferencedConfiguration = newConfig.Name;
             swDoc.EditRebuild3();
-            swDoc.ForceRebuild3(false);
 
             return newConfig;
         }
@@ -592,8 +615,8 @@ namespace SauronSWPlugin
             {
                 IConfiguration newConfig = createNewConfiguration(f.component);
                 componentsForSensing.Add(new ComponentIdentifier(f.component));
-                bool success = false; //lengthenFlag(f.component);
-                if (!success)
+                bool success = lengthenFlag(f.component, newConfig); // false (for testing)
+                /*if (!success)
                 {
                     // try placing a mirror for it
                     success = placeMirror(f.component, newConfig);
@@ -602,9 +625,9 @@ namespace SauronSWPlugin
                         // cry
                         swApp.SendMsgToUser2("we can't seem to see component " + f.component.Name + " you will have to move it", 1, 1);
                     }
-                }
+                }*/
                 // TODO : TAKE ME OUT!  I AM FOR TESTING PURPOSES ONLY!
-                break;
+                //break;
             }
 
             // cast rays from the camera and see what we get!  hopefully some bounding boxes.  :)
