@@ -62,6 +62,7 @@ class Sauron : public ofBaseApp{
 	float sliderProgress;
 	float dialProgress;
 	ComponentTracker::Direction scrollWheelDirection;
+	bool buttonPressed;
 
 	ofxOscReceiver receiver;
 	ofxOscSender sender;

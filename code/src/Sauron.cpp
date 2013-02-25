@@ -26,9 +26,10 @@ void Sauron::setup(){
 	int numComponents = 4;
 	components.reserve(numComponents);
 	
-	sliderProgress = 0.0f;
-	dialProgress = 0.0f;
+	sliderProgress = -1.0f;
+	dialProgress = -1.0f;
 	scrollWheelDirection = ComponentTracker::none;
+	buttonPressed = false;
 	
 	receiver.setup(PORT);
 	sender.setup(HOST, PORT+1);
@@ -102,6 +103,9 @@ void Sauron::update(){
 						scrollWheelDirection = c->calculateScrollWheelDirection(contourFinderGrayImage.blobs);
 						c->setDelta( (float) scrollWheelDirection);
 						break;
+					case ComponentTracker::button:
+						buttonPressed = c->buttonEventDetected();
+						c->setDelta( (float) buttonPressed);
 					default:
 						break;
 				}
@@ -226,8 +230,8 @@ void Sauron::draw(){
 	
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
-	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %f\nDial completion angle: %f\nScroll Wheel Direction: %i",
-			threshold, contourFinder.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection);
+	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %f\nDial completion angle: %f\nScroll Wheel Direction: %i\nButton Pressed: %d",
+			threshold, contourFinder.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection, buttonPressed);
 	ofDrawBitmapString(reportStr, 20, 600);
 	
 	
@@ -324,8 +328,8 @@ ComponentTracker* Sauron::getSauronComponent(){
 	scrollWheel->comptype = ComponentTracker::scroll_wheel;
 	scrollWheel->id = 0;
 	
-		//component = button;
-		component = slider;
+		component = button;
+		//component = slider;
 		//    component = dpad;
 		//component = dial;
 	//component = scrollWheel;
@@ -363,7 +367,13 @@ void Sauron::registerComponent(ComponentTracker* ct){
 }
 
 void Sauron::registerButton(ComponentTracker* ct){
-	
+	std::vector<ofRectangle> componentBounds;
+	for(int i = 0; i < contourFinderGrayImage.nBlobs; i++) {
+		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
+		componentBounds.push_back(blob.boundingRect);
+	}		
+	ct->setROI(componentBounds);
+	ct->numBlobsNeeded = 1;
 }	
 
 void Sauron::registerSlider(ComponentTracker* ct){
@@ -374,8 +384,8 @@ void Sauron::registerSlider(ComponentTracker* ct){
 		// then we will get a message of the form "/slider/1/ done", and there won't be any more movement.
 		// we can just track the max and min x,y values we see between these two messages to get the slider bounds
 	std::vector<ofRectangle> componentBounds;
-	for(int i = 0; i < contourFinder.nBlobs; i++) {
-		ofxCvBlob blob = contourFinder.blobs.at(i);
+	for(int i = 0; i < contourFinderGrayImage.nBlobs; i++) {
+		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
 		componentBounds.push_back(blob.boundingRect);
 	}	
 		//there should now be two blobs, capture both of them.
@@ -391,8 +401,8 @@ void Sauron::registerDPad(ComponentTracker* ct){
 
 void Sauron::registerDial(ComponentTracker* ct){
 	std::vector<ofRectangle> componentBounds;
-	for(int i = 0; i < contourFinder.nBlobs; i++) {
-		ofxCvBlob blob = contourFinder.blobs.at(i);
+	for(int i = 0; i < contourFinderGrayImage.nBlobs; i++) {
+		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
 		componentBounds.push_back(blob.boundingRect);
 	}		
 	ct->setROI(componentBounds);
@@ -401,8 +411,8 @@ void Sauron::registerDial(ComponentTracker* ct){
 
 void Sauron::registerScrollWheel(ComponentTracker* ct){
 	std::vector<ofRectangle> componentBounds;
-	for(int i = 0; i < contourFinder.nBlobs; i++) {
-		ofxCvBlob blob = contourFinder.blobs.at(i);
+	for(int i = 0; i < contourFinderGrayImage.nBlobs; i++) {
+		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
 		componentBounds.push_back(blob.boundingRect);
 	}	
 	

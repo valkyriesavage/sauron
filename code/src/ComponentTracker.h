@@ -41,6 +41,7 @@ public:
 	float calculateSliderProgress(ofxCvBlob blob);
 	float calculateDialProgress(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs);
+	bool isButtonPressed(std::vector<ofxCvBlob> blobs);
 	
 	float getDelta();
 	void setDelta(float f);

@@ -153,7 +153,14 @@ void ComponentTracker::setDialROI(std::vector<ofRectangle> bounds){
 	}
 }
 
-void ComponentTracker::setButtonROI(std::vector<ofRectangle> bounds){}
+void ComponentTracker::setButtonROI(std::vector<ofRectangle> bounds){
+	if(ROIUnset()){
+		ROI = makeBoundingBox(bounds);
+	}else{
+		bounds.push_back(ROI);
+		ROI = makeBoundingBox(bounds);
+	}
+}
 void ComponentTracker::setDpadROI(std::vector<ofRectangle> bounds){}
 
 void ComponentTracker::setScrollWheelROI(std::vector<ofRectangle> bounds){
@@ -215,6 +222,21 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	}else {
 		return ComponentTracker::none;
 	}
+}
+
+bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
+	float precisionThreshhold = 0.2f;
+	if (blobs.size() !=1) {
+		cout<<"error blobs passed into isButtonPressed: " << blobs.size() << endl;
+		return false;
+	} 
+
+	if(blobs[0].area/ROI.getArea() > 1-precisionThreshhold && blobs[0].area/ROI.getArea() < 1+precisionThreshhold){
+		return true;
+	}else{
+		return false;
+	}
+	
 }
 
 float ComponentTracker::getDelta(){
