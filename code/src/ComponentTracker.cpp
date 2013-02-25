@@ -2,6 +2,7 @@
 
 ComponentTracker::ComponentTracker() {
 	id = -1;
+	mIsRegistered = false;
 	ROI = ofRectangle();
 }
 	
@@ -29,6 +30,14 @@ string ComponentTracker::getComponentType(){
 			return "unknown_component";
 			break;
 	}
+}
+
+bool ComponentTracker::isRegistered(){
+	return mIsRegistered;
+}
+
+bool ComponentTracker::finalizeRegistration(){
+	mIsRegistered = true;
 }
 
 bool ComponentTracker::buttonEventDetected() {

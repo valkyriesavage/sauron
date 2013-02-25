@@ -23,8 +23,11 @@ class Sauron : public ofBaseApp{
 	void draw();
 
 	void keyPressed(int key);
-
-	bool isSauronRegistered();
+	
+	
+	void stageComponent(ComponentTracker::ComponentType type, int id);
+	void startRegistrationMode();
+	void stopRegistrationMode();
 	void sauronRegister();
 	void sauronLoad();
 	int assignSauronId();
@@ -52,7 +55,6 @@ class Sauron : public ofBaseApp{
 	int 				threshold;
 	bool				bLearnBakground;
 	bool				registering;
-	bool				isRegistered;
 	bool				testing;//just since we are testing testing
 
 	std::vector<ComponentTracker*> components;

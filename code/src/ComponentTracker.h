@@ -21,8 +21,12 @@ public:
 	int numBlobsNeeded;
 	int id;
 	float delta;
+	bool mIsRegistered;
     
     std::vector<ofxCvBlob> previousBlobs;
+	
+	bool isRegistered();
+	bool finalizeRegistration();
 	
 	bool buttonEventDetected();
 	bool sliderEventDetected(int* sliderPosition);

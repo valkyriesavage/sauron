@@ -8,8 +8,6 @@ void Sauron::setup(){
 		vidGrabber.setDeviceID(3);//Colin likes using the marooned USB port
 	#endif
 	
-	
-	
 	vidGrabber.setVerbose(true);
 	vidGrabber.initGrabber(320,240);
 	
@@ -21,7 +19,6 @@ void Sauron::setup(){
 	bLearnBakground = true;
 	threshold = 80;
 	
-	isRegistered = false;//for testing purposes
 	registering = false;
 	int numComponents = 4;
 	components.reserve(numComponents);
@@ -36,7 +33,7 @@ void Sauron::setup(){
 	
 	testing = false;
 	
-	currentRegisteringComponent = &ComponentTracker();
+	currentRegisteringComponent = new ComponentTracker();
 }
 
 	//--------------------------------------------------------------
@@ -76,9 +73,10 @@ void Sauron::update(){
 		}
 		
 		std:vector<ofxCvBlob> dialBlobs;
-		if (isRegistered){
-			for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
-				ComponentTracker* c = *it;
+
+		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
+			ComponentTracker* c = *it;
+			if(c->isRegistered()){
 				switch (c->comptype) {
 					case ComponentTracker::slider:
 						for (int i = 0; i < contourFinder.nBlobs; i++){
@@ -110,7 +108,7 @@ void Sauron::update(){
 						break;
 				}
 			}
-			
+		}	
 			if(testing) {
 				for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
 					ComponentTracker* component = *it;
@@ -127,7 +125,7 @@ void Sauron::update(){
 					sender.sendMessage(m);
 				}
 			}
-		}
+		
 	}
 	
 	while (receiver.hasWaitingMessages()) {
@@ -156,40 +154,55 @@ void Sauron::update(){
 						// will be numbered 0, 1, 2, ... ) these don't count up between components, unless you
 						// need them to.  I mean, as it is, I will have a button 0 and a slider 0 if there is a
 						// button and a slider in the design.
+					stageComponent(ComponentTracker::button, componentId);
+					startRegistrationMode();
 				} else {
 						// exit button registration mode for id componentId
+					stopRegistrationMode();
 				}
 			}
 			
 			if(tld.compare("slider") == 0) {
 				if(command.compare("start") == 0) {
 						// enter slider registration mode for id componentId
+					stageComponent(ComponentTracker::slider, componentId);
+					startRegistrationMode();
 				} else {
 						// exit slider registration mode for id componentId
+					stopRegistrationMode();
 				}
 			}
 			
 			if(tld.compare("dial") == 0) {
 				if(command.compare("start") == 0) {
 						// enter dial registration mode for id componentId
+					stageComponent(ComponentTracker::dial, componentId);
+					startRegistrationMode();
 				} else {
 						// exit dial registration mode for id componentId
+					stopRegistrationMode();
 				}
 			}
 			
 			if(tld.compare("dpad") == 0) {
 				if(command.compare("start") == 0) {
 						// enter dpad registration mode for id componentId
+					stageComponent(ComponentTracker::dpad, componentId);
+					startRegistrationMode();
 				} else {
 						// exit dpad registration mode for id componentId
+					stopRegistrationMode();
 				}
 			}
 			
 			if(tld.compare("scrollwheel") == 0) {
 				if(command.compare("start") == 0) {
 						// enter scrollwheel registration mode for id componentId
+					stageComponent(ComponentTracker::scroll_wheel, componentId);
+					startRegistrationMode();
 				} else {
 						// exit scrollwheel registration mode for id componentId
+					stopRegistrationMode();
 				}
 			}
 		}
@@ -227,14 +240,11 @@ void Sauron::draw(){
 	}
 	
 		// finally, a report:
-	
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
 	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %f\nDial completion angle: %f\nScroll Wheel Direction: %i\nButton Pressed: %d",
 			threshold, contourFinder.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection, buttonPressed);
 	ofDrawBitmapString(reportStr, 20, 600);
-	
-	
 }
 
 
@@ -254,46 +264,51 @@ void Sauron::keyPressed(int key){
 			if (threshold < 0) threshold = 0;
 			break;
 		case 'r':
-			registering = !registering;
+				stageComponent(getSauronComponent()->comptype, getSauronComponent()->id);
+				startRegistrationMode();
 			break;
 		case 'd':
-			registering = false;
-			isRegistered = true;
+			stopRegistrationMode();
 			break;
+	}
+}
+/*
+ stageComponent takes preparatory information from solidworks and stages it to be registered with sauronRegister().
+ */
+void Sauron::stageComponent(ComponentTracker::ComponentType type, int id){
+	if(!registering){
+		currentRegisteringComponent = new ComponentTracker();
+		currentRegisteringComponent->id = id;
+		currentRegisteringComponent->comptype = type;
 	}
 }
 
 /*
- do some local (or over web/websockets) to check whether this device has already been registered,
- in which case we can just load up the relevant information form our db
- TODO: finish this method
+ startRegistrationMode() begins registration of the staged component
  */
-
-bool Sauron::isSauronRegistered(){
-		//but for now, since we are making registration, we will just claim we are not registered
-	return isRegistered;
+void Sauron::startRegistrationMode(){
+	registering = true;
+}
+/*
+ stopRegistrationMode() is called after the registration is finished. At this point, the staged component is unstaged and added to the components vector.
+ */
+void Sauron::stopRegistrationMode(){
+	currentRegisteringComponent->finalizeRegistration();
+	components.push_back(currentRegisteringComponent);
+	currentRegisteringComponent = new ComponentTracker();
+	registering = false;
 }
 
-/*the function called in setup() is registration has not been performed.
- function itself will perform a variety of operations to fultill registraion of this controller including:
- - assigning it a unique id from the web
- - getting information from (somewhere) with solidworks info (including which components are used,
- and how many, and maybe, as a bonus, relative positioninig (but we could do wihtout this))
- - measuring and logging information (boundaries/detection setup) for the input components
+/*
+ sauronRegister() is called in update() repeatedly (implicitly by being called in update()) continually redrawing the ROI for the staged component.
  */
 void Sauron::sauronRegister(){
-	if (isSauronRegistered()) {
+	if (currentRegisteringComponent->isRegistered()) {
 			//hey man, you've already registered this. TODO: setup some error here
 			//		return; but for now, reregistration is possible
+	}else{
+		registerComponent(currentRegisteringComponent);
 	}
-
-		//register the current component
-	ComponentTracker* component = getSauronComponent();
-	if (currentRegisteringComponent->id != component->id){
-		currentRegisteringComponent = component;
-		components.push_back(component);
-	}
-	registerComponent(currentRegisteringComponent);
 }
 
 /* 
@@ -303,7 +318,7 @@ void Sauron::sauronRegister(){
 void Sauron::sauronLoad(){}
 
 /*
- gets Sauron components from solidworks
+ getSauronComponent currently simulates the action of receiving a component from solidworks
  */
 ComponentTracker* Sauron::getSauronComponent(){
 	ComponentTracker* component;
@@ -328,34 +343,29 @@ ComponentTracker* Sauron::getSauronComponent(){
 	scrollWheel->comptype = ComponentTracker::scroll_wheel;
 	scrollWheel->id = 0;
 	
-		component = button;
-		//component = slider;
+		//component = button;
+	component = slider;
 		//    component = dpad;
 		//component = dial;
-	//component = scrollWheel;
+		//component = scrollWheel;
 	return component;
 }
 
 /*
  depending on component type, does some gui bit for user to properly register this input component
- TODO: finish this method. It's a switch statement between all the different component types. Each component type will have its own method.
  */
 void Sauron::registerComponent(ComponentTracker* ct){
 	switch (ct->comptype) {
 		case ComponentTracker::button:
-				//do some button business
 			registerButton(ct);
 			break;
 		case ComponentTracker::slider:
-				//do some slider business
 			registerSlider(ct);
 			break;
 		case ComponentTracker::dpad:
-				//do some dpad business
 			registerDPad(ct);
 			break;
 		case ComponentTracker::dial:
-				//do some dial business
 			registerDial(ct);
 			break;
 		case ComponentTracker::scroll_wheel:
@@ -388,9 +398,6 @@ void Sauron::registerSlider(ComponentTracker* ct){
 		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
 		componentBounds.push_back(blob.boundingRect);
 	}	
-		//there should now be two blobs, capture both of them.
-		//we should now have two points and we can do stuff with that.
-	
 	ct->setROI(componentBounds);
 	ct->numBlobsNeeded = 1;
 }
