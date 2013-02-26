@@ -104,7 +104,14 @@ void Sauron::update(){
 					case ComponentTracker::button:
 						buttonPressed = c->isButtonPressed(contourFinderGrayImage.blobs);
 						c->setDelta( (float) buttonPressed);
+						break;
+					case ComponentTracker::joystick:
+						mJoystickLocation = c->measureJoystickLocation(contourFinderGrayImage.blobs);
+					//	c->setDelta( (ofPoint) mJoystickLocation);
+					//TODO: set up how to send joystick info to SW
+						break;
 					default:
+						
 						break;
 				}
 			}
@@ -241,8 +248,8 @@ void Sauron::draw(){
 		// finally, a report:
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
-	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %f\nDial completion angle: %f\nScroll Wheel Direction: %i\nButton Pressed: %d",
-			threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection, buttonPressed);
+	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %f\nDial completion angle: %f\nScroll Wheel Direction: %i\nButton Pressed: %d\nJoystick Location: (%f, %f)",
+			threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection, buttonPressed, mJoystickLocation.x, mJoystickLocation.y);
 	ofDrawBitmapString(reportStr, 20, 600);
 }
 
@@ -342,11 +349,16 @@ ComponentTracker* Sauron::getSauronComponent(){
 	scrollWheel->comptype = ComponentTracker::scroll_wheel;
 	scrollWheel->id = 0;
 	
+	ComponentTracker* joystick = new ComponentTracker();
+	joystick->comptype = ComponentTracker::joystick;
+	joystick->id = 0;
+	
 	//component = button;
 	//component = slider;
 		//    component = dpad;
-		component = dial;
+//		component = dial;
 		//component = scrollWheel;
+	component = joystick;
 	return component;
 }
 
@@ -369,6 +381,9 @@ void Sauron::registerComponent(ComponentTracker* ct){
 			break;
 		case ComponentTracker::scroll_wheel:
 			registerScrollWheel(ct);
+			break;
+		case ComponentTracker::joystick:
+			registerJoystick(ct);
 			break;
 		default:
 			break;
@@ -397,4 +412,9 @@ void Sauron::registerDial(ComponentTracker* ct){
 void Sauron::registerScrollWheel(ComponentTracker* ct){
 	ct->setROI(contourFinderGrayImage.blobs);
 	ct->numBlobsNeeded = 3;//pending
+}
+
+void Sauron::registerJoystick(ComponentTracker* ct){
+	ct->setROI(contourFinderGrayImage.blobs);
+	ct->numBlobsNeeded = 3;
 }

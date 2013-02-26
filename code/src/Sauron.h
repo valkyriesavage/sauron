@@ -39,6 +39,7 @@ class Sauron : public ofBaseApp{
 	void registerDPad(ComponentTracker* ct);
 	void registerDial(ComponentTracker* ct);
 	void registerScrollWheel(ComponentTracker* ct);
+	void registerJoystick(ComponentTracker* ct);
 
 	ofVideoGrabber 		vidGrabber;
 
@@ -65,6 +66,7 @@ class Sauron : public ofBaseApp{
 	float dialProgress;
 	ComponentTracker::Direction scrollWheelDirection;
 	bool buttonPressed;
+	ofPoint	mJoystickLocation;
 
 	ofxOscReceiver receiver;
 	ofxOscSender sender;

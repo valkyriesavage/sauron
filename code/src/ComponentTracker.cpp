@@ -218,7 +218,10 @@ bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
 	}else{
 		return false;
 	}
-	
+}
+
+ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
+	return ofPoint(1, 1);
 }
 
 float ComponentTracker::getDelta(){
