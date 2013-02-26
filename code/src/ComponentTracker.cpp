@@ -128,25 +128,7 @@ bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
 	return false;
 }
 
-void ComponentTracker::setROI(std::vector<ofRectangle> bounds){
-	switch (comptype) {
-		case slider:
-			//setSliderROI(bounds);
-			break;
-		case dial:
-			setDialROI( bounds);break;
-		case button:
-			setButtonROI(bounds);break;
-		case dpad:
-			setDpadROI(bounds);break;
-		case scroll_wheel:
-			setScrollWheelROI(bounds);break;
-		default:
-			break;
-	}
-	
-}
-void ComponentTracker::setSliderROI(std::vector<ofxCvBlob> blobs){
+void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 		//ok save all in previous blobs and replace it every time. the blob that changes the most beyond a threshhold is the one we are interested in.
 		//if not set
 	if (previousBlobs.empty()) {
@@ -154,13 +136,12 @@ void ComponentTracker::setSliderROI(std::vector<ofxCvBlob> blobs){
 		return;
 	}
 	if(ROIUnset()){
-		//if movement is beyond movement threshhold
-		//make a box around the previous and this blobs and set it as roi
+			//if movement is beyond movement threshhold
+			//make a box around the previous and this blobs and set it as roi
 		ofxCvBlob* blob = new ofxCvBlob();
 		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
 			ROI = blob->boundingRect;
 		}
-
 	}else{
 		ofxCvBlob* blob = new ofxCvBlob();
 		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
@@ -169,37 +150,9 @@ void ComponentTracker::setSliderROI(std::vector<ofxCvBlob> blobs){
 			vect.push_back((*blob).boundingRect);
 			ROI = makeBoundingBox(vect);
 		}
-		
 	}
 }
 
-void ComponentTracker::setDialROI(std::vector<ofRectangle> bounds){
-	if(ROIUnset()){
-		ROI = makeBoundingBox(bounds);
-	}else{
-		bounds.push_back(ROI);
-		ROI = makeBoundingBox(bounds);
-	}
-}
-
-void ComponentTracker::setButtonROI(std::vector<ofRectangle> bounds){
-	if(ROIUnset()){
-		ROI = makeBoundingBox(bounds);
-	}else{
-		bounds.push_back(ROI);
-		ROI = makeBoundingBox(bounds);
-	}
-}
-void ComponentTracker::setDpadROI(std::vector<ofRectangle> bounds){}
-
-void ComponentTracker::setScrollWheelROI(std::vector<ofRectangle> bounds){
-	if(ROIUnset()){
-		ROI = makeBoundingBox(bounds);
-	}else{
-		bounds.push_back(ROI);
-		ROI = makeBoundingBox(bounds);
-	}
-}
 float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
 	return	distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
 }

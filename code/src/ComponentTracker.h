@@ -37,12 +37,8 @@ public:
 	bool joystickEventDetected(int* xPosition, int* yPosition);
 	bool dpadEventDetected(Direction* direction);
 	
-	void setROI(std::vector<ofRectangle> bounds);
-	void setSliderROI(std::vector<ofxCvBlob> blobs);
-	void setDialROI(std::vector<ofRectangle> bounds);
-	void setButtonROI(std::vector<ofRectangle> bounds);
-	void setDpadROI(std::vector<ofRectangle> bounds);
-	void setScrollWheelROI(std::vector<ofRectangle> bounds);
+	void setROI(std::vector<ofxCvBlob> blobs);
+
 	void setContourFinder(ofRectangle ROI, int numBlobs);
 	float calculateSliderProgress(ofxCvBlob blob);
 	float calculateDialProgress(std::vector<ofxCvBlob> blobs);

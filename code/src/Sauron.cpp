@@ -342,10 +342,10 @@ ComponentTracker* Sauron::getSauronComponent(){
 	scrollWheel->comptype = ComponentTracker::scroll_wheel;
 	scrollWheel->id = 0;
 	
-	component = button;
-	component = slider;
+	//component = button;
+	//component = slider;
 		//    component = dpad;
-		//component = dial;
+		component = dial;
 		//component = scrollWheel;
 	return component;
 }
@@ -376,28 +376,12 @@ void Sauron::registerComponent(ComponentTracker* ct){
 }
 
 void Sauron::registerButton(ComponentTracker* ct){
-	std::vector<ofRectangle> componentBounds;
-	for(int i = 0; i < contourFinderGrayImage.nBlobs; i++) {
-		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
-		componentBounds.push_back(blob.boundingRect);
-	}		
-	ct->setROI(componentBounds);
+	ct->setROI(contourFinderGrayImage.blobs);
 	ct->numBlobsNeeded = 1;
 }	
 
 void Sauron::registerSlider(ComponentTracker* ct){
-		//capture blob bounds (bgsubtraction should have already been set up with two blobs on either extreme side)
-		// Ideally, we would not need to set up bg subtraction in this way:
-		// we can just bg subtract the position when the user starts "capturing", then track the extreme sides.
-		// we will get a message from solidworks of the form "/slider/1 start" and then there will be movement,
-		// then we will get a message of the form "/slider/1/ done", and there won't be any more movement.
-		// we can just track the max and min x,y values we see between these two messages to get the slider bounds
-	std::vector<ofRectangle> componentBounds;
-	for(int i = 0; i < contourFinderGrayImage.nBlobs; i++) {
-		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
-		componentBounds.push_back(blob.boundingRect);
-	}	
-	ct->setSliderROI(contourFinderGrayImage.blobs);
+	ct->setROI(contourFinderGrayImage.blobs);
 	ct->numBlobsNeeded = 1;
 }
 
@@ -405,23 +389,12 @@ void Sauron::registerDPad(ComponentTracker* ct){
 	
 }
 
-void Sauron::registerDial(ComponentTracker* ct){
-	std::vector<ofRectangle> componentBounds;
-	for(int i = 0; i < contourFinderGrayImage.nBlobs; i++) {
-		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
-		componentBounds.push_back(blob.boundingRect);
-	}		
-	ct->setROI(componentBounds);
+void Sauron::registerDial(ComponentTracker* ct){	
+	ct->setROI(contourFinderGrayImage.blobs);
 	ct->numBlobsNeeded = 1;
 }
 
 void Sauron::registerScrollWheel(ComponentTracker* ct){
-	std::vector<ofRectangle> componentBounds;
-	for(int i = 0; i < contourFinderGrayImage.nBlobs; i++) {
-		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
-		componentBounds.push_back(blob.boundingRect);
-	}	
-	
-	ct->setROI(componentBounds);
+	ct->setROI(contourFinderGrayImage.blobs);
 	ct->numBlobsNeeded = 3;//pending
 }
