@@ -102,7 +102,7 @@ void Sauron::update(){
 						c->setDelta( (float) scrollWheelDirection);
 						break;
 					case ComponentTracker::button:
-						buttonPressed = c->buttonEventDetected();
+						buttonPressed = c->isButtonPressed(contourFinderGrayImage.blobs);
 						c->setDelta( (float) buttonPressed);
 					default:
 						break;
@@ -234,7 +234,6 @@ void Sauron::draw(){
 	for (int i = 0; i < contourFinder.nBlobs; i++){
 		contourFinder.blobs[i].draw(360,540);
 	}
-	
 	for (int i = 0; i < contourFinderGrayImage.nBlobs; i++){
 		contourFinderGrayImage.blobs[i].draw(360,20);
 	}
@@ -243,7 +242,7 @@ void Sauron::draw(){
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
 	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %f\nDial completion angle: %f\nScroll Wheel Direction: %i\nButton Pressed: %d",
-			threshold, contourFinder.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection, buttonPressed);
+			threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection, buttonPressed);
 	ofDrawBitmapString(reportStr, 20, 600);
 }
 
@@ -343,8 +342,8 @@ ComponentTracker* Sauron::getSauronComponent(){
 	scrollWheel->comptype = ComponentTracker::scroll_wheel;
 	scrollWheel->id = 0;
 	
-		//component = button;
-	component = slider;
+	component = button;
+	//component = slider;
 		//    component = dpad;
 		//component = dial;
 		//component = scrollWheel;

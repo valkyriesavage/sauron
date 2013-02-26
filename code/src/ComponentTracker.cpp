@@ -234,7 +234,7 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 }
 
 bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
-	float precisionThreshhold = 0.2f;
+	float precisionThreshhold = 0.5f;
 	if (blobs.size() !=1) {
 		cout<<"error blobs passed into isButtonPressed: " << blobs.size() << endl;
 		return false;
