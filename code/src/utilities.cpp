@@ -36,3 +36,20 @@ ofPoint	midpoint(ofPoint p1, ofPoint p2){
 	result.set(abs(p1.x-p2.x), abs(p1.y-p2.y), 0.0f);
 	return result;
 }
+
+bool getFarthestDisplacedBlob(ofxCvBlob* blob, std::vector<ofxCvBlob> oldBlobs, std::vector<ofxCvBlob> newBlobs, float threshold){
+	int i;
+	float maxDistance = FLT_MIN;
+	for(i = 0; i<min(oldBlobs.size(), newBlobs.size()); i++){
+		ofPoint oldBlobCenter = oldBlobs[i].centroid;
+		ofPoint newBlobCenter = newBlobs[i].centroid;
+		float blobsDistance = distanceFormula(oldBlobCenter.x, oldBlobCenter.y, newBlobCenter.x, newBlobCenter.y);
+		if (blobsDistance > maxDistance ) {
+			maxDistance	= blobsDistance;
+			*blob = newBlobs[i];
+		}
+	}
+	if(maxDistance > threshold){
+		return true;
+	}else return false;
+}

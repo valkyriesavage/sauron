@@ -4,6 +4,7 @@ ComponentTracker::ComponentTracker() {
 	id = -1;
 	mIsRegistered = false;
 	ROI = ofRectangle();
+	mThreshold = 2.0f;//just a guess
 }
 	
 string ComponentTracker::getComponentType(){
@@ -130,7 +131,8 @@ bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
 void ComponentTracker::setROI(std::vector<ofRectangle> bounds){
 	switch (comptype) {
 		case slider:
-			setSliderROI(bounds);break;
+			//setSliderROI(bounds);
+			break;
 		case dial:
 			setDialROI( bounds);break;
 		case button:
@@ -144,12 +146,30 @@ void ComponentTracker::setROI(std::vector<ofRectangle> bounds){
 	}
 	
 }
-void ComponentTracker::setSliderROI(std::vector<ofRectangle> bounds){
+void ComponentTracker::setSliderROI(std::vector<ofxCvBlob> blobs){
+		//ok save all in previous blobs and replace it every time. the blob that changes the most beyond a threshhold is the one we are interested in.
+		//if not set
+	if (previousBlobs.empty()) {
+		previousBlobs = blobs;
+		return;
+	}
 	if(ROIUnset()){
-		ROI = makeBoundingBox(bounds);
+		//if movement is beyond movement threshhold
+		//make a box around the previous and this blobs and set it as roi
+		ofxCvBlob* blob = new ofxCvBlob();
+		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
+			ROI = blob->boundingRect;
+		}
+
 	}else{
-		bounds.push_back(ROI);
-		ROI = makeBoundingBox(bounds);
+		ofxCvBlob* blob = new ofxCvBlob();
+		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
+			std::vector<ofRectangle> vect;
+			vect.push_back(ROI);
+			vect.push_back((*blob).boundingRect);
+			ROI = makeBoundingBox(vect);
+		}
+		
 	}
 }
 

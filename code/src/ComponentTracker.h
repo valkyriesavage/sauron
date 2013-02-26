@@ -22,8 +22,10 @@ public:
 	int id;
 	float delta;
 	bool mIsRegistered;
+	float mThreshold;
     
     std::vector<ofxCvBlob> previousBlobs;
+	std::vector<ofRectangle> previousRectangles;//rectangles are used during the ROI set stage of registration (instead of blobs)
 	
 	bool isRegistered();
 	bool finalizeRegistration();
@@ -36,7 +38,7 @@ public:
 	bool dpadEventDetected(Direction* direction);
 	
 	void setROI(std::vector<ofRectangle> bounds);
-	void setSliderROI(std::vector<ofRectangle> bounds);
+	void setSliderROI(std::vector<ofxCvBlob> blobs);
 	void setDialROI(std::vector<ofRectangle> bounds);
 	void setButtonROI(std::vector<ofRectangle> bounds);
 	void setDpadROI(std::vector<ofRectangle> bounds);

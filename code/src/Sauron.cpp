@@ -343,7 +343,7 @@ ComponentTracker* Sauron::getSauronComponent(){
 	scrollWheel->id = 0;
 	
 	component = button;
-	//component = slider;
+	component = slider;
 		//    component = dpad;
 		//component = dial;
 		//component = scrollWheel;
@@ -397,7 +397,7 @@ void Sauron::registerSlider(ComponentTracker* ct){
 		ofxCvBlob blob = contourFinderGrayImage.blobs.at(i);
 		componentBounds.push_back(blob.boundingRect);
 	}	
-	ct->setROI(componentBounds);
+	ct->setSliderROI(contourFinderGrayImage.blobs);
 	ct->numBlobsNeeded = 1;
 }
 
