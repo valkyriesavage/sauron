@@ -34,6 +34,7 @@ namespace SauronSWPlugin
         public AssemblyDoc swAssembly = null;
         public SelectionMgr swSelectionMgr = null;
         public ConfigurationManager swConfMgr = null;
+        public FeatureManager swFeatureMgr = null;
         public Configuration swConf = null;
         public ISketchManager swSketchMgr = null;
         public Measure measure = null;
@@ -115,6 +116,7 @@ namespace SauronSWPlugin
             measure = swDoc.Extension.CreateMeasure();
             measure.ArcOption = 1; // minimum distance
             mathUtils = swApp.IGetMathUtility();
+            swFeatureMgr = ((FeatureManager)swDoc.FeatureManager);
 
             mainBody = findComponent(swConf.GetRootComponent3(true), "body");
 
@@ -143,6 +145,8 @@ namespace SauronSWPlugin
             IFeature cameraNormalFeature = swSelectionMgr.GetSelectedObject6(1, -1);
             RefPlane cameraNormalPlane = cameraNormalFeature.GetSpecificFeature2();
             MathTransform cameraTransform = cameraNormalPlane.Transform;
+            //TODO : test me!
+            //MathTransform reversedCameraTransform = mathUtils.ICreateTransform(-1 * cameraTransform.ArrayData);
             double[] canonicalRay = { 0, 0, 1 };
             MathVector normalVector = mathUtils.CreateVector(canonicalRay);
             MathVector cameraDirection = normalVector.MultiplyTransform(cameraTransform);
@@ -216,28 +220,22 @@ namespace SauronSWPlugin
                 (int)swSetValueInConfiguration_e.swSetValue_InSpecificConfigurations,
                 new string[] { comp.ReferencedConfiguration });
 
-            swApp.IActiveDoc2.EditRebuild3();
+            swFeatureMgr.EditRollback((int)swMoveRollbackBarTo_e.swMoveRollbackBarToEnd, feat.Name);
+
+            swAssembly.EditRebuild();
+            swDoc.ForceRebuild3(false);
         }
 
-        private void setDepthInConfig(Component2 swComponent, IConfiguration configToEdit, IFeature extrusionFeature, double depth)
+        private double distanceBetween(Component2 component, Component2 otherComponent)
         {
-            ExtrudeFeatureData2 extrusion = (ExtrudeFeatureData2)extrusionFeature.GetDefinition();
-            extrusion.AccessSelections(swAssembly, swComponent);
-            
-            extrusion.SetDepth(true, depth);
-            extrusionFeature.ModifyDefinition(extrusion, swDoc, swComponent);
-            
-            extrusion.SetChangeToConfigurations((int)swInConfigurationOpts_e.swSpecifyConfiguration,
-                                                new string[] { configToEdit.Name });
-            extrusion.SetChangeToConfigurations((int)swInConfigurationOpts_e.swThisConfiguration,
-                                                new string[] { });
-
-            extrusion.ReleaseSelectionAccess();
-
-            swDoc.EditRebuild3();
-            swDoc.ForceRebuild3(true);
-            swAssembly.EditRebuild();
-            swAssembly.EditAssembly();
+            double distance;
+            double pt1, pt2;
+            // does not work ((Entity)component).GetDistance(otherComponent, bmin, null, out (object)pt1, out (object)pt2, out distance);
+            distance = swDoc.IClosestDistance(component, otherComponent, out pt1, out pt2);
+            component.Select(false);
+            otherComponent.Select(true);
+            measure.Calculate(null);
+            return measure.Distance;
         }
 
         private bool lengthenFlag(Component2 swComponent, IConfiguration configToEdit)
@@ -257,48 +255,24 @@ namespace SauronSWPlugin
             double originalDepth = extrusion.GetDepth(true);
             double defaultDepth = inchesToMeters(.15);
 
-            double distance;
-            //swComponent.Select(false);
-            //camera.fieldOfView.Select(true);
-            //measure.Calculate(null);
-            double pt1, pt2;
-            distance = swDoc.IClosestDistance(swComponent, camera.fieldOfView, out pt1, out pt2);
-            //distance = Math.Sqrt(measure.DeltaX * measure.DeltaX + measure.DeltaY * measure.DeltaY + measure.DeltaZ * measure.DeltaZ) + originalDepth;
-            //setDepthInConfig(swComponent, configToEdit, extrusionFeature, distance);
-            swApp.SendMsgToUser2(/*"distance from measure = " + distance + */" and distance from iclosestdistance = " + distance, 1, 1);
-            updateExtrudeDepth(extrusionFeature, distance);
+            double distance = distanceBetween(swComponent, camera.fieldOfView);
+            updateExtrudeDepth(extrusionFeature, distance + originalDepth);
 
-            swAssembly.EditRebuild();
-            swDoc.ForceRebuild3(false);
-
-            swComponent.Select(false);
-            camera.fieldOfView.Select(true);
-            measure.Calculate(null);
-
-            swAssembly.EditAssembly();
-            swDoc.ClearSelection2(true);
-
-            if (!(swDoc.IClosestDistance(swComponent, camera.fieldOfView, out pt1, out pt2) < threshold))
+            if (!(distanceBetween(swComponent, camera.fieldOfView) < threshold))
             {
-                //setDepthInConfig(swComponent, configToEdit, extrusionFeature, defaultDepth);
                 updateExtrudeDepth(extrusionFeature, defaultDepth);
-                swApp.SendMsgToUser2("backed off " + swComponent.Name + " : we aren't intersecting the FOV (" + swDoc.IClosestDistance(swComponent, camera.fieldOfView, out pt1, out pt2) + ")", 1, 1);
                 return false;
             }
 
             // we are intersecting successfully, but we need to make sure to check we aren't intersecting anything else...
             foreach (Component2 otherComponent in allSolidComponents)
             {
-                if (otherComponent.Equals(swComponent) || otherComponent.Equals(camera.fieldOfView))
+                if (otherComponent.Equals(swComponent) || otherComponent.Equals(camera.fieldOfView) || otherComponent.Equals(mainBody))
                 {
                     continue;
                 }
-                /*otherComponent.Select(false);
-                swComponent.Select(true);
-                measure.Calculate(null);*/
-                if (/*measure.Distance*/swDoc.IClosestDistance(otherComponent, swComponent, out pt1, out pt2) < threshold)
+                if (distanceBetween(swComponent, otherComponent) < threshold)
                 {
-                    //setDepthInConfig(swComponent, configToEdit, extrusionFeature, defaultDepth);
                     updateExtrudeDepth(extrusionFeature, defaultDepth);
                     swApp.SendMsgToUser2("backed off " + swComponent.Name + " : we intersected with " + otherComponent.Name, 1, 1);
                     return false;
@@ -308,16 +282,32 @@ namespace SauronSWPlugin
             return true;
         }
 
-        private void createPointSketchOnSurface(Component2 swComponent, MathPoint point)
+        private void createMirrorExtrusion(Component2 swComponent, Face2 intersectedFace, MathPoint point)
         {
+            double mirrorWidth = inchesToMeters(1);
+            double[] pointLocation = (double[]) point.ArrayData;
+
+            MathVector normal = mathUtils.CreateVector(new double[] { 0, 0, 1 });
             swComponent.Select(false);
+            swSelectionMgr.SetSelectionPoint2(0, -1, pointLocation[0], pointLocation[1], pointLocation[2]);
             swSketchMgr.InsertSketch(true);
-            swSketchMgr.CreatePoint(point.ArrayData[0], point.ArrayData[1], point.ArrayData[2]);
-            swSketchMgr.InsertSketch(true);
-            swComponent.DeSelect();
+            double[] projectedPointDescription = (double[]) intersectedFace.GetClosestPointOn(pointLocation[0], pointLocation[1], pointLocation[2]);
+            swSketchMgr.CreatePoint(projectedPointDescription[0], projectedPointDescription[1], projectedPointDescription[2]);
+            ISketchSegment[] mirrorRect = swSketchMgr.CreateCenterRectangle(pointLocation[0], pointLocation[1], pointLocation[2],
+                                                                            pointLocation[0] + mirrorWidth, pointLocation[1] + mirrorWidth, pointLocation[2]);
+            
+            swFeatureMgr.FeatureExtrusion2(true, false, false,
+                                           0, 0, 0.00254, 0.00254,
+                                           false, false, false, false,
+                                           0, 0,
+                                           false, false, false, false, true, true, true,
+                                           0, 0,
+                                           false);
+
+            swDoc.ClearSelection2(true);
         }
 
-        private MathPoint intersectsComponentSomewhere(Component2 swComponent, MathPoint rayPoint, MathVector rayDir)
+        private bool intersectsComponentSomewhere(Component2 swComponent, MathPoint rayPoint, MathVector rayDir, out MathPoint intersectionPoint, out Face2 intersectedFace)
         {
             /**  
              * Translated partially from https://forum.solidworks.com/message/269272 
@@ -325,7 +315,9 @@ namespace SauronSWPlugin
              * TODO : only look to see if we are intersecting the FLAG THING.  we don't care about the rest of the object!
              */
 
-            MathPoint intersectionPoint = null;
+            intersectionPoint = null;
+            intersectedFace = null;
+
             object vBodyInfo;
             int[] bodiesInfo = null;
 
@@ -336,33 +328,33 @@ namespace SauronSWPlugin
             foreach (object vBody in vBodies)
             {
                 Body2 body = (Body2)vBody;
-                Face2 face = body.GetFirstFace();
+                intersectedFace = body.GetFirstFace();
 
                 if (!body.Name.Contains("flag"))
                 {
                     continue;
                 }
 
-                while (face != null && intersectionPoint == null)
+                while (intersectedFace != null && intersectionPoint == null)
                 {
-                    intersectionPoint = face.GetProjectedPointOn(rayPoint, rayDir);
+                    intersectionPoint = intersectedFace.GetProjectedPointOn(rayPoint, rayDir);
                     if (intersectionPoint != null && intersectionPoint.ArrayData != null)
                     {
                         double[] intersectCoords = (double[]) intersectionPoint.ArrayData;
                         swApp.SendMsgToUser2("HUZFUCKINGZAH, we intersected with " + swComponent.Name + " at " + intersectCoords[0] + "," + intersectCoords[1] + "," + intersectCoords[2], 1, 1);
                     }
-                    face = face.IGetNextFace();
+                    intersectedFace = intersectedFace.IGetNextFace();
                 }
 
                 if (intersectionPoint != null)
                 {
-                    createPointSketchOnSurface(swComponent, intersectionPoint);
+                    createMirrorExtrusion(swComponent, intersectedFace, intersectionPoint);
                     break;
                 }
                 i++;
             }
 
-            return intersectionPoint;
+            return (intersectionPoint != null);
         }
 
         private bool placeMirror(Component2 swComponent, IConfiguration configToEdit)
@@ -378,11 +370,11 @@ namespace SauronSWPlugin
             int[] bodiesInfo = null;
             
             MathPoint intersectionPoint = null;
+            Face2 intersectedFace = null;
 
             foreach (MathVector cameraRayVector in camera.rayVectors())
             {
-                intersectionPoint = intersectsComponentSomewhere(swComponent, camera.centreOfVision, cameraRayVector);
-                if (intersectionPoint != null)
+                if (intersectsComponentSomewhere(swComponent, camera.centreOfVision, cameraRayVector, out intersectionPoint, out intersectedFace))
                 {
                     break;
                 }
@@ -397,6 +389,8 @@ namespace SauronSWPlugin
                 vBodies = mainBody.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
                 bodiesInfo = (int[])vBodyInfo;
 
+                bool intersecting = false;
+
                 foreach (MathVector cameraRayVector in camera.rayVectors())
                 {
                     foreach (object vBody in vBodies)
@@ -404,7 +398,7 @@ namespace SauronSWPlugin
                         Body2 body = (Body2)vBody;
                         Face2 face = body.GetFirstFace();
 
-                        while (face != null && intersectionPoint == null)
+                        while (face != null && !intersecting)
                         {
                             Surface surface = face.IGetSurface();
                             if (surface == null)
@@ -427,19 +421,19 @@ namespace SauronSWPlugin
                             double[] reflectionDir = camera.calculateReflectionDir(xyz);
                             reflectionVector = mathUtils.CreateVector(reflectionDir);
 
-                            intersectionPoint = intersectsComponentSomewhere(swComponent, reflectionPoint, reflectionVector);
+                            bool intersected = intersectsComponentSomewhere(swComponent, reflectionPoint, reflectionVector, out intersectionPoint, out intersectedFace);
 
                             face = face.IGetNextFace();
                         }
 
-                        if (intersectionPoint != null)
+                        if (intersecting)
                         {
                             // put a mirror on the face at reflectionPoint
-                            createPointSketchOnSurface(swComponent, reflectionPoint);
+                            createMirrorExtrusion(swComponent, intersectedFace, reflectionPoint);
                             break;
                         }
                     }
-                    if (intersectionPoint != null)
+                    if (intersecting)
                     {
                         break;
                     }
@@ -448,48 +442,6 @@ namespace SauronSWPlugin
             }
 
             return intersectionPoint != null;
-        }
-
-        public void traverseFeatures(Feature swFeat, List<FeatureIdentifier> toModify, String featureName = "flag")
-        {
-            while ((swFeat != null))
-            {
-                if (swFeat.Name.Equals(featureName))
-                {
-                    FeatureIdentifier fi = new FeatureIdentifier();
-                    fi.feature = swFeat;
-                    fi.component = null;
-                    toModify.Add(fi);
-                }
-
-                swFeat = (Feature)swFeat.GetNextFeature();
-            }
-        }
-
-        public void traverseComponentFeatures(Component2 swComp, List<FeatureIdentifier> found)
-        {
-            Feature swFeat;
-            swFeat = (Feature)swComp.FirstFeature();
-            traverseFeatures(swFeat, found);
-            foreach (FeatureIdentifier fi in found)
-            {
-                if (fi.component == null)
-                {
-                    fi.component = swComp;
-                }
-            }
-        }
-
-        public void traverseComponentFeatures(Component2 swComp, List<FeatureIdentifier> found, String featureName)
-        {
-            Feature swFeat;
-            swFeat = (Feature)swComp.FirstFeature();
-            traverseFeatures(swFeat, found, featureName);
-            FeatureIdentifier fi = found.ElementAt(0);
-            if (fi.component != null)
-            {
-                fi.component = swComp;
-            }
         }
 
         private Component2 findComponent(Component2 swComp, String searchFor)
@@ -514,7 +466,6 @@ namespace SauronSWPlugin
         {
             object[] vChildComp;
             Component2 swChildComp;
-            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
             int i;
 
             vChildComp = (object[])swComp.GetChildren();
@@ -523,12 +474,15 @@ namespace SauronSWPlugin
                 swChildComp = (Component2)vChildComp[i];
                 if (swChildComp.Name2.Equals(componentName))
                 {
-                    traverseComponentFeatures(swChildComp, found, featureName);
+                    Feature f = swChildComp.FeatureByName(featureName);
+                    if (f != null)
+                    {
+                        FeatureIdentifier fi = new FeatureIdentifier();
+                        fi.component = swChildComp;
+                        fi.feature = f;
+                        return fi;
+                    }
                 }
-            }
-            if (found.Count > 0)
-            {
-                return found.ElementAt(0);
             }
             return null;
         }
@@ -547,7 +501,14 @@ namespace SauronSWPlugin
                 {
                     if (swChildComp.Name2.Contains(compName))
                     {
-                        traverseComponentFeatures(swChildComp, found);
+                        Feature flag = swChildComp.FeatureByName("flag");
+                        if (flag != null)
+                        {
+                            FeatureIdentifier fi = new FeatureIdentifier();
+                            fi.component = swChildComp;
+                            fi.feature = flag;
+                            found.Add(fi);
+                        }
                     }
                 }
             }
@@ -615,8 +576,8 @@ namespace SauronSWPlugin
             {
                 IConfiguration newConfig = createNewConfiguration(f.component);
                 componentsForSensing.Add(new ComponentIdentifier(f.component));
-                bool success = lengthenFlag(f.component, newConfig); // false (for testing)
-                /*if (!success)
+                bool success = lengthenFlag(f.component, newConfig);
+                if (!success)
                 {
                     // try placing a mirror for it
                     success = placeMirror(f.component, newConfig);
@@ -625,7 +586,7 @@ namespace SauronSWPlugin
                         // cry
                         swApp.SendMsgToUser2("we can't seem to see component " + f.component.Name + " you will have to move it", 1, 1);
                     }
-                }*/
+                }
                 // TODO : TAKE ME OUT!  I AM FOR TESTING PURPOSES ONLY!
                 //break;
             }
