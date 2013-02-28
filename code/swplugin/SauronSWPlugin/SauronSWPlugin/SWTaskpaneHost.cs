@@ -45,14 +45,16 @@ namespace SauronSWPlugin
         private Component2 mainBody = null;
         private String[] ourComponents = { "button-4post", "dial", "joystick-all-pieces", "slider", "scroll-wheel", "dpad" };
 
-        private static readonly int Port = 5001;
-        IPEndPoint sourceEndPoint;
+        private static readonly int SENDPORT = 5001;
+        private static readonly int RECEIVEPORT = 5002;
+        IPEndPoint solidworksPlugin;
+        IPEndPoint openFrameworks;
         OscServer server;
 
         private Camera camera = null;
 
         private List<Component2> allSolidComponents = null;
-        private List<ComponentIdentifier> componentsForSensing = new List<ComponentIdentifier>();
+        private List<ComponentIdentifier> allOurComponents = null;
 
         public SWTaskpaneHost()
         {
@@ -62,8 +64,9 @@ namespace SauronSWPlugin
 
         private void initOSC()
         {
-            sourceEndPoint = new IPEndPoint(IPAddress.Loopback, Port);
-            server = new OscServer(TransportType.Udp, IPAddress.Loopback, Port + 1);
+            solidworksPlugin = new IPEndPoint(IPAddress.Loopback, RECEIVEPORT);
+            openFrameworks = new IPEndPoint(IPAddress.Loopback, SENDPORT);
+            server = new OscServer(TransportType.Udp, IPAddress.Loopback, RECEIVEPORT);
             server.FilterRegisteredMethods = false;
             server.MessageReceived += new EventHandler<OscMessageReceivedEventArgs>(receivedMessage);
             server.ConsumeParsingExceptions = false;
@@ -77,26 +80,20 @@ namespace SauronSWPlugin
                 return;
             }
 
-            OscBundle bundle = new OscBundle(sourceEndPoint);
-
-            OscMessage message = new OscMessage(sourceEndPoint, address);
-            message.Append(data);
-            bundle.Append(message);
-
-            bundle.Send();
+            OscMessage message = new OscMessage(solidworksPlugin, address, data);
+            message.Send(openFrameworks);
         }
 
         private void receivedMessage(object sender, OscMessageReceivedEventArgs e)
         {
             OscMessage message = e.Message;
-            String address = message.Address;
-            float data = float.Parse((string)message.Data[0], System.Globalization.CultureInfo.InvariantCulture);
+            string address = message.Address;
+            float data = (float) message.Data[0];
 
-            foreach (ComponentIdentifier ci in componentsForSensing)
+            foreach (ComponentIdentifier ci in allOurComponents)
             {
                 if (ci.isAddressedAs(address))
                 {
-                    // TODO
                     ci.component.Select(false);
                 }
             }
@@ -120,7 +117,8 @@ namespace SauronSWPlugin
 
             mainBody = findComponent(swConf.GetRootComponent3(true), "body");
 
-            allSolidComponents = allComponents();
+            allSolidComponents = getAllComponents();
+            allOurComponents = getAllOurComponents();
 
             swAssembly.EditAssembly();
         }
@@ -128,12 +126,17 @@ namespace SauronSWPlugin
         private void getFOV()
         {
             Component2 fieldOfView = findComponent(swConf.GetRootComponent3(true), Camera.FOV);
-            
-            // figure out the rays' source, i.e. the centre of the camera sensor
-            // see https://forum.solidworks.com/thread/60491
+
             swDoc.Extension.SelectByID2("centre of vision@" + fieldOfView.GetSelectByIDString(),
                                         "DATUMPOINT", 0, 0, 0, false, 0, null, 0);
             IFeature centreOfVisionFeature = swSelectionMgr.GetSelectedObject6(1, -1) as IFeature;
+
+            if (centreOfVisionFeature == null)
+            {
+                swApp.SendMsgToUser2("you need to insert the camera first!", 1, 1);
+                return;
+            }
+
             IRefPoint centreOfVisionPoint = centreOfVisionFeature.GetSpecificFeature2() as IRefPoint;
             IMathPoint centreOfVision = centreOfVisionPoint.GetRefPoint() as IMathPoint;
             swDoc.ClearSelection2(true);
@@ -145,7 +148,7 @@ namespace SauronSWPlugin
             IFeature cameraNormalFeature = swSelectionMgr.GetSelectedObject6(1, -1);
             RefPlane cameraNormalPlane = cameraNormalFeature.GetSpecificFeature2();
             MathTransform cameraTransform = cameraNormalPlane.Transform;
-            //TODO : test me!
+            //TODO : fix me! i can't do this multiplication sadly :(
             //MathTransform reversedCameraTransform = mathUtils.ICreateTransform(-1 * cameraTransform.ArrayData);
             double[] canonicalRay = { 0, 0, 1 };
             MathVector normalVector = mathUtils.CreateVector(canonicalRay);
@@ -462,33 +465,10 @@ namespace SauronSWPlugin
             return null;
         }
 
-        private FeatureIdentifier findFeature(Component2 swComp, String componentName, String featureName)
+        private List<ComponentIdentifier> getAllOurComponents()
         {
-            object[] vChildComp;
-            Component2 swChildComp;
-            int i;
-
-            vChildComp = (object[])swComp.GetChildren();
-            for (i = 0; i < vChildComp.Length; i++)
-            {
-                swChildComp = (Component2)vChildComp[i];
-                if (swChildComp.Name2.Equals(componentName))
-                {
-                    Feature f = swChildComp.FeatureByName(featureName);
-                    if (f != null)
-                    {
-                        FeatureIdentifier fi = new FeatureIdentifier();
-                        fi.component = swChildComp;
-                        fi.feature = f;
-                        return fi;
-                    }
-                }
-            }
-            return null;
-        }
-
-        private void findModifiable(Component2 swComp, List<FeatureIdentifier> found)
-        {
+            List<ComponentIdentifier> found = new List<ComponentIdentifier>();
+            Component2 swComp = swConf.GetRootComponent3(true);
             object[] vChildComp;
             Component2 swChildComp;
             int i;
@@ -501,17 +481,11 @@ namespace SauronSWPlugin
                 {
                     if (swChildComp.Name2.Contains(compName))
                     {
-                        Feature flag = swChildComp.FeatureByName("flag");
-                        if (flag != null)
-                        {
-                            FeatureIdentifier fi = new FeatureIdentifier();
-                            fi.component = swChildComp;
-                            fi.feature = flag;
-                            found.Add(fi);
-                        }
+                        found.Add(new ComponentIdentifier(swChildComp));
                     }
                 }
             }
+            return found;
         }
 
         private bool isBody(Component2 swComponent) {
@@ -520,7 +494,7 @@ namespace SauronSWPlugin
             return bodiesInfo != null && ((int[])bodiesInfo).Length > 0;
         }
 
-        private List<Component2> allComponents()
+        private List<Component2> getAllComponents()
         {
             List<Component2> allComponents = new List<Component2>();
             Component2 swComp = swConf.GetRootComponent3(true);
@@ -568,23 +542,18 @@ namespace SauronSWPlugin
                 return;
             }
 
-            // traverse the tree, searching for components with our names; these are ours
-            List<FeatureIdentifier> found = new List<FeatureIdentifier>();
-            findModifiable(swConf.GetRootComponent3(true), found);
-
-            foreach (FeatureIdentifier f in found)
+            foreach (ComponentIdentifier c in allOurComponents)
             {
-                IConfiguration newConfig = createNewConfiguration(f.component);
-                componentsForSensing.Add(new ComponentIdentifier(f.component));
-                bool success = lengthenFlag(f.component, newConfig);
+                IConfiguration newConfig = createNewConfiguration(c.component);
+                bool success = false;//lengthenFlag(c.component, newConfig);
                 if (!success)
                 {
                     // try placing a mirror for it
-                    success = placeMirror(f.component, newConfig);
+                    success = placeMirror(c.component, newConfig);
                     if (!success)
                     {
                         // cry
-                        swApp.SendMsgToUser2("we can't seem to see component " + f.component.Name + " you will have to move it", 1, 1);
+                        swApp.SendMsgToUser2("we can't seem to see component " + c.component.Name + " you will have to move it", 1, 1);
                     }
                 }
                 // TODO : TAKE ME OUT!  I AM FOR TESTING PURPOSES ONLY!
@@ -600,8 +569,6 @@ namespace SauronSWPlugin
         {
             // a place for me to copy/paste from macros and not hurt anything
             getModelDoc();
-
-
         }
 
         private void test_mode_Click(object sender, EventArgs e)
@@ -626,7 +593,7 @@ namespace SauronSWPlugin
         private void register_Click(object sender, EventArgs e)
         {
             getModelDoc();
-            foreach (ComponentIdentifier c in componentsForSensing)
+            foreach (ComponentIdentifier c in allOurComponents)
             {
                 // we want to process this appropriately: send it to Colin
                 sendMessage(c.OSC_string, "register");
@@ -675,10 +642,25 @@ namespace SauronSWPlugin
         private void testPart_Click(object sender, EventArgs e)
         {
             getModelDoc();
-            getFOV();
-            foreach (Component2 comp in allSolidComponents)
+
+            String message = "10.0";
+            float data = float.Parse(message, System.Globalization.CultureInfo.InvariantCulture);
+            string address = "/button/0";
+
+            swApp.SendMsgToUser2("we have " + allOurComponents.Count() + " components to deal with", 1, 1);
+            swApp.SendMsgToUser2("we got " + message + " on " + address, 1, 1);
+
+            foreach (ComponentIdentifier ci in allOurComponents)
             {
-                swApp.SendMsgToUser2(comp.Name, 1, 1);
+                if (ci.isAddressedAs(address))
+                {
+                    swApp.SendMsgToUser2("yay!!!!!!!", 1, 1);
+                    ci.component.Select(false);
+                }
+                else
+                {
+                    swApp.SendMsgToUser2("whoops, that is addressed as " + ci.ToString(), 1, 1);
+                }
             }
         }
     }
