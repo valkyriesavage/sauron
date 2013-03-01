@@ -7,7 +7,7 @@
 #pragma once
 class ComponentTracker {
 public:
-	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel};
+	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel, unknown};
 	
 	enum Direction {up, down, left, right, none};
 	

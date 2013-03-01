@@ -5,6 +5,7 @@ ComponentTracker::ComponentTracker() {
 	mIsRegistered = false;
 	ROI = ofRectangle();
 	mThreshold = 2.0f;//just a guess
+	comptype = ComponentTracker::unknown;
 }
 
 ComponentTracker::ComponentTracker(ComponentType type, int id){
@@ -35,6 +36,9 @@ string ComponentTracker::getComponentType(){
 			break;
 		case ComponentTracker::scroll_wheel:
 			return "scroll_wheel";
+			break;
+		case ComponentTracker::unknown:
+			return "unknown_component";
 			break;
 		default:
 			return "unknown_component";
