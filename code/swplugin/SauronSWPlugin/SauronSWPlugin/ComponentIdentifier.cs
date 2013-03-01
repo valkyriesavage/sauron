@@ -52,7 +52,8 @@ namespace SauronSWPlugin
             }
         }
 
-        public string toString()
+        override
+        public string ToString()
         {
             return this.OSC_string;
         }
@@ -62,7 +63,7 @@ namespace SauronSWPlugin
             if (o.GetType() == this.GetType())
             {
                 ComponentIdentifier ci = (ComponentIdentifier)o;
-                if (ci.toString().Equals(this.toString()))
+                if (ci.ToString().Equals(this.ToString()))
                 {
                     return true;
                 }
@@ -72,7 +73,7 @@ namespace SauronSWPlugin
 
         public bool isAddressedAs(String address)
         {
-            return this.toString().Equals(address);
+            return this.ToString().CompareTo(address) == 0;
         }
     }
 }
