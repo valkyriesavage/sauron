@@ -14,17 +14,21 @@ void Sauron::setup(){
 	colorImg.allocate(320,240);
 	grayImage.allocate(320,240);
 	
-	threshold = 225;//threshold is such to account for the next camera and brightness
-	mNumBlobsConsidered = 10;//just an arbitrary number
+	threshold = 225;//threshold is such to account for the new camera and brightness
+	mNumBlobsConsidered = 10;//just an arbitrary number high enough to capture all components
 	
 	registering = false;
 	int numComponents = 4;
 	components.reserve(numComponents);
 	
-	sliderProgress = -1.0f;
-	dialProgress = -1.0f;
-	scrollWheelDirection = ComponentTracker::none;
-	buttonPressed = false;
+	const char* notRegistered = "not registered";
+	
+	sprintf(mSliderProgress, "%s", notRegistered);
+	sprintf(mDialProgress,"%s", notRegistered);
+	sprintf(mScrollWheelDirection, "%s", notRegistered);
+	sprintf(mButtonPressed,"%s", notRegistered);
+	sprintf(mJoystickLocation, "%s", notRegistered);
+	
 	
 	receiver.setup(PORT);
 	sender.setup(HOST, PORT+1);
@@ -59,33 +63,30 @@ void Sauron::update(){
 		if(registering){
 			sauronRegister();
 		}
-		
-		std:vector<ofxCvBlob> dialBlobs;
 
 		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
 			ComponentTracker* c = *it;
 			if(c->isRegistered()){
 				switch (c->comptype) {
 					case ComponentTracker::slider:
-						sliderProgress = c->calculateSliderProgress(contourFinderGrayImage.blobs);
-						c->setDelta(sliderProgress);
+						sprintf(mSliderProgress, "%f", c->calculateSliderProgress(contourFinderGrayImage.blobs));
+						c->setDelta(mSliderProgress);
 						break;
 					case ComponentTracker::dial:
-						dialProgress = c->calculateDialProgress(contourFinderGrayImage.blobs);
-						c->setDelta(dialProgress);
+						sprintf(mDialProgress, "%f", c->calculateDialProgress(contourFinderGrayImage.blobs));
+						c->setDelta(mDialProgress);
 						break;
 					case ComponentTracker::scroll_wheel:
-						scrollWheelDirection = c->calculateScrollWheelDirection(contourFinderGrayImage.blobs);
-						c->setDelta( (float) scrollWheelDirection);
+						sprintf(mScrollWheelDirection,"%s", c->EnumDirectionToString(c->calculateScrollWheelDirection(contourFinderGrayImage.blobs)));
+						c->setDelta( mScrollWheelDirection);
 						break;
 					case ComponentTracker::button:
-						buttonPressed = c->isButtonPressed(contourFinderGrayImage.blobs);
-						c->setDelta( (float) buttonPressed);
+						sprintf(mButtonPressed, "%i", c->isButtonPressed(contourFinderGrayImage.blobs));
+						c->setDelta(mButtonPressed);
 						break;
 					case ComponentTracker::joystick:
-						mJoystickLocation = c->measureJoystickLocation(contourFinderGrayImage.blobs);
-					//	c->setDelta( (ofPoint) mJoystickLocation);
-					//TODO: set up how to send joystick info to SW
+						sprintf(mJoystickLocation, "%s", ofPointToA(c->measureJoystickLocation(contourFinderGrayImage.blobs)).c_str());
+						c->setDelta(mJoystickLocation);
 						break;
 					default:
 						
@@ -93,22 +94,22 @@ void Sauron::update(){
 				}
 			}
 		}	
-			if(testing) {
-				for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
-					ComponentTracker* component = *it;
-					string componentType = component->getComponentType();
-					int id = component->id;
-					float delta = component->getDelta();
-					char idstr[21]; // enough to hold all numbers up to 64-bits
-					sprintf(idstr, "%d", id);
-					
-					ofxOscMessage m;
-					m.setRemoteEndpoint(HOST, PORT+1);
-					m.setAddress(componentType + "/" + idstr);
-					m.addFloatArg(delta);
-					sender.sendMessage(m);
-				}
+		if(testing) {
+			for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
+				ComponentTracker* component = *it;
+				string componentType = component->getComponentType();
+				int id = component->id;
+				string delta = component->getDelta();
+				char idstr[21]; // enough to hold all numbers up to 64-bits
+				sprintf(idstr, "%d", id);
+				
+				ofxOscMessage m;
+				m.setRemoteEndpoint(HOST, PORT+1);
+				m.setAddress(componentType + "/" + idstr);
+				m.addStringArg(delta);
+				sender.sendMessage(m);
 			}
+		}
 		
 	}
 	
@@ -207,8 +208,8 @@ void Sauron::draw(){
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
 	const char* ctype = currentRegisteringComponent->getComponentType().c_str();
-	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %f\nDial completion angle: %f\nScroll Wheel Direction: %i\nButton Pressed: %d\nJoystick Location: (%f, %f)",
-			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, sliderProgress, dialProgress, scrollWheelDirection, buttonPressed, mJoystickLocation.x, mJoystickLocation.y);
+	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s",
+			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation);
 	ofDrawBitmapString(reportStr, 20, 600);
 }
 
@@ -273,7 +274,7 @@ void Sauron::stopRegistrationMode(){
 void Sauron::sauronRegister(){
 	if (currentRegisteringComponent->isRegistered()) {
 			//hey man, you've already registered this. TODO: setup some error here
-			//		return; but for now, reregistration is possible
+			//TODO: reregistration is possible since we don't actually check with Sauron whether this component is registered (we are checking the component which doesn't really make sense).
 	}else{
 		registerComponent(currentRegisteringComponent);
 	}

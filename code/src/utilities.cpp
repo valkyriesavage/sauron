@@ -54,3 +54,8 @@ bool getFarthestDisplacedBlob(ofxCvBlob* blob, std::vector<ofxCvBlob> oldBlobs, 
 	}else return false;
 }
 
+string ofPointToA(ofPoint pt){
+	std::ostringstream temp;
+    temp << "ofPoint(" << pt.x << ", " << pt.y << ")"; 
+    return temp.str();
+}

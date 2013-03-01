@@ -50,11 +50,11 @@ class Sauron : public ofBaseApp{
 	ComponentTracker* currentRegisteringComponent;
 	std::vector<ofxCvBlob> blobsCaptured;//assists with registration
 
-	float sliderProgress;
-	float dialProgress;
-	ComponentTracker::Direction scrollWheelDirection;
-	bool buttonPressed;
-	ofPoint	mJoystickLocation;
+	char mSliderProgress[128];
+	char mDialProgress[128];
+	char mScrollWheelDirection[128];
+	char mButtonPressed[128];
+	char mJoystickLocation[128];
 
 	ofxOscReceiver receiver;
 	ofxOscSender sender;

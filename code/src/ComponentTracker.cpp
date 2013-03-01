@@ -69,6 +69,28 @@ string ComponentTracker::getComponentType(){
 	}
 }
 
+const char* ComponentTracker::EnumDirectionToString(ComponentTracker::Direction dir){
+switch (dir) {
+	case ComponentTracker::up:
+		return "up";
+		break;
+	case ComponentTracker::down:
+		return "down";
+		break;
+	case ComponentTracker::left:
+		return "left";
+		break;
+	case ComponentTracker::right:
+		return "right";
+		break;
+	case ComponentTracker::none:
+		return "none";
+		break;
+	default:
+		break;
+}	
+}
+
 bool ComponentTracker::isRegistered(){
 	return mIsRegistered;
 }
@@ -288,11 +310,11 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 	return ofPoint(-1, -1);
 }
 
-float ComponentTracker::getDelta(){
+string ComponentTracker::getDelta(){
 	return delta;
 }
 
-void ComponentTracker::setDelta(float f){
+void ComponentTracker::setDelta(string f){
 	this->delta = f;
 }
 

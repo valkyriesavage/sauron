@@ -15,13 +15,14 @@ public:
     ComponentTracker();
 	ComponentTracker(ComponentType type, int id);
 	string getComponentType();
+	const char*  EnumDirectionToString(ComponentTracker::Direction dir);
 	ofxCvContourFinder contourFinder;
 	ComponentType comptype;
 	CvRect regionOfInterest;
 	ofRectangle ROI;//there's a bit of ambiguity with regionOfInterest. Not sure why regionOfInterest is a CvRect rather than a ofRectangle
 	int numBlobsNeeded;
 	int id;
-	float delta;
+	string delta;
 	bool mIsRegistered;
 	float mThreshold;
     
@@ -47,8 +48,8 @@ public:
 	bool isButtonPressed(std::vector<ofxCvBlob> blobs);
 	ofPoint measureJoystickLocation(std::vector<ofxCvBlob> blobs);
 	
-	float getDelta();
-	void setDelta(float f);
+	string getDelta();
+	void setDelta(string f);
 	
 	bool ROIUnset();
 	
