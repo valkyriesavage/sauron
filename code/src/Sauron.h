@@ -46,17 +46,13 @@ class Sauron : public ofBaseApp{
 	ofxCvColorImage			colorImg;
 
 	ofxCvGrayscaleImage 	grayImage;
-	ofxCvGrayscaleImage 	grayBg;
-	ofxCvGrayscaleImage 	grayDiff;
-
-	ofxCvContourFinder 	contourFinder;
 	
 	ofxCvContourFinder	contourFinderGrayImage;
 
 	int 				threshold;
-	bool				bLearnBakground;
 	bool				registering;
 	bool				testing;//just since we are testing testing
+	int					mNumBlobsConsidered;
 
 	std::vector<ComponentTracker*> components;
 	ComponentTracker* currentRegisteringComponent;

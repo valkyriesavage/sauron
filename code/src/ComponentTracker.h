@@ -13,6 +13,7 @@ public:
 	
 
     ComponentTracker();
+	ComponentTracker(ComponentType type, int id);
 	string getComponentType();
 	ofxCvContourFinder contourFinder;
 	ComponentType comptype;

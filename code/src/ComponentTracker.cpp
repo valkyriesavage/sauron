@@ -6,6 +6,15 @@ ComponentTracker::ComponentTracker() {
 	ROI = ofRectangle();
 	mThreshold = 2.0f;//just a guess
 }
+
+ComponentTracker::ComponentTracker(ComponentType type, int id){
+	mIsRegistered = false;
+	ROI = ofRectangle();
+	mThreshold = 2.0f;//just a guess
+	
+	this->id = id;
+	this->comptype = type;
+}
 	
 string ComponentTracker::getComponentType(){
 	switch (this->comptype) {

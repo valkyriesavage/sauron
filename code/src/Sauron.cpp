@@ -13,11 +13,9 @@ void Sauron::setup(){
 	
 	colorImg.allocate(320,240);
 	grayImage.allocate(320,240);
-	grayBg.allocate(320,240);
-	grayDiff.allocate(320,240);
 	
-	bLearnBakground = true;
-	threshold = 80;
+	threshold = 190;//threshold is such to account for the next camera and brightness
+	mNumBlobsConsidered = 10;//just an arbitrary number
 	
 	registering = false;
 	int numComponents = 4;
@@ -49,24 +47,14 @@ void Sauron::update(){
 		
 		colorImg.setFromPixels(vidGrabber.getPixels(), 320,240);
 		
-		grayBg.resetROI();
 		colorImg.resetROI();
 		grayImage.resetROI();
-		grayDiff.resetROI();
 		
 		grayImage = colorImg;
-		if (bLearnBakground == true){
-			grayBg = grayImage;		// the = sign copys the pixels from grayImage into grayBg (operator overloading)
-			bLearnBakground = false;
-		}
-		
-			// take the abs value of the difference between background and incoming and then threshold:
-		grayDiff.absDiff(grayBg, grayImage);
-		grayDiff.threshold(threshold);
-		contourFinder.findContours(grayDiff, 5, (340*240)/4, 4, false, true);
+
 		
 		grayImage.threshold(threshold);
-		contourFinderGrayImage.findContours(grayDiff, 5, (340*240)/4, 4, false, true);
+		contourFinderGrayImage.findContours(grayImage, 5, (340*240)/4, mNumBlobsConsidered, false, true);
 		
 		if(registering){
 			sauronRegister();
@@ -79,7 +67,7 @@ void Sauron::update(){
 			if(c->isRegistered()){
 				switch (c->comptype) {
 					case ComponentTracker::slider:
-						for (int i = 0; i < contourFinder.nBlobs; i++){
+						for (int i = 0; i < contourFinderGrayImage.nBlobs; i++){
 							ofxCvBlob blob = contourFinderGrayImage.blobs[i];
 							if ((c->ROI).inside((blob.centroid))){
 								sliderProgress = c->calculateSliderProgress(blob);
@@ -88,7 +76,7 @@ void Sauron::update(){
 						c->setDelta(sliderProgress);
 						break;
 					case ComponentTracker::dial:
-						for (int i = 0; i < contourFinder.nBlobs; i++){
+						for (int i = 0; i < contourFinderGrayImage.nBlobs; i++){
 							ofxCvBlob blob = contourFinderGrayImage.blobs[i];
 							if ((c->ROI).inside((blob.centroid))){
 								dialBlobs.push_back(blob);
@@ -218,32 +206,13 @@ void Sauron::update(){
 
 	//--------------------------------------------------------------
 void Sauron::draw(){
-		// draw the incoming, the grayscale, the bg and the thresholded difference
-	ofSetHexColor(0xffffff);
+		//draw each image (color and gray)
 	colorImg.draw(20,20);
 	grayImage.draw(360,20);
-	grayBg.draw(20,280);
-	grayDiff.draw(360,280);
+
+		//draw the whole contour finder
+	contourFinderGrayImage.draw(360,20);
 	
-		// then draw the contours:
-	
-	ofFill();
-	ofSetHexColor(0x333333);
-	ofRect(360,540,320,240);
-	ofSetHexColor(0xffffff);
-	
-		// we could draw the whole contour finder
-		//contourFinder.draw(360,540);
-	
-		// or, instead we can draw each blob individually,
-		// this is how to get access to them:
-	
-	for (int i = 0; i < contourFinder.nBlobs; i++){
-		contourFinder.blobs[i].draw(360,540);
-	}
-	for (int i = 0; i < contourFinderGrayImage.nBlobs; i++){
-		contourFinderGrayImage.blobs[i].draw(360,20);
-	}
 	
 		// finally, a report:
 	ofSetHexColor(0xffffff);
@@ -258,9 +227,6 @@ void Sauron::draw(){
 void Sauron::keyPressed(int key){
 	
 	switch (key){
-		case ' ':
-			bLearnBakground = true;
-			break;
 		case '+':
 			threshold ++;
 			if (threshold > 255) threshold = 255;
