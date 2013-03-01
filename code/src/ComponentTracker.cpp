@@ -4,7 +4,7 @@ ComponentTracker::ComponentTracker() {
 	id = -1;
 	mIsRegistered = false;
 	ROI = ofRectangle();
-	mThreshold = 2.0f;//just a guess
+	mThreshold = 3.0f;//just a guess
 	comptype = ComponentTracker::no_component;
 }
 
@@ -15,6 +15,29 @@ ComponentTracker::ComponentTracker(ComponentType type, int id){
 	
 	this->id = id;
 	this->comptype = type;
+	
+	switch(type){
+		case ComponentTracker::button:
+			numBlobsNeeded = 1;
+			break;
+		case ComponentTracker::slider:
+			numBlobsNeeded = 1;
+			break;
+		case ComponentTracker::dpad:
+			numBlobsNeeded = 4;
+			break;
+		case ComponentTracker::dial:
+			numBlobsNeeded = 1;
+			break;
+		case ComponentTracker::scroll_wheel:
+			numBlobsNeeded = 3;
+			break;
+		case ComponentTracker::joystick:
+			numBlobsNeeded = 3;
+			break;
+		default:
+			break;
+	}
 }
 	
 string ComponentTracker::getComponentType(){
@@ -205,6 +228,11 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs){
 	std::vector<ofxCvBlob> scrollBlobs = keepInsideBlobs(blobs);
 	
+	if (scrollBlobs.size() > numBlobsNeeded) {
+		cout<<"error blobs passed into calculateScrollWheelDirection: " << scrollBlobs.size() << endl;
+		return ComponentTracker::none;
+	}
+	
 	float meanDistance = 0.0f;
 	float totalDistance = 0.0f;
 	int movementThreshhold = 1;//based on empirical evidence. 
@@ -234,13 +262,15 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 }
 
 bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
+	std::vector<ofxCvBlob> buttonBlobs = keepInsideBlobs(blobs);
+	
 	float precisionThreshhold = 0.5f;
-	if (blobs.size() !=1) {
-		cout<<"error blobs passed into isButtonPressed: " << blobs.size() << endl;
+	if (buttonBlobs.size() !=numBlobsNeeded) {
+		cout<<"error blobs passed into isButtonPressed: " << buttonBlobs.size() << endl;
 		return false;
 	} 
 
-	if(blobs[0].area/ROI.getArea() > 1-precisionThreshhold && blobs[0].area/ROI.getArea() < 1+precisionThreshhold){
+	if(buttonBlobs[0].area/ROI.getArea() > 1-precisionThreshhold && buttonBlobs[0].area/ROI.getArea() < 1+precisionThreshhold){
 		return true;
 	}else{
 		return false;
@@ -248,7 +278,14 @@ bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
 }
 
 ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
-	return ofPoint(1, 1);
+	std::vector<ofxCvBlob> joystickBlobs = keepInsideBlobs(blobs);
+
+	if (joystickBlobs.size() !=numBlobsNeeded) {
+		cout<<"error blobs passed into measureJoystickLocation: " << joystickBlobs.size() << endl;
+		return ofPoint(-1, -1);;
+	} 
+	
+	return ofPoint(-1, -1);
 }
 
 float ComponentTracker::getDelta(){

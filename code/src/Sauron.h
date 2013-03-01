@@ -31,15 +31,7 @@ class Sauron : public ofBaseApp{
 	void sauronRegister();
 	void sauronLoad();
 	int assignSauronId();
-	ComponentTracker* getSauronComponent();
 	void registerComponent(ComponentTracker*);
-
-	void registerButton(ComponentTracker* ct);
-	void registerSlider(ComponentTracker* ct);
-	void registerDPad(ComponentTracker* ct);
-	void registerDial(ComponentTracker* ct);
-	void registerScrollWheel(ComponentTracker* ct);
-	void registerJoystick(ComponentTracker* ct);
 
 	ofVideoGrabber 		vidGrabber;
 

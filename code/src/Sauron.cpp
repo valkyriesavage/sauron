@@ -226,8 +226,8 @@ void Sauron::keyPressed(int key){
 			if (threshold < 0) threshold = 0;
 			break;
 		case 'r':
-				stageComponent(ComponentTracker::slider, 0);
-				startRegistrationMode();
+			stageComponent(ComponentTracker::slider, 0);
+			startRegistrationMode();
 			break;
 		case 'e':
 			stageComponent(ComponentTracker::scroll_wheel, 0);
@@ -286,85 +286,8 @@ void Sauron::sauronRegister(){
 void Sauron::sauronLoad(){}
 
 /*
- getSauronComponent currently simulates the action of receiving a component from solidworks
- */
-ComponentTracker* Sauron::getSauronComponent(){
-	ComponentTracker* component;
-	
-	ComponentTracker* button = new ComponentTracker(ComponentTracker::button, 0);
-	
-	ComponentTracker* slider = new ComponentTracker(ComponentTracker::slider, 0);
-	
-	ComponentTracker* dpad = new ComponentTracker(ComponentTracker::dpad, 0);
-	
-	ComponentTracker* dial = new ComponentTracker( ComponentTracker::dial, 0);
-	
-	ComponentTracker* scrollWheel = new ComponentTracker(ComponentTracker::scroll_wheel, 0);
-	
-	ComponentTracker* joystick = new ComponentTracker(ComponentTracker::joystick, 0);
-	
-	//component = button;
-	component = slider;
-		//    component = dpad;
-//		component = dial;
-		//component = scrollWheel;
-	//component = joystick;
-	return component;
-}
-
-/*
  depending on component type, does some gui bit for user to properly register this input component
  */
 void Sauron::registerComponent(ComponentTracker* ct){
-	switch (ct->comptype) {
-		case ComponentTracker::button:
-			registerButton(ct);
-			break;
-		case ComponentTracker::slider:
-			registerSlider(ct);
-			break;
-		case ComponentTracker::dpad:
-			registerDPad(ct);
-			break;
-		case ComponentTracker::dial:
-			registerDial(ct);
-			break;
-		case ComponentTracker::scroll_wheel:
-			registerScrollWheel(ct);
-			break;
-		case ComponentTracker::joystick:
-			registerJoystick(ct);
-			break;
-		default:
-			break;
-	}
-}
-
-void Sauron::registerButton(ComponentTracker* ct){
 	ct->setROI(contourFinderGrayImage.blobs);
-	ct->numBlobsNeeded = 1;
-}	
-
-void Sauron::registerSlider(ComponentTracker* ct){
-	ct->setROI(contourFinderGrayImage.blobs);
-	ct->numBlobsNeeded = 1;
-}
-
-void Sauron::registerDPad(ComponentTracker* ct){
-	
-}
-
-void Sauron::registerDial(ComponentTracker* ct){	
-	ct->setROI(contourFinderGrayImage.blobs);
-	ct->numBlobsNeeded = 1;
-}
-
-void Sauron::registerScrollWheel(ComponentTracker* ct){
-	ct->setROI(contourFinderGrayImage.blobs);
-	ct->numBlobsNeeded = 3;//pending
-}
-
-void Sauron::registerJoystick(ComponentTracker* ct){
-	ct->setROI(contourFinderGrayImage.blobs);
-	ct->numBlobsNeeded = 3;
 }
