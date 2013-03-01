@@ -14,7 +14,7 @@ void Sauron::setup(){
 	colorImg.allocate(320,240);
 	grayImage.allocate(320,240);
 	
-	threshold = 190;//threshold is such to account for the next camera and brightness
+	threshold = 225;//threshold is such to account for the next camera and brightness
 	mNumBlobsConsidered = 10;//just an arbitrary number
 	
 	registering = false;
@@ -67,22 +67,11 @@ void Sauron::update(){
 			if(c->isRegistered()){
 				switch (c->comptype) {
 					case ComponentTracker::slider:
-						for (int i = 0; i < contourFinderGrayImage.nBlobs; i++){
-							ofxCvBlob blob = contourFinderGrayImage.blobs[i];
-							if ((c->ROI).inside((blob.centroid))){
-								sliderProgress = c->calculateSliderProgress(blob);
-							}
-						}
+						sliderProgress = c->calculateSliderProgress(contourFinderGrayImage.blobs);
 						c->setDelta(sliderProgress);
 						break;
 					case ComponentTracker::dial:
-						for (int i = 0; i < contourFinderGrayImage.nBlobs; i++){
-							ofxCvBlob blob = contourFinderGrayImage.blobs[i];
-							if ((c->ROI).inside((blob.centroid))){
-								dialBlobs.push_back(blob);
-							}
-						}
-						dialProgress = c->calculateDialProgress(dialBlobs);
+						dialProgress = c->calculateDialProgress(contourFinderGrayImage.blobs);
 						c->setDelta(dialProgress);
 						break;
 					case ComponentTracker::scroll_wheel:
@@ -237,8 +226,16 @@ void Sauron::keyPressed(int key){
 			if (threshold < 0) threshold = 0;
 			break;
 		case 'r':
-				stageComponent(getSauronComponent()->comptype, getSauronComponent()->id);
+				stageComponent(ComponentTracker::slider, 0);
 				startRegistrationMode();
+			break;
+		case 'e':
+			stageComponent(ComponentTracker::scroll_wheel, 0);
+			startRegistrationMode();
+			break;
+		case 'w':
+			stageComponent(ComponentTracker::dial, 0);
+			startRegistrationMode();
 			break;
 		case 'd':
 			stopRegistrationMode();
@@ -250,9 +247,7 @@ void Sauron::keyPressed(int key){
  */
 void Sauron::stageComponent(ComponentTracker::ComponentType type, int id){
 	if(!registering){
-		currentRegisteringComponent = new ComponentTracker();
-		currentRegisteringComponent->id = id;
-		currentRegisteringComponent->comptype = type;
+		currentRegisteringComponent = new ComponentTracker(type, id);
 	}
 }
 
@@ -296,36 +291,24 @@ void Sauron::sauronLoad(){}
 ComponentTracker* Sauron::getSauronComponent(){
 	ComponentTracker* component;
 	
-	ComponentTracker* button = new ComponentTracker();
-	button->comptype = ComponentTracker::button;
-	button->id = 0;
+	ComponentTracker* button = new ComponentTracker(ComponentTracker::button, 0);
 	
-	ComponentTracker* slider = new ComponentTracker();
-	slider->comptype = ComponentTracker::slider;
-	slider->id = 0;
+	ComponentTracker* slider = new ComponentTracker(ComponentTracker::slider, 0);
 	
-	ComponentTracker* dpad = new ComponentTracker();
-	dpad->comptype = ComponentTracker::dpad;
-	dpad->id = 0;
+	ComponentTracker* dpad = new ComponentTracker(ComponentTracker::dpad, 0);
 	
-	ComponentTracker* dial = new ComponentTracker();
-	dial->comptype = ComponentTracker::dial;
-	dial->id = 0;
+	ComponentTracker* dial = new ComponentTracker( ComponentTracker::dial, 0);
 	
-	ComponentTracker* scrollWheel = new ComponentTracker();
-	scrollWheel->comptype = ComponentTracker::scroll_wheel;
-	scrollWheel->id = 0;
+	ComponentTracker* scrollWheel = new ComponentTracker(ComponentTracker::scroll_wheel, 0);
 	
-	ComponentTracker* joystick = new ComponentTracker();
-	joystick->comptype = ComponentTracker::joystick;
-	joystick->id = 0;
+	ComponentTracker* joystick = new ComponentTracker(ComponentTracker::joystick, 0);
 	
 	//component = button;
-	//component = slider;
+	component = slider;
 		//    component = dpad;
 //		component = dial;
 		//component = scrollWheel;
-	component = joystick;
+	//component = joystick;
 	return component;
 }
 

@@ -5,13 +5,13 @@ ComponentTracker::ComponentTracker() {
 	mIsRegistered = false;
 	ROI = ofRectangle();
 	mThreshold = 2.0f;//just a guess
-	comptype = ComponentTracker::unknown;
+	comptype = ComponentTracker::no_component;
 }
 
 ComponentTracker::ComponentTracker(ComponentType type, int id){
 	mIsRegistered = false;
 	ROI = ofRectangle();
-	mThreshold = 2.0f;//just a guess
+	mThreshold = 3.0f;//just a guess
 	
 	this->id = id;
 	this->comptype = type;
@@ -37,8 +37,8 @@ string ComponentTracker::getComponentType(){
 		case ComponentTracker::scroll_wheel:
 			return "scroll_wheel";
 			break;
-		case ComponentTracker::unknown:
-			return "unknown_component";
+		case ComponentTracker::no_component:
+			return "no_component";
 			break;
 		default:
 			return "unknown_component";
@@ -166,7 +166,17 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 	}
 }
 
-float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
+float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
+	
+	std::vector<ofxCvBlob> sliderBlobs;
+	sliderBlobs = keepInsideBlobs(blobs);
+	if (sliderBlobs.size() != numBlobsNeeded) {
+		cout<<"error blobs passed into calculateDialProgress: " << sliderBlobs.size() << endl;
+		return -1.0f;
+	} 
+	ofxCvBlob blob;
+	blob = sliderBlobs.front();
+	
 	return	distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
 }
 
@@ -177,11 +187,13 @@ float ComponentTracker::calculateSliderProgress(ofxCvBlob blob){
  Formula from http://math.stackexchange.com/questions/185829/how-do-you-find-an-angle-between-two-points-on-the-edge-of-a-circle
  */
 float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
-		if (blobs.size() !=1) {
-			cout<<"error blobs passed into calculateDialProgress: " << blobs.size() << endl;
-			return -1.0f;
-		} 
-	ofPoint p1 = blobs[0].centroid;
+	
+	std::vector<ofxCvBlob> dialBlobs = keepInsideBlobs(blobs);
+	if (dialBlobs.size() != numBlobsNeeded) {
+		cout<<"error blobs passed into calculateDialProgress: " << dialBlobs.size() << endl;
+		return -1.0f;
+	} 
+	ofPoint p1 = dialBlobs[0].centroid;
 	ofPoint p2 = ROI.getCenter();
 	float r = ROI.width/2;
 	p2.y = p2.y + r;
@@ -191,24 +203,26 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 }
 
 ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs){
+	std::vector<ofxCvBlob> scrollBlobs = keepInsideBlobs(blobs);
+	
 	float meanDistance = 0.0f;
 	float totalDistance = 0.0f;
-	int movementThreshhold = 2;//based on empirical evidence. 
+	int movementThreshhold = 1;//based on empirical evidence. 
 	
-	for(int i = 0; i < min(blobs.size(), previousBlobs.size()); i++) {
-		float xDisp = blobs[i].centroid.x - previousBlobs[i].centroid.x;
-		float yDisp = blobs[i].centroid.y - previousBlobs[i].centroid.y;
+	for(int i = 0; i < min(scrollBlobs.size(), previousBlobs.size()); i++) {
+		float xDisp = scrollBlobs[i].centroid.x - previousBlobs[i].centroid.x;
+		float yDisp = scrollBlobs[i].centroid.y - previousBlobs[i].centroid.y;
 		if (((abs(xDisp) > abs(yDisp)) && xDisp > 0) || ((abs(yDisp) > abs(xDisp)) && yDisp > 0)) {//yes I know, hacky.
-			totalDistance += distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
+			totalDistance += distanceFormula(scrollBlobs[i].centroid.x, scrollBlobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
 			//I guess we don't technically need to do this here, but it'll set up nicely for measuring scrollwheel movement later.
 		}else {
-			totalDistance -= distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
+			totalDistance -= distanceFormula(scrollBlobs[i].centroid.x, scrollBlobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
 		}
 	}
 	
 	meanDistance =  totalDistance /previousBlobs.size();	
 	
-	this->previousBlobs = blobs;//gotta replace our previous blobs
+	this->previousBlobs = scrollBlobs;//gotta replace our previous blobs
 	
 	if (meanDistance >movementThreshhold) {//for now, 'up' is reletively defined. 
 		return ComponentTracker::up;
@@ -247,4 +261,21 @@ void ComponentTracker::setDelta(float f){
 
 bool ComponentTracker::ROIUnset(){
 	return ROI.width == 0 && ROI.height == 0;
+}
+
+std::vector<ofxCvBlob> ComponentTracker::keepInsideBlobs(std::vector<ofxCvBlob> blobs){
+	std::vector<ofxCvBlob> result;
+	if(ROIUnset()){
+		cout<<"error in keepInnerBlobs"<<endl;
+		return result;
+	}
+		//take only the blobs in ROI
+	for(std::vector<ofxCvBlob>::iterator it = blobs.begin(); it != blobs.end();++it){
+		ofxCvBlob blob = *it;
+		if (ROI.inside(blob.centroid)) {
+			result.push_back(blob);
+			
+		}
+	}
+	return result;
 }

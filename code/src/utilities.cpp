@@ -53,3 +53,4 @@ bool getFarthestDisplacedBlob(ofxCvBlob* blob, std::vector<ofxCvBlob> oldBlobs, 
 		return true;
 	}else return false;
 }
+

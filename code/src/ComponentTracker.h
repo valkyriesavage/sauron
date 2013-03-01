@@ -7,7 +7,7 @@
 #pragma once
 class ComponentTracker {
 public:
-	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel, unknown};
+	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel, no_component};
 	
 	enum Direction {up, down, left, right, none};
 	
@@ -41,7 +41,7 @@ public:
 	void setROI(std::vector<ofxCvBlob> blobs);
 
 	void setContourFinder(ofRectangle ROI, int numBlobs);
-	float calculateSliderProgress(ofxCvBlob blob);
+	float calculateSliderProgress(std::vector<ofxCvBlob> blobs);
 	float calculateDialProgress(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs);
 	bool isButtonPressed(std::vector<ofxCvBlob> blobs);
@@ -51,4 +51,6 @@ public:
 	void setDelta(float f);
 	
 	bool ROIUnset();
+	
+	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 };
