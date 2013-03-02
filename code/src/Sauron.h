@@ -23,14 +23,12 @@ class Sauron : public ofBaseApp{
 	void draw();
 
 	void keyPressed(int key);
-	
-	
+		
 	void stageComponent(ComponentTracker::ComponentType type, int id);
 	void startRegistrationMode();
 	void stopRegistrationMode();
 	void sauronRegister();
 	void sauronLoad();
-	int assignSauronId();
 	void registerComponent(ComponentTracker*);
 
 	ofVideoGrabber 		vidGrabber;
