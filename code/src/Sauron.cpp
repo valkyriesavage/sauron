@@ -238,6 +238,11 @@ void Sauron::keyPressed(int key){
 			stageComponent(ComponentTracker::dial, 0);
 			startRegistrationMode();
 			break;
+		case 'q':
+			stageComponent(ComponentTracker::joystick, 0);
+			threshold = 150;
+			startRegistrationMode();
+			break;
 		case 'd':
 			stopRegistrationMode();
 			break;

@@ -59,3 +59,21 @@ string ofPointToA(ofPoint pt){
     temp << "ofPoint(" << pt.x << ", " << pt.y << ")"; 
     return temp.str();
 }
+
+void distributeJoystickBlobs(std::vector<ofxCvBlob> blobs, ofxCvBlob* middle, ofxCvBlob* flank0, ofxCvBlob* flank1, int maxBlobs){
+	if (blobs.size() != maxBlobs) {
+		return;
+	}
+	for(std::vector<ofxCvBlob>::iterator it = blobs.begin(); it != blobs.end();++it){
+		ofxCvBlob blob = *it;
+		if(blob.area > middle->area){
+			*flank0 = *flank1;
+			*flank1 = *middle;
+			*middle = blob;
+		}else {
+			*flank0 = *flank1;
+			*flank1 = blob;
+		}
+
+	}
+}

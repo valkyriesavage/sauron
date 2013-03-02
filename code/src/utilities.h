@@ -18,3 +18,5 @@ ofPoint	midpoint(ofPoint p1, ofPoint p2);
 bool getFarthestDisplacedBlob(ofxCvBlob* blob, std::vector<ofxCvBlob> oldBlobs, std::vector<ofxCvBlob> newBlobs, float threshold);
 
 string ofPointToA(ofPoint pt);
+
+void distributeJoystickBlobs(std::vector<ofxCvBlob> blobs, ofxCvBlob* middle, ofxCvBlob* flank0, ofxCvBlob* flank1, int maxBlobs);

@@ -307,7 +307,15 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 		return ofPoint(-1, -1);;
 	} 
 	
-	return ofPoint(-1, -1);
+	ofxCvBlob* middle = new ofxCvBlob();
+	ofxCvBlob* flank0 = new ofxCvBlob();
+	ofxCvBlob* flank1 = new ofxCvBlob();
+	
+	distributeJoystickBlobs(blobs, middle, flank0, flank1, numBlobsNeeded);
+	
+	int x = (middle->centroid).x;
+	int y = (flank0->centroid).y;
+	return ofPoint(x, y);
 }
 
 string ComponentTracker::getDelta(){
@@ -338,3 +346,4 @@ std::vector<ofxCvBlob> ComponentTracker::keepInsideBlobs(std::vector<ofxCvBlob> 
 	}
 	return result;
 }
+
