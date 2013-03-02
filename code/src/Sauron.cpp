@@ -33,7 +33,7 @@ void Sauron::setup(){
 	receiver.setup(PORT);
 	sender.setup(HOST, PORT+1);
 	
-	testing = true;
+	testing = false;
 	
 	currentRegisteringComponent = new ComponentTracker();
 }
@@ -207,6 +207,15 @@ void Sauron::draw(){
 		//draw the whole contour finder
 	contourFinderGrayImage.draw(360,20);
 	
+	if(registering){
+		ofPushView();
+		ofSetHexColor(0xf7b82b);
+		ofNoFill();
+		ofTranslate(360, 20);
+		ofRect(currentRegisteringComponent->ROI);
+		ofPopView();
+	}
+
 	ofPushView();
 		//draw all the ROIs
 	ofSetHexColor(0xffff00);

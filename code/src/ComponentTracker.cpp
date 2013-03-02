@@ -4,14 +4,14 @@ ComponentTracker::ComponentTracker() {
 	id = -1;
 	mIsRegistered = false;
 	ROI = ofRectangle();
-	mThreshold = 50.0f;//just a guess
+	mThreshold = 5.0f;//just a guess
 	comptype = ComponentTracker::no_component;
 }
 
 ComponentTracker::ComponentTracker(ComponentType type, int id){
 	mIsRegistered = false;
 	ROI = ofRectangle();
-	mThreshold = 50.0f;//just a guess
+	mThreshold = 5.0f;//just a guess
 	
 	this->id = id;
 	this->comptype = type;
@@ -205,10 +205,12 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
 			std::vector<ofRectangle> vect;
 			vect.push_back(ROI);
-			vect.push_back((*blob).boundingRect);
+			vect.push_back(blob->boundingRect);
 			ROI = makeBoundingBox(vect);
+
 		}
 	}
+	previousBlobs = blobs;
 }
 
 float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
