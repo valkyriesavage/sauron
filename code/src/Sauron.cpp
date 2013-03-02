@@ -28,12 +28,12 @@ void Sauron::setup(){
 	sprintf(mScrollWheelDirection, "%s", notRegistered);
 	sprintf(mButtonPressed,"%s", notRegistered);
 	sprintf(mJoystickLocation, "%s", notRegistered);
-	
+	sprintf(mDpadDirection, "%s", notRegistered);
 	
 	receiver.setup(PORT);
 	sender.setup(HOST, PORT+1);
 	
-	testing = false;
+	testing = true;
 	
 	currentRegisteringComponent = new ComponentTracker();
 }
@@ -83,6 +83,10 @@ void Sauron::update(){
 					case ComponentTracker::button:
 						sprintf(mButtonPressed, "%i", c->isButtonPressed(contourFinderGrayImage.blobs));
 						c->setDelta(mButtonPressed);
+						break;
+					case ComponentTracker::dpad:
+						sprintf(mDpadDirection, "%s", c->EnumDirectionToString(c->calculateDpadDirection(contourFinderGrayImage.blobs)));
+						c->setDelta(mDpadDirection);
 						break;
 					case ComponentTracker::joystick:
 						sprintf(mJoystickLocation, "%s", ofPointToA(c->measureJoystickLocation(contourFinderGrayImage.blobs)).c_str());
@@ -203,13 +207,24 @@ void Sauron::draw(){
 		//draw the whole contour finder
 	contourFinderGrayImage.draw(360,20);
 	
+	ofPushView();
+		//draw all the ROIs
+	ofSetHexColor(0xffff00);
+	ofNoFill();
+	ofTranslate(360, 20);
+	for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
+		ComponentTracker* c = *it;
+		ofRect(c->ROI);
+	}
+		
+	ofPopView();//don't keep the ROI drawing settings
 	
 		// finally, a report:
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
 	const char* ctype = currentRegisteringComponent->getComponentType().c_str();
-	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s",
-			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation);
+	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s",
+			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection);
 	ofDrawBitmapString(reportStr, 20, 600);
 }
 
@@ -244,6 +259,10 @@ void Sauron::keyPressed(int key){
 			startRegistrationMode();
 			break;
 		case 'd':
+			stageComponent(ComponentTracker::dpad, 0);
+			startRegistrationMode();
+			break;
+		case ' ':
 			stopRegistrationMode();
 			break;
 	}
@@ -252,7 +271,15 @@ void Sauron::keyPressed(int key){
  stageComponent takes preparatory information from solidworks and stages it to be registered with sauronRegister().
  */
 void Sauron::stageComponent(ComponentTracker::ComponentType type, int id){
-	if(!registering){
+	for (std::vector<ComponentTracker*>::size_type i = 0; i != components.size(); i++){
+		ComponentTracker* c = components[i];
+		if (c->comptype == type && c->id == id) {
+			components.erase(components.begin()+i);
+			break;
+		}
+	}
+	
+	if(!registering && type!=ComponentTracker::no_component){
 		currentRegisteringComponent = new ComponentTracker(type, id);
 	}
 }

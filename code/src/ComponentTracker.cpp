@@ -4,14 +4,14 @@ ComponentTracker::ComponentTracker() {
 	id = -1;
 	mIsRegistered = false;
 	ROI = ofRectangle();
-	mThreshold = 3.0f;//just a guess
+	mThreshold = 50.0f;//just a guess
 	comptype = ComponentTracker::no_component;
 }
 
 ComponentTracker::ComponentTracker(ComponentType type, int id){
 	mIsRegistered = false;
 	ROI = ofRectangle();
-	mThreshold = 3.0f;//just a guess
+	mThreshold = 50.0f;//just a guess
 	
 	this->id = id;
 	this->comptype = type;
@@ -299,12 +299,26 @@ bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
 	}
 }
 
+ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector<ofxCvBlob> blobs){
+	std::vector<ofxCvBlob> dpadBlobs = keepInsideBlobs(blobs);
+	
+	if (dpadBlobs.size() !=numBlobsNeeded) {
+		cout<<"error blobs passed into calculateDpadDirection: " << dpadBlobs.size() << endl;
+		return ComponentTracker::none;
+	} 
+	
+		//assuming they are all the same size blobs (which may be a tricky 'hardware' problem (i.e. make sure the reflective tape is all the same size))
+	ofxCvBlob largestBlob = getLargestBlob(dpadBlobs);
+	
+	return getRelativeDirection(largestBlob, dpadBlobs);
+}
+
 ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 	std::vector<ofxCvBlob> joystickBlobs = keepInsideBlobs(blobs);
 
 	if (joystickBlobs.size() !=numBlobsNeeded) {
 		cout<<"error blobs passed into measureJoystickLocation: " << joystickBlobs.size() << endl;
-		return ofPoint(-1, -1);;
+		return ofPoint(-1, -1);
 	} 
 	
 	ofxCvBlob* middle = new ofxCvBlob();
@@ -347,3 +361,22 @@ std::vector<ofxCvBlob> ComponentTracker::keepInsideBlobs(std::vector<ofxCvBlob> 
 	return result;
 }
 
+ComponentTracker::Direction ComponentTracker::getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> blobs){
+//	blobs.erase(std::remove(blobs.begin(), blobs.end(), largestBlob), blobs.end());
+	ofPoint p0 = blobs[0].centroid;
+	ofPoint p1 = blobs[1].centroid;
+	ofPoint p2 = blobs[2].centroid;
+	
+	ofPoint currentP = largestBlob.centroid;
+	if (currentP.x >p0.x && currentP.x > p1.x && currentP.x > p2.x){
+		return ComponentTracker::right;
+	}else if (currentP.y >p0.y && currentP.y > p1.y && currentP.y > p2.y) {
+		return ComponentTracker::up;
+	}else if (currentP.y < p0.y && currentP.y < p1.y && currentP.y < p2.y) {
+		return ComponentTracker::down;
+	}else if (currentP.x < p0.x && currentP.x < p1.x && currentP.x < p2.x){
+		return ComponentTracker::left;
+	}else {
+		return ComponentTracker::none;
+	}
+}

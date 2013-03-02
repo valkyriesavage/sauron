@@ -54,6 +54,7 @@ class Sauron : public ofBaseApp{
 	char mDialProgress[128];
 	char mScrollWheelDirection[128];
 	char mButtonPressed[128];
+	char mDpadDirection[128];
 	char mJoystickLocation[128];
 
 	ofxOscReceiver receiver;

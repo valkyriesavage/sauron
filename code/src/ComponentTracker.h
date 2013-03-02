@@ -46,6 +46,7 @@ public:
 	float calculateDialProgress(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs);
 	bool isButtonPressed(std::vector<ofxCvBlob> blobs);
+	ComponentTracker::Direction calculateDpadDirection(std::vector<ofxCvBlob> blobs);
 	ofPoint measureJoystickLocation(std::vector<ofxCvBlob> blobs);
 	
 	string getDelta();
@@ -54,4 +55,6 @@ public:
 	bool ROIUnset();
 	
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
+	
+	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);
 };

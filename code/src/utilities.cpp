@@ -77,3 +77,17 @@ void distributeJoystickBlobs(std::vector<ofxCvBlob> blobs, ofxCvBlob* middle, of
 
 	}
 }
+
+ofxCvBlob getLargestBlob(std::vector<ofxCvBlob> blobs){
+	ofxCvBlob result;
+	float maxArea = FLT_MIN;
+	for(std::vector<ofxCvBlob>::iterator it = blobs.begin(); it != blobs.end();++it){
+		ofxCvBlob blob = *it;
+		if (blob.area > result.area) {
+			result = blob;
+			maxArea = blob.area;
+		}
+	}
+	return result;
+}
+
