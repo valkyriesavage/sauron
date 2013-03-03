@@ -12,7 +12,7 @@ int main( ){
     bool doTesting = false;
 
     ofAppGlutWindow window;
-	ofSetupOpenGL(&window, 1024,768, OF_WINDOW);			// <-------- setup the GL context
+	ofSetupOpenGL(&window, 700,500, OF_WINDOW);			// <-------- setup the GL context
 
     if (doTesting) {
         // run the example app that shipped; this will help

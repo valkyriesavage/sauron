@@ -33,7 +33,7 @@ void Sauron::setup(){
 	receiver.setup(PORT);
 	sender.setup(HOST, PORT+1);
 	
-	testing = false;
+	testing = true;
 	
 	currentRegisteringComponent = new ComponentTracker();
 }
@@ -234,7 +234,7 @@ void Sauron::draw(){
 	const char* ctype = currentRegisteringComponent->getComponentType().c_str();
 	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s",
 			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection);
-	ofDrawBitmapString(reportStr, 20, 600);
+	ofDrawBitmapString(reportStr, 20, 280);
 }
 
 
