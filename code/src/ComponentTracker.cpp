@@ -31,6 +31,7 @@ ComponentTracker::ComponentTracker(ComponentType type, int id){
 			break;
 		case ComponentTracker::scroll_wheel:
 			numBlobsNeeded = 3;
+			mPreviousScrollWheelDirection = ComponentTracker::none;
 			break;
 		case ComponentTracker::joystick:
 			numBlobsNeeded = 3;
@@ -38,6 +39,8 @@ ComponentTracker::ComponentTracker(ComponentType type, int id){
 		default:
 			break;
 	}
+	
+
 }
 	
 string ComponentTracker::getComponentType(){
@@ -255,6 +258,8 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	if (scrollBlobs.size() > numBlobsNeeded) {
 		cout<<"error blobs passed into calculateScrollWheelDirection: " << scrollBlobs.size() << endl;
 		return ComponentTracker::none;
+	}else if (scrollBlobs.size() == 1 && scrollBlobs[0].area/ROI.getArea() > 0.5) {
+		return mPreviousScrollWheelDirection;
 	}
 	
 	float meanDistance = 0.0f;
@@ -277,10 +282,13 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	this->previousBlobs = scrollBlobs;//gotta replace our previous blobs
 	
 	if (meanDistance >movementThreshhold) {//for now, 'up' is reletively defined. 
+		mPreviousScrollWheelDirection = ComponentTracker::up;
 		return ComponentTracker::up;
 	}else if (meanDistance < -movementThreshhold) {
+		mPreviousScrollWheelDirection = ComponentTracker::down;
 		return ComponentTracker::down;
 	}else {
+
 		return ComponentTracker::none;
 	}
 }

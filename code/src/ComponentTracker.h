@@ -25,6 +25,7 @@ public:
 	string delta;
 	bool mIsRegistered;
 	float mThreshold;
+	ComponentTracker::Direction mPreviousScrollWheelDirection;
     
     std::vector<ofxCvBlob> previousBlobs;
 	std::vector<ofRectangle> previousRectangles;//rectangles are used during the ROI set stage of registration (instead of blobs)
