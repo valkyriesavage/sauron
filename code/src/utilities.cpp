@@ -94,3 +94,17 @@ ofxCvBlob getLargestBlob(std::vector<ofxCvBlob> blobs){
 	return result;
 }
 
+/*
+ adjustRelativePoint takes an ofPoint and ofRectangle and computes the point relative to it's position inside the rectangle.
+ If the point in the rectangle, we return false
+ */
+bool adjustRelativePoint(ofPoint* pt, ofRectangle rect){
+	if (!rect.inside(*pt)) {
+		return false;
+	}else{
+		pt->x = pt->x - rect.getX();
+		pt->y = pt->y - rect.getY();
+		return true;
+	}
+}
+

@@ -23,3 +23,5 @@ void distributeJoystickBlobs(std::vector<ofxCvBlob> blobs, ofxCvBlob* middle, of
 
 ofxCvBlob getLargestBlob(std::vector<ofxCvBlob> blobs);
 
+bool adjustRelativePoint(ofPoint* pt, ofRectangle rect);
+
