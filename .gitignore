@@ -21,3 +21,5 @@
 *Settings*
 *.user*
 *.config*
+code/sw-recorded-macros
+code\sw-recorded-macros

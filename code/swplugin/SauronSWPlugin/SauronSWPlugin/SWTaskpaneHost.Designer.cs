@@ -36,6 +36,9 @@
             this.register = new System.Windows.Forms.Button();
             this.test_mode = new System.Windows.Forms.Button();
             this.testPart = new System.Windows.Forms.Button();
+            this.print = new System.Windows.Forms.Button();
+            this.saurontitle = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -68,7 +71,7 @@
             this.processFeatures.Name = "processFeatures";
             this.processFeatures.Size = new System.Drawing.Size(139, 49);
             this.processFeatures.TabIndex = 4;
-            this.processFeatures.Text = "process features";
+            this.processFeatures.Text = "computer vision-ize components";
             this.processFeatures.UseVisualStyleBackColor = true;
             this.processFeatures.Click += new System.EventHandler(this.processFeatures_Click);
             // 
@@ -78,27 +81,27 @@
             this.insert_camera.Name = "insert_camera";
             this.insert_camera.Size = new System.Drawing.Size(139, 49);
             this.insert_camera.TabIndex = 5;
-            this.insert_camera.Text = "insert camera";
+            this.insert_camera.Text = "place camera";
             this.insert_camera.UseVisualStyleBackColor = true;
             this.insert_camera.Click += new System.EventHandler(this.insert_camera_Click);
             // 
             // register
             // 
-            this.register.Location = new System.Drawing.Point(44, 153);
+            this.register.Location = new System.Drawing.Point(44, 208);
             this.register.Name = "register";
             this.register.Size = new System.Drawing.Size(139, 49);
             this.register.TabIndex = 6;
-            this.register.Text = "register on print";
+            this.register.Text = "register printed components";
             this.register.UseVisualStyleBackColor = true;
             this.register.Click += new System.EventHandler(this.register_Click);
             // 
             // test_mode
             // 
-            this.test_mode.Location = new System.Drawing.Point(44, 208);
+            this.test_mode.Location = new System.Drawing.Point(44, 263);
             this.test_mode.Name = "test_mode";
             this.test_mode.Size = new System.Drawing.Size(139, 49);
             this.test_mode.TabIndex = 7;
-            this.test_mode.Text = "enter test mode";
+            this.test_mode.Text = "start testing!";
             this.test_mode.UseVisualStyleBackColor = true;
             this.test_mode.Click += new System.EventHandler(this.test_mode_Click);
             // 
@@ -112,10 +115,43 @@
             this.testPart.UseVisualStyleBackColor = true;
             this.testPart.Click += new System.EventHandler(this.testPart_Click);
             // 
+            // print
+            // 
+            this.print.Location = new System.Drawing.Point(44, 153);
+            this.print.Name = "print";
+            this.print.Size = new System.Drawing.Size(139, 49);
+            this.print.TabIndex = 9;
+            this.print.Text = "print whole device";
+            this.print.UseVisualStyleBackColor = true;
+            this.print.Click += new System.EventHandler(this.print_Click);
+            // 
+            // saurontitle
+            // 
+            this.saurontitle.AutoSize = true;
+            this.saurontitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.saurontitle.Location = new System.Drawing.Point(23, 0);
+            this.saurontitle.Name = "saurontitle";
+            this.saurontitle.Size = new System.Drawing.Size(186, 17);
+            this.saurontitle.TabIndex = 10;
+            this.saurontitle.Text = "sauron : computer vision-ize";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label4.Location = new System.Drawing.Point(72, 17);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(85, 17);
+            this.label4.TabIndex = 11;
+            this.label4.Text = "your models";
+            // 
             // SWTaskpaneHost
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.saurontitle);
+            this.Controls.Add(this.print);
             this.Controls.Add(this.testPart);
             this.Controls.Add(this.test_mode);
             this.Controls.Add(this.register);
@@ -141,5 +177,8 @@
         private System.Windows.Forms.Button register;
         private System.Windows.Forms.Button test_mode;
         private System.Windows.Forms.Button testPart;
+        private System.Windows.Forms.Button print;
+        private System.Windows.Forms.Label saurontitle;
+        private System.Windows.Forms.Label label4;
     }
 }

@@ -43,7 +43,7 @@ namespace SauronSWPlugin
         public bool testing = false;
 
         private Component2 mainBody = null;
-        private String[] ourComponents = { "button-4post", "dial", "joystick-all-pieces", "slider", "scroll-wheel", "dpad" };
+        private String[] ourComponentNames = { "button-4post", "dial", "joystick-all-pieces", "slider", "scroll-wheel", "dpad" };
 
         private static readonly int SENDPORT = 5001;
         private static readonly int RECEIVEPORT = 5002;
@@ -54,7 +54,7 @@ namespace SauronSWPlugin
         private Camera camera = null;
 
         private List<Component2> allSolidComponents = null;
-        private List<ComponentIdentifier> allOurComponents = null;
+        private List<ComponentIdentifier> ourComponents = null;
 
         public SWTaskpaneHost()
         {
@@ -88,9 +88,9 @@ namespace SauronSWPlugin
         {
             OscMessage message = e.Message;
             string address = message.Address;
-            float data = (float) message.Data[0];
+            //float data = Float.Parse(message.Data[0]);
 
-            foreach (ComponentIdentifier ci in allOurComponents)
+            foreach (ComponentIdentifier ci in ourComponents)
             {
                 if (ci.isAddressedAs(address))
                 {
@@ -118,57 +118,19 @@ namespace SauronSWPlugin
             mainBody = findComponent(swConf.GetRootComponent3(true), "body");
 
             allSolidComponents = getAllComponents();
-            allOurComponents = getAllOurComponents();
+            ourComponents = getAllOurComponents();
 
             swAssembly.EditAssembly();
         }
 
         private void getFOV()
         {
-            Component2 fieldOfView = findComponent(swConf.GetRootComponent3(true), Camera.FOV);
-
-            swDoc.Extension.SelectByID2("centre of vision@" + fieldOfView.GetSelectByIDString(),
-                                        "DATUMPOINT", 0, 0, 0, false, 0, null, 0);
-            IFeature centreOfVisionFeature = swSelectionMgr.GetSelectedObject6(1, -1) as IFeature;
-
-            if (centreOfVisionFeature == null)
+            if (camera == null)
             {
-                swApp.SendMsgToUser2("you need to insert the camera first!", 1, 1);
-                return;
+                Component2 fieldOfView = findComponent(swConf.GetRootComponent3(true), Camera.FOV);
+                camera = Camera.createCamera(fieldOfView, swApp, swDoc, swAssembly, swSelectionMgr, mathUtils);
             }
-
-            IRefPoint centreOfVisionPoint = centreOfVisionFeature.GetSpecificFeature2() as IRefPoint;
-            IMathPoint centreOfVision = centreOfVisionPoint.GetRefPoint() as IMathPoint;
-            swDoc.ClearSelection2(true);
-
-            // now figure out the direction the camera points
-            // this is translated from http://help.solidworks.com/2012/English/api/sldworksapi/get_the_normal_and_origin_of_a_reference_plane_using_its_transform_example_vb.htm
-            swDoc.Extension.SelectByID2("distance of measurement@" + fieldOfView.GetSelectByIDString(),
-                                        "PLANE", 0, 0, 0, false, 0, null, 0);
-            IFeature cameraNormalFeature = swSelectionMgr.GetSelectedObject6(1, -1);
-            RefPlane cameraNormalPlane = cameraNormalFeature.GetSpecificFeature2();
-            MathTransform cameraTransform = cameraNormalPlane.Transform;
-            //TODO : fix me! i can't do this multiplication sadly :(
-            //MathTransform reversedCameraTransform = mathUtils.ICreateTransform(-1 * cameraTransform.ArrayData);
-            double[] canonicalRay = { 0, 0, 1 };
-            MathVector normalVector = mathUtils.CreateVector(canonicalRay);
-            MathVector cameraDirection = normalVector.MultiplyTransform(cameraTransform);
-            swDoc.ClearSelection2(true);
-
-            camera = new Camera(fieldOfView, mathUtils.CreatePoint((double[])centreOfVision.ArrayData), cameraDirection);
-
-            double[] cameraDirData = (double[])cameraDirection.ArrayData;
-            double[] cameraOriginData = (double[])centreOfVision.ArrayData;
-            swDoc.Insert3DSketch2(true);
-            swDoc.CreateLine2(cameraOriginData[0], cameraOriginData[1], cameraOriginData[2], cameraDirData[0], cameraDirData[1], cameraDirData[2]);
-            swDoc.Insert3DSketch2(true);
-            Feature sketch = swSelectionMgr.GetSelectedObject6(1, 0);
-            sketch.Name = "camera ray";
-            swDoc.ClearSelection2(true);
-
-            /*
-            swApp.SendMsgToUser2("camera is at " + cameraOriginData[0] + "," + cameraOriginData[1] + "," + cameraOriginData[2] + " with direction " + cameraDirData[0] + "," + cameraDirData[1] + "," + cameraDirData[2], 1, 1); 
-            */       
+            camera.drawInitalRay();
         }
 
         private double inchesToMeters(double inches)
@@ -290,14 +252,26 @@ namespace SauronSWPlugin
             double mirrorWidth = inchesToMeters(1);
             double[] pointLocation = (double[]) point.ArrayData;
 
-            MathVector normal = mathUtils.CreateVector(new double[] { 0, 0, 1 });
-            swComponent.Select(false);
+            // get the normal of the face.. this will tell us how to orient the rectangle
+            double[] ridiculousReturn = intersectedFace.GetSurface().EvaluateAtPoint(pointLocation[0],
+                                                                                     pointLocation[1],
+                                                                                     pointLocation[2]);
+            double[] surfaceNormal = { ridiculousReturn[0], ridiculousReturn[1], ridiculousReturn[2] };
+            MathVector normal = mathUtils.CreateVector(surfaceNormal);
+            
+            // select the main body, because that is what we want to draw on
+            mainBody.Select(false);
+            int status = 0;
+            swAssembly.EditPart2(true, false, ref status);
             swSelectionMgr.SetSelectionPoint2(0, -1, pointLocation[0], pointLocation[1], pointLocation[2]);
             swSketchMgr.InsertSketch(true);
             double[] projectedPointDescription = (double[]) intersectedFace.GetClosestPointOn(pointLocation[0], pointLocation[1], pointLocation[2]);
             swSketchMgr.CreatePoint(projectedPointDescription[0], projectedPointDescription[1], projectedPointDescription[2]);
-            ISketchSegment[] mirrorRect = swSketchMgr.CreateCenterRectangle(pointLocation[0], pointLocation[1], pointLocation[2],
-                                                                            pointLocation[0] + mirrorWidth, pointLocation[1] + mirrorWidth, pointLocation[2]);
+            
+            swSketchMgr.CreateCenterRectangle(projectedPointDescription[0], projectedPointDescription[1], projectedPointDescription[2],
+                                              projectedPointDescription[0] + mirrorWidth * (1 - surfaceNormal[0]),
+                                              projectedPointDescription[1] + mirrorWidth * (1 - surfaceNormal[1]),
+                                              projectedPointDescription[2] + mirrorWidth * (1 - surfaceNormal[2]));
             
             swFeatureMgr.FeatureExtrusion2(true, false, false,
                                            0, 0, 0.00254, 0.00254,
@@ -308,6 +282,61 @@ namespace SauronSWPlugin
                                            false);
 
             swDoc.ClearSelection2(true);
+        }
+
+        private bool intersectsComponents()
+        {
+            /*
+             * see https://forum.solidworks.com/thread/65563 for alternatives to getprojectedpointon
+             * 
+             * IModelDoc2::RayIntersections.
+             * ModelDoc2::GetRayIntersectionsPoints.
+             * ModelDoc2::GetRayIntersectionsTopology.
+             */
+
+            double[] rayVectorOrigins = camera.rayVectorOrigins();
+            double[] rayVectorDirections = camera.rayVectorDirections();
+
+            object[] bodies = ourComponents.ElementAt(1).component.GetBodies2((int)swBodyType_e.swSolidBody);
+
+            alert("we are trying with component " + ourComponents.ElementAt(1).component.Name);
+
+            int numIntersectionsFound = swDoc.RayIntersections(bodies,
+                                                               rayVectorOrigins,
+                                                               rayVectorDirections,
+                                                               (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                               .01,
+                                                               .01);
+
+            if (numIntersectionsFound > 0)
+            {
+                double[] horrifyingReturn = swDoc.GetRayIntersectionsPoints();
+                int lengthOfOneReturn = 9;
+                for (int i = 0; i < numIntersectionsFound; i++)
+                {
+                    double bodyIndex = horrifyingReturn[i * lengthOfOneReturn + 0];
+                    double rayIndex = horrifyingReturn[i * lengthOfOneReturn + 1];
+                    double intersectionType = horrifyingReturn[i * lengthOfOneReturn + 2];
+                    double x = horrifyingReturn[i * lengthOfOneReturn + 3];
+                    double y = horrifyingReturn[i * lengthOfOneReturn + 4];
+                    double z = horrifyingReturn[i * lengthOfOneReturn + 5];
+                    double nx = horrifyingReturn[i * lengthOfOneReturn + 6];
+                    double ny = horrifyingReturn[i * lengthOfOneReturn + 7];
+                    double nz = horrifyingReturn[i * lengthOfOneReturn + 8];
+
+                    alert("our entire horrifying return " + bodyIndex + "," + rayIndex + "," + intersectionType + "," + x + "," + y + "," + z + "," + nx + "," + ny + "," + nz);
+
+                    alert("we hit body " + ((Body2)bodies[(int)bodyIndex]).Name + " at " + x + "," + y + "," + z);
+
+                    visualizeRay("cameraRay-" + randomString(15), camera.rayVectors().ElementAt((int)rayIndex), camera.rayVectorSources().ElementAt((int)rayIndex));
+
+                    //intersectionPoint = mathUtils.CreatePoint(new double[] { x, y, z });
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         private bool intersectsComponentSomewhere(Component2 swComponent, MathPoint rayPoint, MathVector rayDir, out MathPoint intersectionPoint, out Face2 intersectedFace)
@@ -333,18 +362,13 @@ namespace SauronSWPlugin
                 Body2 body = (Body2)vBody;
                 intersectedFace = body.GetFirstFace();
 
-                if (!body.Name.Contains("flag"))
-                {
-                    continue;
-                }
-
                 while (intersectedFace != null && intersectionPoint == null)
                 {
                     intersectionPoint = intersectedFace.GetProjectedPointOn(rayPoint, rayDir);
                     if (intersectionPoint != null && intersectionPoint.ArrayData != null)
                     {
                         double[] intersectCoords = (double[]) intersectionPoint.ArrayData;
-                        swApp.SendMsgToUser2("HUZFUCKINGZAH, we intersected with " + swComponent.Name + " at " + intersectCoords[0] + "," + intersectCoords[1] + "," + intersectCoords[2], 1, 1);
+                        //swApp.SendMsgToUser2("we intersected with " + swComponent.Name + " at " + intersectCoords[0] + "," + intersectCoords[1] + "," + intersectCoords[2], 1, 1);
                     }
                     intersectedFace = intersectedFace.IGetNextFace();
                 }
@@ -358,6 +382,23 @@ namespace SauronSWPlugin
             }
 
             return (intersectionPoint != null);
+        }
+
+        private void visualizeRay(String name, MathVector ray, IMathPoint origin)
+        {
+            double[] rayData = (double[])ray.ArrayData;
+            double[] originData = (double[])origin.ArrayData;
+            swDoc.Insert3DSketch2(true);
+            swDoc.CreateLine2(originData[0], originData[1], originData[2], rayData[0], rayData[1], rayData[2]);
+            swDoc.Insert3DSketch2(true);
+            Feature sketch = swSelectionMgr.GetSelectedObject6(1, 0);
+            sketch.Name = name;
+            swDoc.ClearSelection2(true);
+        }
+
+        private MathPoint determineRayProjectionPoint(MathPoint raySource, MathVector rayVector, Face2 face)
+        {
+            return raySource;
         }
 
         private bool placeMirror(Component2 swComponent, IConfiguration configToEdit)
@@ -375,24 +416,23 @@ namespace SauronSWPlugin
             MathPoint intersectionPoint = null;
             Face2 intersectedFace = null;
 
+            bool intersecting = false;
+
             foreach (MathVector cameraRayVector in camera.rayVectors())
             {
-                if (intersectsComponentSomewhere(swComponent, camera.centreOfVision, cameraRayVector, out intersectionPoint, out intersectedFace))
-                {
-                    break;
-                }
+                // let's see if it works without reflection
+                intersecting = intersectsComponentSomewhere(swComponent, camera.centreOfVision, cameraRayVector, out intersectionPoint, out intersectedFace);
             }
 
-            if (intersectionPoint == null)
+            if (!intersecting)
             {
-                swApp.SendMsgToUser2("moving on to trying reflection", 1, 1);
+                // move on and try reflection
                 MathPoint reflectionPoint = null;
                 MathVector reflectionVector = null;
-                // then we need to reflect to see this component
+
+                // we want to reflect only off of the main body, not other bodies
                 vBodies = mainBody.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
                 bodiesInfo = (int[])vBodyInfo;
-
-                bool intersecting = false;
 
                 foreach (MathVector cameraRayVector in camera.rayVectors())
                 {
@@ -403,34 +443,48 @@ namespace SauronSWPlugin
 
                         while (face != null && !intersecting)
                         {
+                            // TODO : take out all the shit we are sendmsgtouser2-ing
                             Surface surface = face.IGetSurface();
                             if (surface == null)
                             {
-                                swApp.SendMsgToUser2("our surface is null?", 1, 1);
+                                continue;
                             }
 
-                            reflectionPoint = surface.GetProjectedPointOn(camera.centreOfVision, cameraRayVector);
+                            // note that we can't do this!  agh!  damnable memory leaks...
+                            //reflectionPoint = face.GetProjectedPointOn(camera.centreOfVision, cameraRayVector);
+                            reflectionPoint = determineRayProjectionPoint(camera.centreOfVision, cameraRayVector, face); 
 
+                            // TODO : try making the ray longer and using getClosestPoint
+                            // TODO : try making the ray longer and finding the intersection??
+                            
                             if (reflectionPoint == null)
                             {
                                 continue;
                             }
 
+                            double[] reflectionPointData = (double[])reflectionPoint.ArrayData;
+                            swApp.SendMsgToUser2("looks like we got reflection point " + reflectionPointData[0] + "," + reflectionPointData[1] + "," + reflectionPointData[2], 1, 1);
+
                             double[] ridiculousReturn = surface.EvaluateAtPoint(reflectionPoint.ArrayData[0],
                                                                                 reflectionPoint.ArrayData[1],
                                                                                 reflectionPoint.ArrayData[2]);
                             double[] surfaceNormal = { ridiculousReturn[0], ridiculousReturn[1], ridiculousReturn[2] };
+                            swApp.SendMsgToUser2("looks like we got surface normal " + surfaceNormal[0] + "," + surfaceNormal[1] + "," + surfaceNormal[2], 1, 1);
                             double[] xyz = (double[])cameraRayVector.ArrayData;
-                            double[] reflectionDir = camera.calculateReflectionDir(xyz);
+                            double[] reflectionDir = camera.calculateReflectionDir(xyz, surfaceNormal);
                             reflectionVector = mathUtils.CreateVector(reflectionDir);
+                            swApp.SendMsgToUser2("looks like we got reflection ray " + reflectionDir[0] + "," + reflectionDir[1] + "," + reflectionDir[2], 1, 1);
 
-                            bool intersected = intersectsComponentSomewhere(swComponent, reflectionPoint, reflectionVector, out intersectionPoint, out intersectedFace);
+                            visualizeRay("reflection", reflectionVector, reflectionPoint);
+
+                            intersecting = intersectsComponentSomewhere(swComponent, reflectionPoint, reflectionVector, out intersectionPoint, out intersectedFace);
 
                             face = face.IGetNextFace();
                         }
 
                         if (intersecting)
                         {
+                            swApp.SendMsgToUser2("intersected!", 1, 1);
                             // put a mirror on the face at reflectionPoint
                             createMirrorExtrusion(swComponent, intersectedFace, reflectionPoint);
                             break;
@@ -444,7 +498,7 @@ namespace SauronSWPlugin
                 
             }
 
-            return intersectionPoint != null;
+            return intersecting;
         }
 
         private Component2 findComponent(Component2 swComp, String searchFor)
@@ -477,7 +531,7 @@ namespace SauronSWPlugin
             for (i = 0; i < vChildComp.Length; i++)
             {
                 swChildComp = (Component2)vChildComp[i];
-                foreach (String compName in ourComponents)
+                foreach (String compName in ourComponentNames)
                 {
                     if (swChildComp.Name2.Contains(compName))
                     {
@@ -531,20 +585,22 @@ namespace SauronSWPlugin
             return newConfig;
         }
 
+        // TODO : enforce an ordering on the clicks of the buttons
+
         private void processFeatures_Click(object sender, EventArgs e)
         {
-            // do the basic setup for the function
             getModelDoc();
             getFOV();
+
             if (camera.fieldOfView == null)
             {
-                swApp.SendMsgToUser2("no camera detected!", 1, 1);
                 return;
             }
 
-            foreach (ComponentIdentifier c in allOurComponents)
+            foreach (ComponentIdentifier c in ourComponents)
             {
                 IConfiguration newConfig = createNewConfiguration(c.component);
+                // TODO change me back!  I need to lengthen flags first, but not while we test raytracing
                 bool success = false;//lengthenFlag(c.component, newConfig);
                 if (!success)
                 {
@@ -556,8 +612,6 @@ namespace SauronSWPlugin
                         swApp.SendMsgToUser2("we can't seem to see component " + c.component.Name + " you will have to move it", 1, 1);
                     }
                 }
-                // TODO : TAKE ME OUT!  I AM FOR TESTING PURPOSES ONLY!
-                //break;
             }
 
             // cast rays from the camera and see what we get!  hopefully some bounding boxes.  :)
@@ -565,17 +619,11 @@ namespace SauronSWPlugin
             swAssembly.EditAssembly();
         }
 
-        private void stuff()
-        {
-            // a place for me to copy/paste from macros and not hurt anything
-            getModelDoc();
-        }
-
         private void test_mode_Click(object sender, EventArgs e)
         {
             getModelDoc();
-            String exit_test = "exit test mode";
-            String enter_test = "enter test mode";
+            String exit_test = "stop testing";
+            String enter_test = "start testing!";
             if (testing)
             {
                 testing = false;
@@ -593,8 +641,10 @@ namespace SauronSWPlugin
         private void register_Click(object sender, EventArgs e)
         {
             getModelDoc();
-            foreach (ComponentIdentifier c in allOurComponents)
+            foreach (ComponentIdentifier c in ourComponents)
             {
+                c.component.Select(false);
+
                 // we want to process this appropriately: send it to Colin
                 sendMessage(c.OSC_string, "register");
 
@@ -607,10 +657,8 @@ namespace SauronSWPlugin
             }
         }
 
-        private void insert_camera_Click(object sender, EventArgs e)
+        private void insertCamera()
         {
-            getModelDoc();
-
             string FOV_file = "C:\\Users\\Valkyrie\\projects\\sauron\\solidworks\\point-grey-fov.SLDPRT";
             int loadErrs = 0;
             int loadWarns = 0;
@@ -631,37 +679,42 @@ namespace SauronSWPlugin
             swAssembly.AddComponent(FOV_file, x, y, z);
             swApp.CloseDoc(FOV_file);
             swAssembly.ForceRebuild();
+        }
+
+        private void insert_camera_Click(object sender, EventArgs e)
+        {
+            getModelDoc();
+
+            insertCamera();
 
             getFOV();
-            camera.fieldOfView.Select2(false, 1 << 0);
+            camera.fieldOfView.Select(false);
             swAssembly.SetComponentTransparent(true);
             camera.fieldOfView.DeSelect();
             swAssembly.EditAssembly();
         }
 
+        private void print_Click(object sender, EventArgs e)
+        {
+            getModelDoc();
+            getFOV();
+            // remove the camera
+            // export the STL
+            // replace the camera
+            insertCamera();
+        }
+
         private void testPart_Click(object sender, EventArgs e)
         {
             getModelDoc();
+            getFOV();
 
-            String message = "10.0";
-            float data = float.Parse(message, System.Globalization.CultureInfo.InvariantCulture);
-            string address = "/button/0";
+            intersectsComponents();
+        }
 
-            swApp.SendMsgToUser2("we have " + allOurComponents.Count() + " components to deal with", 1, 1);
-            swApp.SendMsgToUser2("we got " + message + " on " + address, 1, 1);
-
-            foreach (ComponentIdentifier ci in allOurComponents)
-            {
-                if (ci.isAddressedAs(address))
-                {
-                    swApp.SendMsgToUser2("yay!!!!!!!", 1, 1);
-                    ci.component.Select(false);
-                }
-                else
-                {
-                    swApp.SendMsgToUser2("whoops, that is addressed as " + ci.ToString(), 1, 1);
-                }
-            }
+        private void alert(string text)
+        {
+            swApp.SendMsgToUser2(text, 1, 1);
         }
     }
 }
