@@ -30,8 +30,9 @@ void Sauron::setup(){
 	sprintf(mJoystickLocation, "%s", notRegistered);
 	sprintf(mDpadDirection, "%s", notRegistered);
 	
-	receiver.setup(PORT);
-	sender.setup(HOST, PORT+1);
+	receiver.setup(RECEIVE_PORT);
+	sender.setup(HOST, SEND_PORT);
+	websocketsSender.setup(HOST, WEBSOCKETS_PORT);
 	
 	testing = true;
 	
@@ -112,6 +113,7 @@ void Sauron::update(){
 				m.setAddress(componentType + "/" + idstr);
 				m.addStringArg(delta);
 				sender.sendMessage(m);
+				websocketsSender.sendMessage(m);
 			}
 		}
 		
