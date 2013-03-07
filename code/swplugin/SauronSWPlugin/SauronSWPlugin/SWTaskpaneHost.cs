@@ -64,7 +64,7 @@ namespace SauronSWPlugin
 
         private void initOSC()
         {
-            solidworksPlugin = new IPEndPoint(IPAddress.Loopback, RECEIVEPORT);
+            solidworksPlugin = new IPEndPoint(IPAddress.Loopback, SENDPORT);
             openFrameworks = new IPEndPoint(IPAddress.Loopback, SENDPORT);
             server = new OscServer(TransportType.Udp, IPAddress.Loopback, RECEIVEPORT);
             server.FilterRegisteredMethods = false;
@@ -75,13 +75,10 @@ namespace SauronSWPlugin
 
         private void sendMessage(String address, String data)
         {
-            if (data == null)
-            {
-                return;
-            }
-
+            OscBundle bundle = new OscBundle(solidworksPlugin);
             OscMessage message = new OscMessage(solidworksPlugin, address, data);
-            message.Send(openFrameworks);
+            bundle.Append(message);
+            bundle.Send(openFrameworks);
         }
 
         private void receivedMessage(object sender, OscMessageReceivedEventArgs e)
@@ -200,7 +197,7 @@ namespace SauronSWPlugin
             component.Select(false);
             otherComponent.Select(true);
             measure.Calculate(null);
-            return measure.Distance;
+            return measure.Distance;  // TODO measure.Projection ?
         }
 
         private bool lengthenFlag(Component2 swComponent, IConfiguration configToEdit)
@@ -247,7 +244,7 @@ namespace SauronSWPlugin
             return true;
         }
 
-        private void createMirrorExtrusion(Component2 swComponent, Face2 intersectedFace, MathPoint point)
+        private void createMirrorExtrusion(Face2 intersectedFace, MathPoint point)
         {
             double mirrorWidth = inchesToMeters(1);
             double[] pointLocation = (double[]) point.ArrayData;
@@ -257,7 +254,6 @@ namespace SauronSWPlugin
                                                                                      pointLocation[1],
                                                                                      pointLocation[2]);
             double[] surfaceNormal = { ridiculousReturn[0], ridiculousReturn[1], ridiculousReturn[2] };
-            MathVector normal = mathUtils.CreateVector(surfaceNormal);
             
             // select the main body, because that is what we want to draw on
             mainBody.Select(false);
@@ -294,19 +290,24 @@ namespace SauronSWPlugin
              * ModelDoc2::GetRayIntersectionsTopology.
              */
 
-            double[] rayVectorOrigins = camera.rayVectorOrigins();
-            double[] rayVectorDirections = camera.rayVectorDirections();
+            double[] rayVectorOrigins = { 0, 0, 0 };//camera.rayVectorOrigins();
+            double[] rayVectorDirections = { 0, 0, 1 };// camera.rayVectorDirections();
 
-            object[] bodies = ourComponents.ElementAt(1).component.GetBodies2((int)swBodyType_e.swSolidBody);
+            object[] allBodies = ourComponents.ElementAt(0).component.GetBodies2((int)swBodyType_e.swSolidBody);
+            object[] myBody = {allBodies[0]};
 
-            alert("we are trying with component " + ourComponents.ElementAt(1).component.Name);
+            //object[] bodies = ourComponents.ElementAt(0).component.GetBodies2((int)swBodyType_e.swSolidBody);
 
-            int numIntersectionsFound = swDoc.RayIntersections(bodies,
+            alert("we are trying with component " + ourComponents.ElementAt(0).component.Name);
+
+            int numIntersectionsFound = swDoc.RayIntersections(myBody,
                                                                rayVectorOrigins,
                                                                rayVectorDirections,
-                                                               (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                               (int)swRayPtsOpts_e.swRayPtsOptsTOPOLS + (int)swRayPtsOpts_e.swRayPtsOptsNORMALS,
                                                                .01,
                                                                .01);
+
+            alert("done!");
 
             if (numIntersectionsFound > 0)
             {
@@ -326,7 +327,7 @@ namespace SauronSWPlugin
 
                     alert("our entire horrifying return " + bodyIndex + "," + rayIndex + "," + intersectionType + "," + x + "," + y + "," + z + "," + nx + "," + ny + "," + nz);
 
-                    alert("we hit body " + ((Body2)bodies[(int)bodyIndex]).Name + " at " + x + "," + y + "," + z);
+                    alert("we hit body " + ((Body2)myBody[(int)bodyIndex]).Name + " at " + x + "," + y + "," + z);
 
                     visualizeRay("cameraRay-" + randomString(15), camera.rayVectors().ElementAt((int)rayIndex), camera.rayVectorSources().ElementAt((int)rayIndex));
 
@@ -375,7 +376,7 @@ namespace SauronSWPlugin
 
                 if (intersectionPoint != null)
                 {
-                    createMirrorExtrusion(swComponent, intersectedFace, intersectionPoint);
+                    createMirrorExtrusion(intersectedFace, intersectionPoint);
                     break;
                 }
                 i++;
@@ -486,7 +487,7 @@ namespace SauronSWPlugin
                         {
                             swApp.SendMsgToUser2("intersected!", 1, 1);
                             // put a mirror on the face at reflectionPoint
-                            createMirrorExtrusion(swComponent, intersectedFace, reflectionPoint);
+                            createMirrorExtrusion(intersectedFace, reflectionPoint);
                             break;
                         }
                     }
@@ -533,9 +534,10 @@ namespace SauronSWPlugin
                 swChildComp = (Component2)vChildComp[i];
                 foreach (String compName in ourComponentNames)
                 {
-                    if (swChildComp.Name2.Contains(compName))
+                    if (swChildComp.Name2.StartsWith(compName) && !swChildComp.Equals(mainBody))
                     {
-                        found.Add(new ComponentIdentifier(swChildComp));
+                        ComponentIdentifier ci = new ComponentIdentifier(swChildComp);
+                        found.Add(ci);
                     }
                 }
             }
@@ -646,7 +648,7 @@ namespace SauronSWPlugin
                 c.component.Select(false);
 
                 // we want to process this appropriately: send it to Colin
-                sendMessage(c.OSC_string, "register");
+                sendMessage(c.OSC_string, "start");
 
                 // now ask the user to register it
                 swApp.SendMsgToUser2("please actuate " + c.component.Name + ", then click OK",
