@@ -55,10 +55,10 @@ void Sauron::update(){
 		grayImage.resetROI();
 		
 		grayImage = colorImg;
-
+		int minAreaOfContours = 20;
 		
 		grayImage.threshold(threshold);
-		contourFinderGrayImage.findContours(grayImage, 5, (340*240)/4, mNumBlobsConsidered, false, true);
+		contourFinderGrayImage.findContours(grayImage, minAreaOfContours, (340*240)/4, mNumBlobsConsidered, false, true);
 		
 		if(registering){
 			sauronRegister();

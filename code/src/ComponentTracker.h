@@ -31,7 +31,7 @@ public:
 	std::vector<ofRectangle> previousRectangles;//rectangles are used during the ROI set stage of registration (instead of blobs)
 	
 	bool isRegistered();
-	bool finalizeRegistration();
+	void finalizeRegistration();
 	
 	bool buttonEventDetected();
 	bool sliderEventDetected(int* sliderPosition);
