@@ -68,7 +68,7 @@ void Sauron::update(){
 		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
 			ComponentTracker* c = *it;
 			if(c->isRegistered()){
-				switch (c->comptype) {
+				switch (c->getComponentType()) {
 					case ComponentTracker::slider:
 						sprintf(mSliderProgress, "%f", c->calculateSliderProgress(contourFinderGrayImage.blobs));
 						c->setDelta(mSliderProgress);
@@ -102,8 +102,8 @@ void Sauron::update(){
 		if(testing) {
 			for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
 				ComponentTracker* component = *it;
-				string componentType = component->getComponentType();
-				int id = component->id;
+				string componentType = component->getComponentTypeString();
+				int id = component->getId();
 				string delta = component->getDelta();
 				char idstr[21]; // enough to hold all numbers up to 64-bits
 				sprintf(idstr, "%d", id);
@@ -214,7 +214,7 @@ void Sauron::draw(){
 		ofSetHexColor(0xf7b82b);
 		ofNoFill();
 		ofTranslate(360, 20);
-		ofRect(currentRegisteringComponent->ROI);
+		ofRect(currentRegisteringComponent->getROI());
 		ofPopView();
 	}
 
@@ -225,7 +225,7 @@ void Sauron::draw(){
 	ofTranslate(360, 20);
 	for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
 		ComponentTracker* c = *it;
-		ofRect(c->ROI);
+		ofRect(c->getROI());
 	}
 		
 	ofPopView();//don't keep the ROI drawing settings
@@ -233,7 +233,7 @@ void Sauron::draw(){
 		// finally, a report:
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
-	const char* ctype = currentRegisteringComponent->getComponentType().c_str();
+	const char* ctype = currentRegisteringComponent->getComponentTypeString().c_str();
 	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s",
 			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection);
 	ofDrawBitmapString(reportStr, 20, 280);
@@ -284,7 +284,7 @@ void Sauron::keyPressed(int key){
 void Sauron::stageComponent(ComponentTracker::ComponentType type, int id){
 	for (std::vector<ComponentTracker*>::size_type i = 0; i != components.size(); i++){
 		ComponentTracker* c = components[i];
-		if (c->comptype == type && c->id == id) {
+		if (c->getComponentType() == type && c->getId() == id) {
 			components.erase(components.begin()+i);
 			break;
 		}

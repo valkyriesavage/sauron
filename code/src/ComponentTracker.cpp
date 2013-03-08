@@ -42,7 +42,7 @@ void ComponentTracker::init(ComponentType type, int id){
 	}
 }
 	
-string ComponentTracker::getComponentType(){
+string ComponentTracker::getComponentTypeString(){
 	switch (this->comptype) {
 		case ComponentTracker::button:
 			return "button";
@@ -215,6 +215,10 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 	previousBlobs = blobs;
 }
 
+ofRectangle ComponentTracker::getROI(){
+	return ROI;	
+}
+
 float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
 	
 	std::vector<ofxCvBlob> sliderBlobs;
@@ -357,6 +361,14 @@ string ComponentTracker::getDelta(){
 
 void ComponentTracker::setDelta(string f){
 	this->delta = f;
+}
+
+int ComponentTracker::getId(){
+	return id;
+}
+
+ComponentTracker::ComponentType ComponentTracker::getComponentType(){
+	return comptype;
 }
 
 bool ComponentTracker::ROIUnset(){
