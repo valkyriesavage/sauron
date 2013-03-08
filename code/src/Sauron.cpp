@@ -234,8 +234,8 @@ void Sauron::draw(){
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
 	const char* ctype = currentRegisteringComponent->getComponentTypeString().c_str();
-	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nis Registering? %d\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s",
-			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), registering, mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection);
+	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s",
+			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection);
 	ofDrawBitmapString(reportStr, 20, 280);
 }
 
