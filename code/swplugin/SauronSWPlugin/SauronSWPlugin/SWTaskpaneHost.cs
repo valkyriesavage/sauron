@@ -290,30 +290,42 @@ namespace SauronSWPlugin
              * ModelDoc2::GetRayIntersectionsTopology.
              */
 
+            swDoc = ((ModelDoc2)(swApp.ActiveDoc));
+            swSelectionMgr = ((SelectionMgr)(swDoc.SelectionManager));
+
+            /*
+            swDoc.ClearSelection2(true);
+            foreach(ComponentIdentifier ci in ourComponents) {
+                ci.component.Select(true);
+            }
+            */
+            object body = swSelectionMgr.GetSelectedObject6(1, -1);
+
             double[] rayVectorOrigins = { 0, 0, 0 };//camera.rayVectorOrigins();
             double[] rayVectorDirections = { 0, 0, 1 };// camera.rayVectorDirections();
 
-            object[] allBodies = ourComponents.ElementAt(0).component.GetBodies2((int)swBodyType_e.swSolidBody);
-            object[] myBody = {allBodies[0]};
-
             //object[] bodies = ourComponents.ElementAt(0).component.GetBodies2((int)swBodyType_e.swSolidBody);
 
-            alert("we are trying with component " + ourComponents.ElementAt(0).component.Name);
 
-            int numIntersectionsFound = swDoc.RayIntersections(myBody,
-                                                               rayVectorOrigins,
-                                                               rayVectorDirections,
-                                                               (int)swRayPtsOpts_e.swRayPtsOptsTOPOLS + (int)swRayPtsOpts_e.swRayPtsOptsNORMALS,
-                                                               .01,
-                                                               .01);
+            //alert("we are trying with component " + ourComponents.ElementAt(0).component.Name);
+            alert("here we go");
 
-            alert("done!");
+            int numIntersectionsFound = (int)swDoc.RayIntersections((object)body,
+                                                                    (object)rayVectorOrigins,
+                                                                    (object)rayVectorDirections,
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (double).0000001,
+                                                                    (double).0000001);
 
-            if (numIntersectionsFound > 0)
-            {
+            alert("done!  numIntersectionsFound = " + numIntersectionsFound);
+
+            /*if (numIntersectionsFound > 0)
+            {*/
                 double[] horrifyingReturn = swDoc.GetRayIntersectionsPoints();
                 int lengthOfOneReturn = 9;
-                for (int i = 0; i < numIntersectionsFound; i++)
+                alert(horrifyingReturn + "");
+                alert(horrifyingReturn.Length + "");
+                for (int i = 0; i < horrifyingReturn.Length/lengthOfOneReturn; i++)
                 {
                     double bodyIndex = horrifyingReturn[i * lengthOfOneReturn + 0];
                     double rayIndex = horrifyingReturn[i * lengthOfOneReturn + 1];
@@ -326,16 +338,11 @@ namespace SauronSWPlugin
                     double nz = horrifyingReturn[i * lengthOfOneReturn + 8];
 
                     alert("our entire horrifying return " + bodyIndex + "," + rayIndex + "," + intersectionType + "," + x + "," + y + "," + z + "," + nx + "," + ny + "," + nz);
-
-                    alert("we hit body " + ((Body2)myBody[(int)bodyIndex]).Name + " at " + x + "," + y + "," + z);
-
                     visualizeRay("cameraRay-" + randomString(15), camera.rayVectors().ElementAt((int)rayIndex), camera.rayVectorSources().ElementAt((int)rayIndex));
-
-                    //intersectionPoint = mathUtils.CreatePoint(new double[] { x, y, z });
                 }
 
                 return true;
-            }
+            //}
 
             return false;
         }
@@ -708,8 +715,8 @@ namespace SauronSWPlugin
 
         private void testPart_Click(object sender, EventArgs e)
         {
-            getModelDoc();
-            getFOV();
+            /*getModelDoc();
+            getFOV();*/
 
             intersectsComponents();
         }
