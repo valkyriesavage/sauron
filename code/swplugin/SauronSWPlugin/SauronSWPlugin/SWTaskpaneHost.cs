@@ -27,6 +27,8 @@ namespace SauronSWPlugin
     [ProgId(SWTASKPANE_PROGID)]
     public partial class SWTaskpaneHost : UserControl
     {
+        public bool DEBUG = false;
+        
         public const string SWTASKPANE_PROGID = "Sauron.SWTaskPane_SwPlugin";
         public const string BASE_SW_FOLDER = "C:\\Users\\Valkyrie\\projects\\sauron\\solidworks";
         public SldWorks swApp;
@@ -60,6 +62,13 @@ namespace SauronSWPlugin
         {
             InitializeComponent();
             initOSC();
+            if (!DEBUG)
+            {
+                processFeatures.Enabled = false;
+                print.Enabled = false;
+                register.Enabled = false;
+                test_mode.Enabled = false;
+            }
         }
 
         private void initOSC()
@@ -406,6 +415,7 @@ namespace SauronSWPlugin
 
         private MathPoint determineRayProjectionPoint(MathPoint raySource, MathVector rayVector, Face2 face)
         {
+            // TODO!
             return raySource;
         }
 
@@ -598,6 +608,7 @@ namespace SauronSWPlugin
 
         private void processFeatures_Click(object sender, EventArgs e)
         {
+            print.Enabled = true;
             getModelDoc();
             getFOV();
 
@@ -649,6 +660,7 @@ namespace SauronSWPlugin
 
         private void register_Click(object sender, EventArgs e)
         {
+            test_mode.Enabled = true;
             getModelDoc();
             foreach (ComponentIdentifier c in ourComponents)
             {
@@ -695,10 +707,10 @@ namespace SauronSWPlugin
 
         private void insert_camera_Click(object sender, EventArgs e)
         {
+            processFeatures.Enabled = true;
+
             getModelDoc();
-
             insertCamera();
-
             getFOV();
             camera.fieldOfView.Select(false);
             swAssembly.SetComponentTransparent(true);
@@ -708,6 +720,7 @@ namespace SauronSWPlugin
 
         private void print_Click(object sender, EventArgs e)
         {
+            register.Enabled = true;
             getModelDoc();
             getFOV();
 
