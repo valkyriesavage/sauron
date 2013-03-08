@@ -1,17 +1,17 @@
 #include "ComponentTracker.h"
 
 ComponentTracker::ComponentTracker() {
-	id = -1;
-	mIsRegistered = false;
-	ROI = ofRectangle();
-	mThreshold = 10.0f;//just a guess
-	comptype = ComponentTracker::no_component;
+	init(ComponentTracker::no_component, -1);
 }
 
 ComponentTracker::ComponentTracker(ComponentType type, int id){
+	init(type, id);
+}
+
+void ComponentTracker::init(ComponentType type, int id){
 	mIsRegistered = false;
 	ROI = ofRectangle();
-	mThreshold = 5.0f;//just a guess
+	mThreshold = 2.0f;//just a guess
 	
 	this->id = id;
 	this->comptype = type;
@@ -37,10 +37,9 @@ ComponentTracker::ComponentTracker(ComponentType type, int id){
 			numBlobsNeeded = 3;
 			break;
 		default:
+			numBlobsNeeded = 0;
 			break;
 	}
-	
-
 }
 	
 string ComponentTracker::getComponentType(){
