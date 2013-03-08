@@ -98,7 +98,7 @@ bool ComponentTracker::isRegistered(){
 	return mIsRegistered;
 }
 
-bool ComponentTracker::finalizeRegistration(){
+void ComponentTracker::finalizeRegistration(){
 	mIsRegistered = true;
 }
 

@@ -12,7 +12,9 @@
 #include "ComponentTracker.h"
 #include "utilities.h"
 
-#define PORT 5001
+#define RECEIVE_PORT 5001
+#define SEND_PORT 5002
+#define WEBSOCKETS_PORT 4344
 #define HOST "localhost"
 
 class Sauron : public ofBaseApp{
@@ -57,5 +59,6 @@ class Sauron : public ofBaseApp{
 
 	ofxOscReceiver receiver;
 	ofxOscSender sender;
+	ofxOscSender websocketsSender;
 };
 

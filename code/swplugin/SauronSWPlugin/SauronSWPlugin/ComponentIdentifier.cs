@@ -16,6 +16,7 @@ namespace SauronSWPlugin
         static int dialCount = 0;
         static int joystickCount = 0;
         static int scrollwheelCount = 0;
+        static int dpadCount = 0;
 
         public Component2 component;
         public string OSC_string;
@@ -37,18 +38,23 @@ namespace SauronSWPlugin
             }
             else if (component.Name2.Contains("dial"))
             {
-                this.OSC_string = "/slider/" + dialCount;
+                this.OSC_string = "/dial/" + dialCount;
                 dialCount++;
             }
             else if (component.Name2.Contains("joystick"))
             {
-                this.OSC_string = "/slider/" + joystickCount;
+                this.OSC_string = "/joystick/" + joystickCount;
                 joystickCount++;
             }
-            else if (component.Name2.Contains("scrollwheel"))
+            else if (component.Name2.Contains("scroll-wheel"))
             {
-                this.OSC_string = "/slider/" + scrollwheelCount;
+                this.OSC_string = "/scrollwheel/" + scrollwheelCount;
                 scrollwheelCount++;
+            }
+            else if (component.Name2.Contains("dpad"))
+            {
+                this.OSC_string = "/dpad/" + dpadCount;
+                dpadCount++;
             }
         }
 
