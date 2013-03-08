@@ -274,13 +274,13 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	if (scrollBlobs.size() > numBlobsNeeded) {
 		cout<<"error blobs passed into calculateScrollWheelDirection: " << scrollBlobs.size() << endl;
 		return ComponentTracker::none;
-	}else if (scrollBlobs.size() == 1 && scrollBlobs[0].area/ROI.getArea() > 0.5) {
+	}else if (scrollBlobs.size() == 1) {
 		return mPreviousScrollWheelDirection;
 	}
 	
-	float meanDistance = 0.0f;
 	float totalDistance = 0.0f;
-	int movementThreshhold = 1;//based on empirical evidence. 
+	float movementThreshhold = 1.5f;//based on empirical evidence. 
+	float movementTolerance = 20.0f;
 	
 	for(int i = 0; i < min(scrollBlobs.size(), previousBlobs.size()); i++) {
 		float xDisp = scrollBlobs[i].centroid.x - previousBlobs[i].centroid.x;
@@ -293,18 +293,28 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 		}
 	}
 	
-	meanDistance =  totalDistance /previousBlobs.size();	
+	float meanDistance =  totalDistance /min(scrollBlobs.size(), previousBlobs.size());	
 	
 	this->previousBlobs = scrollBlobs;//gotta replace our previous blobs
 	
+	if (meanDistance > movementTolerance || meanDistance < -movementTolerance) {//sometimes scroll wheel gets whacky (possibly due to blob id shifting). This is a bandaid to the symptoms.
+		return mPreviousScrollWheelDirection;
+	}
+	
 	if (meanDistance >movementThreshhold) {//for now, 'up' is reletively defined. 
+		if (mPreviousScrollWheelDirection == ComponentTracker::down) {
+			return ComponentTracker::down;
+		}
 		mPreviousScrollWheelDirection = ComponentTracker::up;
 		return ComponentTracker::up;
 	}else if (meanDistance < -movementThreshhold) {
+		if (mPreviousScrollWheelDirection == ComponentTracker::up) {
+			return ComponentTracker::up;
+		}
 		mPreviousScrollWheelDirection = ComponentTracker::down;
 		return ComponentTracker::down;
 	}else {
-
+		mPreviousScrollWheelDirection = ComponentTracker::none;
 		return ComponentTracker::none;
 	}
 }
