@@ -319,8 +319,8 @@ namespace SauronSWPlugin
 
             alert("done!  numIntersectionsFound = " + numIntersectionsFound);
 
-            /*if (numIntersectionsFound > 0)
-            {*/
+            if (numIntersectionsFound > 0)
+            {
                 double[] horrifyingReturn = swDoc.GetRayIntersectionsPoints();
                 int lengthOfOneReturn = 9;
                 alert(horrifyingReturn + "");
@@ -342,7 +342,7 @@ namespace SauronSWPlugin
                 }
 
                 return true;
-            //}
+            }
 
             return false;
         }
@@ -666,7 +666,7 @@ namespace SauronSWPlugin
             }
         }
 
-        private void insertCamera()
+        private void insertCameraAt(double x, double y, double z)
         {
             string FOV_file = "C:\\Users\\Valkyrie\\projects\\sauron\\solidworks\\point-grey-fov.SLDPRT";
             int loadErrs = 0;
@@ -682,12 +682,15 @@ namespace SauronSWPlugin
                                      (int)swMessageBoxIcon_e.swMbWarning,
                                      (int)swMessageBoxBtn_e.swMbOk);
             }
-            double x = 0;
-            double y = 0;
-            double z = 0;
+
             swAssembly.AddComponent(FOV_file, x, y, z);
             swApp.CloseDoc(FOV_file);
             swAssembly.ForceRebuild();
+        }
+
+        private void insertCamera()
+        {
+            insertCameraAt(0, 0, 0);
         }
 
         private void insert_camera_Click(object sender, EventArgs e)
@@ -707,10 +710,13 @@ namespace SauronSWPlugin
         {
             getModelDoc();
             getFOV();
-            // remove the camera
-            // export the STL
-            // replace the camera
-            insertCamera();
+
+            camera.fieldOfView.SetSuppression2((int)swComponentSuppressionState_e.swComponentSuppressed);
+            int errors = 0, warnings = 0;
+            string fileName = "C:\\Users\\Valkyrie\\Dropbox\\Sauron\\toPrint\\" + "SAURON-AUTO-" + randomString() + ".STL";
+            swDoc.Extension.SaveAs(fileName, 0, 0, null, ref errors, ref warnings);
+            camera.fieldOfView.SetSuppression2((int)swComponentSuppressionState_e.swComponentFullyResolved);
+            alert("you can print " + fileName + " on your favourite 3D printer");
         }
 
         private void testPart_Click(object sender, EventArgs e)
