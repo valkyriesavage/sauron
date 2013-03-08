@@ -234,12 +234,17 @@ float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
 }
 
 /*
- calculateDialProgress() returns the angle between the two blobs (which are points on the 'circumference' of the ROI (ROI is still a rectangle
- so 'circumference' isn't technically correct, but it's close enough for our purposes)). 
- The first blob is the 'initial point' from the background subtraction and the latter is the moving part.
+ calculateDialProgress() returns the angle of the blob passed
  Formula from http://math.stackexchange.com/questions/185829/how-do-you-find-an-angle-between-two-points-on-the-edge-of-a-circle
  */
 float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
+	bool degrees = true;//change to false if you want radians
+	float rotation;
+	if (degrees) {
+		rotation = 360;
+	}else {
+		rotation = 2*PI;
+	}
 	
 	std::vector<ofxCvBlob> dialBlobs = keepInsideBlobs(blobs);
 	if (dialBlobs.size() != numBlobsNeeded) {
@@ -248,11 +253,19 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 	} 
 	ofPoint p1 = dialBlobs[0].centroid;
 	ofPoint p2 = ROI.getCenter();
-	float r = ROI.width/2;
+	float r = ROI.height/2;
 	p2.y = p2.y + r;
-
-	return acos((2*pow(r, 2)- pow(distanceFormula(p1.x, p1.y, p2.x, p2.y), 2))/(2*pow(r, 2)));
 	
+	float c = distanceFormula(p1.x, p1.y, p2.x, p2.y);
+	float angle = acos((2*pow(r, 2)- pow(c, 2))/(2*pow(r, 2)));
+	
+	if (degrees) {
+		angle = angle* 180/PI;
+	}
+	
+	if (p1.x>ROI.getCenter().x) {
+		return angle;
+	}else return rotation-angle;
 }
 
 ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs){
