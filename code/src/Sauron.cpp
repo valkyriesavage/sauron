@@ -109,7 +109,7 @@ void Sauron::update(){
 				sprintf(idstr, "%d", id);
 				
 				ofxOscMessage m;
-				m.setRemoteEndpoint(HOST, PORT+1);
+				m.setRemoteEndpoint(HOST, SEND_PORT);
 				m.setAddress(componentType + "/" + idstr);
 				m.addStringArg(delta);
 				sender.sendMessage(m);
