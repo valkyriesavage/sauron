@@ -78,7 +78,7 @@
   <ItemGroup>
     <Compile Include="Camera.cs" />
     <Compile Include="ComponentIdentifier.cs" />
-    <Compile Include="FeatureIdentifier.cs" />
+    <Compile Include="InstructionsGenerator.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
