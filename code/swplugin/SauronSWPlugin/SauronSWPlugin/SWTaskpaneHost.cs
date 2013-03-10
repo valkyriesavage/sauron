@@ -305,32 +305,47 @@ namespace SauronSWPlugin
         private bool intersectsComponents()
         {
             /*
-             * see https://forum.solidworks.com/thread/65563 for alternatives to getprojectedpointon
-             * 
-             * IModelDoc2::RayIntersections.
-             * ModelDoc2::GetRayIntersectionsPoints.
-             * ModelDoc2::GetRayIntersectionsTopology.
+             * see https://forum.solidworks.com/message/348151
              */
 
             swDoc = ((ModelDoc2)(swApp.ActiveDoc));
             swSelectionMgr = ((SelectionMgr)(swDoc.SelectionManager));
 
-            /*
-            swDoc.ClearSelection2(true);
+            IBody2[] body = new IBody2[] { swSelectionMgr.GetSelectedObject6(1, -1) as IBody2 };
+
+            double[] rayVectorOrigins = { 0, 0, 0 };
+            double[] rayVectorDirections = { 0, 0, 1 };
+
+            int numIntersectionsFound = (int)swDoc.RayIntersections(body,
+            (object)rayVectorOrigins,
+            (object)rayVectorDirections,
+            (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+            (double).0000001,
+            (double).0000001);
+
+            double[] points = (double[])swDoc.GetRayIntersectionsPoints();
+
+            swDoc.SketchManager.Insert3DSketch(true);
+            swDoc.SketchManager.AddToDB = true;
+            for (int i = 0; i < points.Length; i += 9)
+            {
+                double[] pt = new double[] { points[i + 3], points[i + 4], points[i + 5] };
+                swDoc.SketchManager.CreatePoint(pt[0], pt[1], pt[2]);
+            }
+            swDoc.SketchManager.AddToDB = false;
+            swDoc.SketchManager.Insert3DSketch(true);
+
+            /*swDoc.ClearSelection2(true);
             foreach(ComponentIdentifier ci in ourComponents) {
                 ci.component.Select(true);
             }
-            */
+            
             IBody2[] body = new IBody2[] { swSelectionMgr.GetSelectedObject6(1, -1) as IBody2 };
 
             double[] rayVectorOrigins = { 0, 0, 0 };//camera.rayVectorOrigins();
             double[] rayVectorDirections = { 0, 0, 1 };// camera.rayVectorDirections();
 
             //object[] bodies = ourComponents.ElementAt(0).component.GetBodies2((int)swBodyType_e.swSolidBody);
-
-
-            //alert("we are trying with component " + ourComponents.ElementAt(0).component.Name);
-            alert("here we go");
 
             int numIntersectionsFound = (int)swDoc.RayIntersections(body,
                                                                     (object)rayVectorOrigins,
@@ -364,8 +379,13 @@ namespace SauronSWPlugin
                 }
 
                 return true;
-            }
+            }*/
 
+            return false;
+        }
+
+        private bool hitMainBodyFirst(double[] rayCoordinates, int rayIndex, double[] horrifyingReturn)
+        {
             return false;
         }
 
