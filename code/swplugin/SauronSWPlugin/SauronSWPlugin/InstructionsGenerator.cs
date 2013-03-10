@@ -110,6 +110,7 @@ namespace SauronSWPlugin
             swDoc.Extension.SaveAs(screenshotLocation, 0, 0, null, ref errors, ref warnings);
 
             string instruction = "";
+            // TODO : add in images for examples of all of these!
             if (ci.component.Name.StartsWith("button"))
             {
                 instruction = "stick a circle of reflective material on the bottom of the button as in the example below<br/>";

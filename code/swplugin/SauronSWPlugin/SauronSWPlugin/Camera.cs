@@ -134,6 +134,16 @@ namespace SauronSWPlugin
             swDoc.Extension.DeleteSelection2((int)swDeleteSelectionOptions_e.swDelete_Children +  (int)swDeleteSelectionOptions_e.swDelete_Absorbed);
         }
 
+        public void drawRayForCamera()
+        {
+            Camera.drawRayForCamera(cameraDirection, centreOfVision, swDoc, swSelectionMgr);
+        }
+
+        public void removeRayIfPresent()
+        {
+            Camera.removeRayIfPresent(swDoc);
+        }
+
         public Camera(Component2 fieldOfView, MathPoint centreOfVision, MathVector cameraDirection)
         {
             this.fieldOfView = fieldOfView;
@@ -193,10 +203,12 @@ namespace SauronSWPlugin
             {
                 castRayVectors = new List<MathVector>();
                 castRayVectors.Add(cameraDirection);
-                for (int i = 0; i < 16; i++)
+
+                // important: direction reference {12,13,14,15} are the bounding corners of the shape!  we can just interpolate from there
+                /*for (int i = 12; i < 16; i++)
                 {
                     castRayVectors.Add(getRayFromNamedPoint("direction reference " + i));
-                }
+                }*/
             }
             return castRayVectors;
         }
