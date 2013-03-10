@@ -128,7 +128,7 @@ namespace SauronSWPlugin
             swDoc.ClearSelection2(true);
         }
 
-        private static void removeRayIfPresent(ModelDoc2 swDoc)
+        public static void removeRayIfPresent(ModelDoc2 swDoc)
         {
             swDoc.Extension.SelectByID2(CAMERA_RAY_NAME, "SKETCH", 0, 0, 0, false, 0, null, 0);
             swDoc.Extension.DeleteSelection2((int)swDeleteSelectionOptions_e.swDelete_Children +  (int)swDeleteSelectionOptions_e.swDelete_Absorbed);

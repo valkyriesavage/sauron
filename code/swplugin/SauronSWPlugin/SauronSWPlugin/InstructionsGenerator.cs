@@ -29,7 +29,7 @@ namespace SauronSWPlugin
 
         static int stepNumber = 0;
 
-        public static void createInstructions(List<ComponentIdentifier> componentsToAssemble, List<IFeature> mirrorExtrusions) {
+        public static void createInstructions(List<ComponentIdentifier> componentsToAssemble, List<IFeature> mirrorExtrusions, string STLLocation) {
             stepNumber = 0;
 
             string fileLocation = tempFile(".html");
@@ -37,6 +37,8 @@ namespace SauronSWPlugin
             string html = HTMLHeader();
 
             html += tableHeader();
+
+            html += step("print <a href='file:///" + STLLocation.Replace("\\", "/") + "'>" + STLLocation + "</a> on your favourite 3D printer", "C:\\Users\\Valkyrie\\projects\\sauron\\etc\\webImages\\uprint.jpg");
 
             foreach (ComponentIdentifier ci in componentsToAssemble)
             {
@@ -64,29 +66,31 @@ namespace SauronSWPlugin
 
         private static string HTMLHeader()
         {
-            return "<html>";
+            return "<html>\n<head><title>How to Build Your Computer Vision-ized Device</title></head>\n<body>";
         }
 
         private static string tableHeader()
         {
-            return "<table>";
+            return "<table width=100%>\n";
         }
 
         private static string step(string instruction, string imageLocation)
         {
-            string html = "<tr bgcolor='#000000'><td width=50% style='vertical-align:top;padding:5px'>";
+            string html = "<tr bgcolor='#FFFFFF'><td width=50% style='vertical-align:top;padding:5px'>";
 
             if (stepNumber % 2 == 1)
             {
                 // differentiate the alternating steps with pretty colors!
-                html = html.Replace("#000000", "#E0E0E0");
+                html = html.Replace("#FFFFFF", "#E0E0E0");
             }
 
-            html = html + "stuff in column 1";
+            html = html + "<h1>" + stepNumber + "</h1>";
 
-            html = html + "</td><td width=50% style='vertical-align:top;padding:5px'>";
+            html = html + instruction;
 
-            html = html + "stuff in column 2";
+            html = html + "</td>\n<td width=50% style='vertical-align:top;padding:5px'>";
+
+            html = html + "<img src='file:///" + imageLocation.Replace("\\", "/") + "' width=100% >";
 
             html = html + "</td></tr>\n";
 
@@ -98,10 +102,10 @@ namespace SauronSWPlugin
         private static string componentAssemblyInstruction(ComponentIdentifier ci)
         {
             // first, we select the component and take a screenshot of the model
-            string screenshotLocation = tempFile(".jpeg");
+            string screenshotLocation = tempFile(".jpg");
             int errors = 0, warnings = 0;
             ci.component.Select(false);
-            swDoc.ShowNamedView2("*Isometric", -1);
+            swDoc.ShowNamedView2("*Dimetric", -1);
             swDoc.ViewZoomtofit2();
             swDoc.Extension.SaveAs(screenshotLocation, 0, 0, null, ref errors, ref warnings);
 
@@ -154,7 +158,7 @@ namespace SauronSWPlugin
 
         private static string HTMLFooter()
         {
-            return "</html>";
+            return "</body>\n</html>";
         }
     }
 }

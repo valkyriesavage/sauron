@@ -126,6 +126,10 @@ namespace SauronSWPlugin
 
             allSolidComponents = getAllComponents();
             ourComponents = getAllOurComponents();
+            if (generatedMirrorExtrusions == null)
+            {
+                generatedMirrorExtrusions = new List<IFeature>();
+            }
 
             swAssembly.EditAssembly();
 
@@ -308,20 +312,29 @@ namespace SauronSWPlugin
              * see https://forum.solidworks.com/message/348151
              */
 
-            swDoc = ((ModelDoc2)(swApp.ActiveDoc));
-            swSelectionMgr = ((SelectionMgr)(swDoc.SelectionManager));
+            List<IBody2> bodies = new List<IBody2>();
 
-            IBody2[] body = new IBody2[] { swSelectionMgr.GetSelectedObject6(1, -1) as IBody2 };
+            foreach (ComponentIdentifier ci in ourComponents)
+            {
+                object vBodyInfo;
+                object[] componentBodies = (object[])ci.component.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
+                for (int i = 0; i < componentBodies.Length; i++)
+                {
+                    bodies.Add((Body2)componentBodies[i]);
+                }
+            }
 
-            double[] rayVectorOrigins = { 0, 0, 0 };
-            double[] rayVectorDirections = { 0, 0, 1 };
+            double[] rayVectorOrigins = { 0, 0, 0 };//camera.rayVectorOrigins();
+            double[] rayVectorDirections = { 0, 0, 1 };//camera.rayVectorDirections();
 
-            int numIntersectionsFound = (int)swDoc.RayIntersections(body,
-            (object)rayVectorOrigins,
-            (object)rayVectorDirections,
-            (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
-            (double).0000001,
-            (double).0000001);
+            int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
+                                                                    (object)rayVectorOrigins,
+                                                                    (object)rayVectorDirections,
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (double).0000001,
+                                                                    (double).0000001);
+
+            alert("done!  numIntersectionsFound = " + numIntersectionsFound);
 
             double[] points = (double[])swDoc.GetRayIntersectionsPoints();
 
@@ -335,27 +348,7 @@ namespace SauronSWPlugin
             swDoc.SketchManager.AddToDB = false;
             swDoc.SketchManager.Insert3DSketch(true);
 
-            /*swDoc.ClearSelection2(true);
-            foreach(ComponentIdentifier ci in ourComponents) {
-                ci.component.Select(true);
-            }
-            
-            IBody2[] body = new IBody2[] { swSelectionMgr.GetSelectedObject6(1, -1) as IBody2 };
-
-            double[] rayVectorOrigins = { 0, 0, 0 };//camera.rayVectorOrigins();
-            double[] rayVectorDirections = { 0, 0, 1 };// camera.rayVectorDirections();
-
-            //object[] bodies = ourComponents.ElementAt(0).component.GetBodies2((int)swBodyType_e.swSolidBody);
-
-            int numIntersectionsFound = (int)swDoc.RayIntersections(body,
-                                                                    (object)rayVectorOrigins,
-                                                                    (object)rayVectorDirections,
-                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
-                                                                    (double).0000001,
-                                                                    (double).0000001);
-
-            alert("done!  numIntersectionsFound = " + numIntersectionsFound);
-
+            /*
             if (numIntersectionsFound > 0)
             {
                 double[] horrifyingReturn = swDoc.GetRayIntersectionsPoints();
@@ -758,22 +751,24 @@ namespace SauronSWPlugin
             getFOV();
 
             camera.fieldOfView.SetSuppression2((int)swComponentSuppressionState_e.swComponentSuppressed);
+            Camera.removeRayIfPresent(swDoc);
             int errors = 0, warnings = 0;
             string fileName = "C:\\Users\\Valkyrie\\Dropbox\\Sauron\\toPrint\\" + "SAURON-AUTO-" + randomString() + ".STL";
             swDoc.Extension.SaveAs(fileName, 0, 0, null, ref errors, ref warnings);
-            camera.fieldOfView.SetSuppression2((int)swComponentSuppressionState_e.swComponentFullyResolved);
-            alert("you can print " + fileName + " on your favourite 3D printer");
 
-            InstructionsGenerator.createInstructions(ourComponents, generatedMirrorExtrusions);
+            mainBody.Select(false);
+            swAssembly.SetComponentTransparent(true);
+            InstructionsGenerator.createInstructions(ourComponents, generatedMirrorExtrusions, fileName);
+
+            camera.fieldOfView.SetSuppression2((int)swComponentSuppressionState_e.swComponentFullyResolved);
         }
 
         private void testPart_Click(object sender, EventArgs e)
         {
-            /*getModelDoc();
-            getFOV();*/
+            getModelDoc();
+            getFOV();
 
             intersectsComponents();
-            //InstructionsGenerator.createInstructions(null, null);
         }
 
         private void alert(string text)
