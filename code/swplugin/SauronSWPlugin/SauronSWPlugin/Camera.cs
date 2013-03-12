@@ -136,6 +136,7 @@ namespace SauronSWPlugin
 
         public void drawRayForCamera()
         {
+            centreOfVision = (MathPoint)Camera.getCentreOfVision(fieldOfView, swDoc, swSelectionMgr, mathUtils);
             Camera.drawRayForCamera(cameraDirection, centreOfVision, swDoc, swSelectionMgr);
         }
 
@@ -155,7 +156,7 @@ namespace SauronSWPlugin
         {
             Camera.removeRayIfPresent(swDoc);
 
-            IMathPoint centreOfVision = Camera.getCentreOfVision(fieldOfView, swDoc, swSelectionMgr, mathUtils);
+            centreOfVision = (MathPoint) Camera.getCentreOfVision(fieldOfView, swDoc, swSelectionMgr, mathUtils);
 
             if (centreOfVision == null)
             {
@@ -185,13 +186,13 @@ namespace SauronSWPlugin
             return mathUtils.CreateVector(cameraDir);
         }
 
-        public double[] calculateReflectionDir(double[] xyz, double[] surfaceNormal)
+        public double[] calculateReflectionDir(double[] rayDir, double[] surfaceNormal)
         {
             double[] reflectedDir = { 0, 0, 0 };
-            double dotProduct = xyz[0] * surfaceNormal[0] + xyz[1] * surfaceNormal[1] + xyz[2] * surfaceNormal[2];
+            double dotProduct = rayDir[0] * surfaceNormal[0] + rayDir[1] * surfaceNormal[1] + rayDir[2] * surfaceNormal[2];
             for (int i = 0; i < 3; i++)
             {
-                reflectedDir[i] = 2 * dotProduct * surfaceNormal[i] - xyz[i];
+                reflectedDir[i] = 2 * dotProduct * surfaceNormal[i] - rayDir[i];
             }
            
             return reflectedDir;
@@ -204,10 +205,10 @@ namespace SauronSWPlugin
                 castRayVectors = new List<MathVector>();
                 castRayVectors.Add(cameraDirection);
 
-                // important: direction reference {12,13,14,15} are the bounding corners of the shape!  we can just interpolate from there
+                // TODO important: direction reference {12,13,14,15} are the bounding corners of the shape!  we can just interpolate from there
                 /*for (int i = 12; i < 16; i++)
                 {
-                    castRayVectors.Add(getRayFromNamedPoint("direction reference " + i));
+                    castRayVectors.Add(getRayFromNamedPoint("direction reference " + i).multiplyTransform(fieldOfView.Transform2));
                 }*/
             }
             return castRayVectors;

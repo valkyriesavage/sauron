@@ -50,6 +50,8 @@ namespace SauronSWPlugin
                 html += mirrorAssemblyInstruction(mirror);
             }
 
+            html += step("screw the camera rig onto the body", "");
+
             html += tableFooter();
 
             html += HTMLFooter();
@@ -109,34 +111,36 @@ namespace SauronSWPlugin
             swDoc.ViewZoomtofit2();
             swDoc.Extension.SaveAs(screenshotLocation, 0, 0, null, ref errors, ref warnings);
 
-            string instruction = "";
+            string allApplicable = "";
             // TODO : add in images for examples of all of these!
             if (ci.component.Name.StartsWith("button"))
             {
-                instruction = "stick a circle of reflective material on the bottom of the button as in the example below<br/>";
+                allApplicable += step("stick a circle of reflective material on the bottom of the button as in the example below<br/>", screenshotLocation);
+                allApplicable += step("use tweezers to put a small spring between the button and the body", "");
             }
             if (ci.component.Name.StartsWith("slider"))
             {
-                instruction = "stick a rectangle of reflective material on the bottom of the slider as in the example below<br/>";
+                allApplicable += step("stick a rectangle of reflective material on the bottom of the slider as in the example below<br/>", screenshotLocation);
             }
             if (ci.component.Name.StartsWith("dpad"))
             {
-                instruction = "stick a circle of reflective material on the bottom of each of the direction pad's protrusions as in the example below<br/>";
+                allApplicable += step("stick a circle of reflective material on the bottom of each of the direction pad's protrusions as in the example below<br/>", screenshotLocation);
+                allApplicable += step("use tweezers to put a small spring between the direction pad and the body", "");
             }
             if (ci.component.Name.StartsWith("scroll-wheel"))
             {
-                instruction = "stick horizontal stripes (about 10) of reflective material on the outside of the scroll wheel as in the example below<br/>";
+                allApplicable += step("stick horizontal stripes (about 10) of reflective material on the outside of the scroll wheel as in the example below<br/>", screenshotLocation);
             }
             if (ci.component.Name.StartsWith("joystick"))
             {
-                instruction = "stick a rectangle of reflective material on the bottom of each of the joystick's protrusions as in the example below<br/>";
+                allApplicable += step("stick a rectangle of reflective material on the bottom of each of the joystick's protrusions as in the example below<br/>", screenshotLocation);
             }
             if (ci.component.Name.StartsWith("dial"))
             {
-                instruction = "stick a circle of reflective material on the bottom of the dial's protrusion as in the example below<br/>";
+                allApplicable += step("stick a circle of reflective material on the bottom of the dial's protrusion as in the example below<br/>", screenshotLocation);
             }
 
-            return step(instruction, screenshotLocation);
+            return allApplicable;
         }
 
         private static string mirrorAssemblyInstruction(IFeature mirror)

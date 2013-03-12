@@ -129,7 +129,7 @@
             // 
             this.saurontitle.AutoSize = true;
             this.saurontitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.saurontitle.Location = new System.Drawing.Point(23, 0);
+            this.saurontitle.Location = new System.Drawing.Point(25, 0);
             this.saurontitle.Name = "saurontitle";
             this.saurontitle.Size = new System.Drawing.Size(186, 17);
             this.saurontitle.TabIndex = 10;
@@ -139,7 +139,7 @@
             // 
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(72, 17);
+            this.label4.Location = new System.Drawing.Point(74, 17);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(85, 17);
             this.label4.TabIndex = 11;
@@ -161,7 +161,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "SWTaskpaneHost";
-            this.Size = new System.Drawing.Size(249, 417);
+            this.Size = new System.Drawing.Size(225, 417);
             this.ResumeLayout(false);
             this.PerformLayout();
 
