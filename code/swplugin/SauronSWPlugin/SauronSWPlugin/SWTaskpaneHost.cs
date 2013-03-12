@@ -127,6 +127,11 @@ namespace SauronSWPlugin
 
             mainBody = findComponent(swConf.GetRootComponent3(true), "body");
 
+            if (mainBody == null)
+            {
+                mainBody = findComponent(swConf.GetRootComponent3(true), "base");
+            }
+
             allSolidComponents = getAllComponents();
             ourComponents = getAllOurComponents();
             if (generatedMirrorExtrusions == null)
@@ -210,19 +215,46 @@ namespace SauronSWPlugin
             swDoc.ForceRebuild3(false);
         }
 
+        private double distanceFromFlagToCamera(Component2 component)
+        {
+            return distanceBetween(component, camera.fieldOfView);
+            // TODO : check this function out!  what the hell?
+            IFeature flag = component.FeatureByName("flag");
+            Object[] faces = (Object[])flag.GetFaces();
+
+            double maxDistance = 0;
+            for (int i = 0; i < faces.Length; i++)
+            {
+                Face2 face = (Face2)faces[i];
+                measure.Calculate((object)(new object[] { face, camera.fieldOfView }));
+                if (maxDistance < measure.Distance)
+                {
+                    maxDistance = measure.Distance;
+                }
+            }
+            return maxDistance;
+        }
+
         private double distanceBetween(Component2 component, Component2 otherComponent)
         {
-            double distance;
-            double pt1, pt2;
-            // does not work ((Entity)component).GetDistance(otherComponent, bmin, null, out (object)pt1, out (object)pt2, out distance);
-            distance = swDoc.IClosestDistance(component, otherComponent, out pt1, out pt2);
             component.Select(false);
             otherComponent.Select(true);
             measure.Calculate(null);
-            return measure.Distance;  // TODO measure.Projection ?
+            return measure.Distance;
         }
 
-        private bool lengthenFlag(Component2 swComponent, IConfiguration configToEdit)
+        private bool isFlagPerpendicularToCameraLens(Component2 component)
+        {
+            // TODO : Figure out how to get the face or axis of the flag.  we can't do this from just the flag feature, or just the camera lens feature
+            // TODO : use feature.getfaces
+            component.FeatureByName("flag").Select(false);
+            IFeature cameraFace = camera.fieldOfView.FeatureByName("camera lens");
+            cameraFace.Select(true);
+            measure.Calculate(null);
+            return !measure.IsPerpendicular;
+        }
+
+        private bool lengthenFlag(Component2 swComponent)
         {
             double threshold = inchesToMeters(.05);
             IFeature extrusionFeature = swComponent.FeatureByName("flag");
@@ -235,15 +267,15 @@ namespace SauronSWPlugin
             ExtrudeFeatureData2 extrusion = extrusionFeature.GetDefinition();
             extrusion.AccessSelections(swAssembly, swComponent);
 
-            // try getting the distance between them via the measurement API and setting the extrusion to that length
             double originalDepth = extrusion.GetDepth(true);
             double defaultDepth = inchesToMeters(.15);
 
-            double distance = distanceBetween(swComponent, camera.fieldOfView);
+            double distance = distanceFromFlagToCamera(swComponent);
             updateExtrudeDepth(extrusionFeature, distance + originalDepth);
 
             if (!(distanceBetween(swComponent, camera.fieldOfView) < threshold))
             {
+                // back off ; they are separated in some way that we can't extrude through (e.g. angles are wrong)
                 updateExtrudeDepth(extrusionFeature, defaultDepth);
                 return false;
             }
@@ -251,14 +283,13 @@ namespace SauronSWPlugin
             // we are intersecting successfully, but we need to make sure to check we aren't intersecting anything else...
             foreach (Component2 otherComponent in allSolidComponents)
             {
-                if (otherComponent.Equals(swComponent) || otherComponent.Equals(camera.fieldOfView) || otherComponent.Equals(mainBody))
+                if (otherComponent.Name.Equals(swComponent.Name) || otherComponent.Name.Equals(camera.fieldOfView.Name) || otherComponent.Name.Equals(mainBody.Name))
                 {
                     continue;
                 }
                 if (distanceBetween(swComponent, otherComponent) < threshold)
                 {
                     updateExtrudeDepth(extrusionFeature, defaultDepth);
-                    swApp.SendMsgToUser2("backed off " + swComponent.Name + " : we intersected with " + otherComponent.Name, 1, 1);
                     return false;
                 }
             }
@@ -266,16 +297,12 @@ namespace SauronSWPlugin
             return true;
         }
 
-        private void createMirrorExtrusion(Face2 intersectedFace, MathPoint point)
+        private void createMirrorExtrusion(ReflectionPoint reflectionPoint)
         {
             double mirrorWidth = inchesToMeters(1);
-            double[] pointLocation = (double[]) point.ArrayData;
+            double[] pointLocation = reflectionPoint.xyz;
 
-            // get the normal of the face.. this will tell us how to orient the rectangle
-            double[] ridiculousReturn = intersectedFace.GetSurface().EvaluateAtPoint(pointLocation[0],
-                                                                                     pointLocation[1],
-                                                                                     pointLocation[2]);
-            double[] surfaceNormal = { ridiculousReturn[0], ridiculousReturn[1], ridiculousReturn[2] };
+            double[] surfaceNormal = reflectionPoint.nxnynz;
             
             // select the main body, because that is what we want to draw on
             mainBody.Select(false);
@@ -283,13 +310,12 @@ namespace SauronSWPlugin
             swAssembly.EditPart2(true, false, ref status);
             swSelectionMgr.SetSelectionPoint2(0, -1, pointLocation[0], pointLocation[1], pointLocation[2]);
             swSketchMgr.InsertSketch(true);
-            double[] projectedPointDescription = (double[]) intersectedFace.GetClosestPointOn(pointLocation[0], pointLocation[1], pointLocation[2]);
-            swSketchMgr.CreatePoint(projectedPointDescription[0], projectedPointDescription[1], projectedPointDescription[2]);
-            
-            swSketchMgr.CreateCenterRectangle(projectedPointDescription[0], projectedPointDescription[1], projectedPointDescription[2],
-                                              projectedPointDescription[0] + mirrorWidth * (1 - surfaceNormal[0]),
-                                              projectedPointDescription[1] + mirrorWidth * (1 - surfaceNormal[1]),
-                                              projectedPointDescription[2] + mirrorWidth * (1 - surfaceNormal[2]));
+            swSketchMgr.CreatePoint(pointLocation[0], pointLocation[1], pointLocation[2]);
+
+            swSketchMgr.CreateCenterRectangle(pointLocation[0], pointLocation[1], pointLocation[2],
+                                              pointLocation[0] + mirrorWidth * (1 - surfaceNormal[0]),
+                                              pointLocation[1] + mirrorWidth * (1 - surfaceNormal[1]),
+                                              pointLocation[2] + mirrorWidth * (1 - surfaceNormal[2]));
             
             swFeatureMgr.FeatureExtrusion2(true, false, false,
                                            0, 0, 0.00254, 0.00254,
@@ -319,25 +345,20 @@ namespace SauronSWPlugin
 
             foreach (ComponentIdentifier ci in ourComponents)
             {
-                if (ci.component.Name2.StartsWith("joystick"))
+                object vBodyInfo;
+                object[] componentBodies = (object[])ci.component.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
+                for (int i = 0; i < componentBodies.Length; i++)
                 {
-                    // we deal with this specially because it has subparts
-                }
-                else
-                {
-                    object vBodyInfo;
-                    object[] componentBodies = (object[])ci.component.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
-                    for (int i = 0; i < componentBodies.Length; i++)
-                    {
-                        IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
-                        tempBody.ApplyTransform(ci.component.Transform2);
-                        bodies.Add(tempBody);
-                    }
+                    IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
+                    tempBody.ApplyTransform(ci.component.Transform2);
+                    bodies.Add(tempBody);
                 }
             }
 
             double[] rayVectorOrigins = camera.rayVectorOrigins();
             double[] rayVectorDirections = camera.rayVectorDirections();
+
+            visualizeRay(camera.rayVectors().ElementAt(0), camera.rayVectorSources().ElementAt(0));
 
             int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
                                                                     (object)rayVectorOrigins,
@@ -365,53 +386,247 @@ namespace SauronSWPlugin
             swDoc.SketchManager.AddToDB = false;
             swDoc.SketchManager.Insert3DSketch(true);
 
-            /*
-            if (numIntersectionsFound > 0)
-            {
-                double[] horrifyingReturn = swDoc.GetRayIntersectionsPoints();
-                int lengthOfOneReturn = 9;
-                alert(horrifyingReturn + "");
-                alert(horrifyingReturn.Length + "");
-                for (int i = 0; i < horrifyingReturn.Length/lengthOfOneReturn; i++)
-                {
-                    double bodyIndex = horrifyingReturn[i * lengthOfOneReturn + 0];
-                    double rayIndex = horrifyingReturn[i * lengthOfOneReturn + 1];
-                    double intersectionType = horrifyingReturn[i * lengthOfOneReturn + 2];
-                    double x = horrifyingReturn[i * lengthOfOneReturn + 3];
-                    double y = horrifyingReturn[i * lengthOfOneReturn + 4];
-                    double z = horrifyingReturn[i * lengthOfOneReturn + 5];
-                    double nx = horrifyingReturn[i * lengthOfOneReturn + 6];
-                    double ny = horrifyingReturn[i * lengthOfOneReturn + 7];
-                    double nz = horrifyingReturn[i * lengthOfOneReturn + 8];
-
-                    alert("our entire horrifying return " + bodyIndex + "," + rayIndex + "," + intersectionType + "," + x + "," + y + "," + z + "," + nx + "," + ny + "," + nz);
-                    visualizeRay("cameraRay-" + randomString(15), camera.rayVectors().ElementAt((int)rayIndex), camera.rayVectorSources().ElementAt((int)rayIndex));
-                }
-
-                return true;
-            }*/
-
             return false;
         }
 
-        private bool hitMainBodyFirst(double[] rayCoordinates, int rayIndex, double[] horrifyingReturn)
+        private bool rawRaysCanSeeComponentDirectly(Component2 component)
         {
+            /*
+             * see https://forum.solidworks.com/message/348151
+             * 
+             * TODO : need to figure out how to get the mates of the component and move it around
+             * so that we know it can be seen during its whole motion...
+             */
+
+            List<IBody2> bodies = new List<IBody2>();
+
+            object vBodyInfo;
+            object[] componentBodies = (object[])component.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
+            for (int i = 0; i < componentBodies.Length; i++)
+            {
+                IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
+                tempBody.ApplyTransform(component.Transform2);
+                bodies.Add(tempBody);
+            }
+
+            double[] rayVectorOrigins = camera.rayVectorOrigins();
+            double[] rayVectorDirections = camera.rayVectorDirections();
+
+            visualizeRay(mathUtils.CreateVector(rayVectorDirections), mathUtils.CreatePoint(rayVectorOrigins));
+
+            int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
+                                                                    (object)rayVectorOrigins,
+                                                                    (object)rayVectorDirections,
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (double).0000001,
+                                                                    (double).0000001);
+
+            if (numIntersectionsFound == 0)
+            {
+                return false;
+            }
+
+            double[] horrifyingReturn = (double[])swDoc.GetRayIntersectionsPoints();
+
+            
+            for (int i = 0; i < horrifyingReturn.Length; i += 9)
+            {
+                double[] pt = new double[] { horrifyingReturn[i + 3], horrifyingReturn[i + 4], horrifyingReturn[i + 5] };
+            }
+
+            int lengthOfOneReturn = 9;
+            for (int i = 0; i < numIntersectionsFound; i++)
+            {
+                int rayIndex = (int)horrifyingReturn[i * lengthOfOneReturn + 1];
+                double x = horrifyingReturn[i * lengthOfOneReturn + 3];
+                double y = horrifyingReturn[i * lengthOfOneReturn + 4];
+                double z = horrifyingReturn[i * lengthOfOneReturn + 5];
+
+                double[] rayOrigin = camera.rayVectorSources().ElementAt(rayIndex).ArrayData;
+                double[] rayDirection = camera.rayVectors().ElementAt(rayIndex).ArrayData;
+                double[] hitPoint = new double[] { x, y, z };
+
+                if (!hitMainBodyBefore(rayOrigin, rayDirection, hitPoint))
+                {
+                    visualizeRay(mathUtils.CreateVector(rayDirection), mathUtils.CreatePoint(rayOrigin));
+                    return true;
+                }
+            }
+
             return false;
         }
 
-        private void visualizeRay(String name, MathVector ray, IMathPoint origin)
+        private double distanceAlongRay(double[] rayOrigin, double[] xyz)
+        {
+            return Math.Sqrt(Math.Pow(rayOrigin[0] - xyz[0], 2) + Math.Pow(rayOrigin[1] - xyz[1], 2) + Math.Pow(rayOrigin[2] - xyz[2], 2));
+        }
+
+        private bool hitMainBodyBefore(double[] rayOrigin, double[] rayDirection, double[] hitPointToCompareTo)
+        {
+            List<IBody2> bodies = new List<IBody2>();
+
+            object vBodyInfo;
+            object[] componentBodies = (object[])mainBody.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
+            for (int i = 0; i < componentBodies.Length; i++)
+            {
+                IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
+                tempBody.ApplyTransform(mainBody.Transform2);
+                bodies.Add(tempBody);
+            }
+
+            int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
+                                                                    (object)rayOrigin,
+                                                                    (object)rayDirection,
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (double).0000001,
+                                                                    (double).0000001);
+
+            double[] horrifyingReturn = (double[])swDoc.GetRayIntersectionsPoints();
+
+            if (numIntersectionsFound == 0)
+            {
+                return false;
+            }
+
+            int lengthOfOneReturn = 9;
+
+            for (int i = 0; i < numIntersectionsFound; i++)
+            {
+                double x = horrifyingReturn[i * lengthOfOneReturn + 3];
+                double y = horrifyingReturn[i * lengthOfOneReturn + 4];
+                double z = horrifyingReturn[i * lengthOfOneReturn + 5];
+
+                if (distanceAlongRay(rayOrigin, new double[] { x, y, z }) < distanceAlongRay(rayOrigin, hitPointToCompareTo))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool rayHitsComponent(Component2 component, MathPoint rayOrigin, MathVector rayDirection)
+        {
+            List<IBody2> bodies = new List<IBody2>();
+
+            object vBodyInfo;
+            object[] componentBodies = (object[])component.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
+            for (int i = 0; i < componentBodies.Length; i++)
+            {
+                IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
+                tempBody.ApplyTransform(mainBody.Transform2);
+                bodies.Add(tempBody);
+            }
+
+            int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
+                                                                    (object)rayOrigin.ArrayData,
+                                                                    (object)rayDirection.ArrayData,
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (double).0000001,
+                                                                    (double).0000001);
+
+            if (numIntersectionsFound == 0)
+            {
+                return false;
+            }
+
+            double[] horrifyingReturn = (double[])swDoc.GetRayIntersectionsPoints();
+
+            int lengthOfOneReturn = 9;
+
+            for (int i = 0; i < numIntersectionsFound; i++)
+            {
+                double x = horrifyingReturn[i * lengthOfOneReturn + 3];
+                double y = horrifyingReturn[i * lengthOfOneReturn + 4];
+                double z = horrifyingReturn[i * lengthOfOneReturn + 5];
+
+                double[] hitPoint = new double[] { x, y, z };
+
+                if (!hitMainBodyBefore(rayOrigin.ArrayData, rayDirection.ArrayData, hitPoint))
+                {
+                    alert("successful hit!");
+                    visualizeRay(rayDirection, rayOrigin);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private ReflectionPoint reflectedRayCanSeeComponent(Component2 component)
+        {
+            List<IBody2> bodies = new List<IBody2>();
+
+            object vBodyInfo;
+            object[] componentBodies = (object[])mainBody.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
+            for (int i = 0; i < componentBodies.Length; i++)
+            {
+                IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
+                tempBody.ApplyTransform(mainBody.Transform2);
+                bodies.Add(tempBody);
+            }
+
+            double[] rayOrigins = camera.rayVectorOrigins();
+            double[] rayDirections = camera.rayVectorDirections();
+
+            int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
+                                                                    (object)rayOrigins,
+                                                                    (object)rayDirections,
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (double).0000001,
+                                                                    (double).0000001);
+
+            double[] horrifyingReturn = (double[])swDoc.GetRayIntersectionsPoints();
+
+            if (numIntersectionsFound == 0)
+            {
+                // we didn't hit the main body at all...??
+                return null;
+            }
+
+            int lengthOfOneReturn = 9;
+
+            for (int i = 0; i < numIntersectionsFound; i++)
+            {
+                int rayIndex = (int)horrifyingReturn[i * lengthOfOneReturn + 1];
+                double x = horrifyingReturn[i * lengthOfOneReturn + 3];
+                double y = horrifyingReturn[i * lengthOfOneReturn + 4];
+                double z = horrifyingReturn[i * lengthOfOneReturn + 5];
+                double nx = horrifyingReturn[i * lengthOfOneReturn + 6];
+                double ny = horrifyingReturn[i * lengthOfOneReturn + 7];
+                double nz = horrifyingReturn[i * lengthOfOneReturn + 8];
+
+                ReflectionPoint rp = new ReflectionPoint(mathUtils, new double[] { x, y, z }, new double[] { nx, ny, nz });
+                double[] reflectionDir = camera.calculateReflectionDir(camera.rayVectors().ElementAt(rayIndex).ArrayData, rp.nxnynz);
+                MathVector reflectedRay = mathUtils.CreateVector(reflectionDir);
+
+                if (rayHitsComponent(component, rp.location, reflectedRay))
+                {
+                    return rp;
+                }
+            }
+
+            return null;
+        }
+
+        private void visualizeRay(MathVector ray, IMathPoint origin)
         {
             double[] rayData = (double[])ray.ArrayData;
             double[] originData = (double[])origin.ArrayData;
             swDoc.Insert3DSketch2(true);
-            swDoc.CreateLine2(originData[0], originData[1], originData[2], rayData[0], rayData[1], rayData[2]);
+            swDoc.SketchManager.AddToDB = true;
+            swDoc.CreateLine2(originData[0], originData[1], originData[2],
+                              originData[0] + rayData[0], originData[1] + rayData[1], originData[2] + rayData[2]);
+            swDoc.SketchManager.AddToDB = false;
             swDoc.Insert3DSketch2(true);
-            Feature sketch = swSelectionMgr.GetSelectedObject6(1, 0);
-            sketch.Name = name;
-            swDoc.ClearSelection2(true);
         }
 
-        private bool placeMirror(Component2 swComponent, IConfiguration configToEdit)
+        private void visualizeRay(IMathPoint origin, MathVector ray)
+        {
+            visualizeRay(ray, origin);
+        }
+
+        private bool placeMirror(Component2 swComponent)
         {
             // intutively, what we want to do:
             // look to see if any camera rays hit the object as-is, then no worries
@@ -419,7 +634,19 @@ namespace SauronSWPlugin
             //   if yes, put a mirror in that spot
             //   if no, we fail and cry
 
-            // TODO
+            if (rawRaysCanSeeComponentDirectly(swComponent))
+            {
+                // TODO : test moving component around and seeing if rawRaysCanSeeComponentDirectly still
+                return true;
+            }
+
+            ReflectionPoint rp = reflectedRayCanSeeComponent(swComponent);
+
+            if (rp != null)
+            {
+                createMirrorExtrusion(rp);
+                return true;
+            }
 
             return false;
         }
@@ -517,18 +744,18 @@ namespace SauronSWPlugin
 
             if (camera.fieldOfView == null)
             {
+                alert("you need to add the camera before you can do this");
                 return;
             }
 
             foreach (ComponentIdentifier c in ourComponents)
             {
-                IConfiguration newConfig = createNewConfiguration(c.component);
-                // TODO change me back!  I need to lengthen flags first, but not while we test raytracing
-                bool success = false;//lengthenFlag(c.component, newConfig);
+                createNewConfiguration(c.component);
+                bool success = lengthenFlag(c.component);
                 if (!success)
                 {
                     // try placing a mirror for it
-                    success = placeMirror(c.component, newConfig);
+                    success = placeMirror(c.component);
                     if (!success)
                     {
                         // cry
@@ -644,7 +871,8 @@ namespace SauronSWPlugin
             getModelDoc();
             getFOV();
 
-            intersectsComponents();
+            //intersectsComponents();
+            rawRaysCanSeeComponentDirectly(ourComponents.ElementAt(0).component);
         }
 
         private void alert(string text)
