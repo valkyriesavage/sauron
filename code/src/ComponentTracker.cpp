@@ -383,6 +383,7 @@ string ComponentTracker::getDelta(){
 }
 
 void ComponentTracker::setDelta(string f){
+	this->prevDelta = this->delta;
 	this->delta = f;
 }
 
@@ -432,5 +433,43 @@ ComponentTracker::Direction ComponentTracker::getRelativeDirection(ofxCvBlob lar
 		return ComponentTracker::left;
 	}else {
 		return ComponentTracker::none;
+	}
+}
+
+bool ComponentTracker::isDeltaSignificant(){
+	float significance;
+	switch(this->comptype){
+		case ComponentTracker::button:
+			return true;//for now until we get some values
+			break;
+		case ComponentTracker::slider://significant on a numerical significance
+			significance =  0.5f;
+			if (abs(atof(delta.c_str())-atof(prevDelta.c_str()))>significance) {
+				return true;
+			}else return false;
+			break;
+		case ComponentTracker::dpad:
+			return true;//for now until we implement
+			break;
+		case ComponentTracker::dial://significant on a numerical significance
+			significance =  0.5f;
+			if (abs(atof(delta.c_str())-atof(prevDelta.c_str()))>significance) {
+				return true;
+			}else return false;
+			break;
+		case ComponentTracker::scroll_wheel://significant when direction changes
+			if(strcmp(delta.c_str(), prevDelta.c_str()) == 0){
+				return true;
+			}else return false;
+
+			break;
+		case ComponentTracker::joystick://significant on a point by point change significance
+			if(strcmp(delta.c_str(), prevDelta.c_str()) == 0){//does a bit of throttling. but not to the extent we want. Probably need an aToOfPoint() in util
+				return true;
+			}else return false;
+			break;
+		default:
+			return false;
+			break;
 	}
 }

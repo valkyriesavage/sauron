@@ -54,6 +54,7 @@ public:
 	int getId();
 	ComponentTracker::ComponentType getComponentType();
 	void setContourFinder(ofRectangle ROI, int numBlobs);
+	bool isDeltaSignificant();
 	
 private:
 	bool mIsRegistered;
@@ -61,6 +62,7 @@ private:
 	int numBlobsNeeded;
 	int id;
 	string delta;
+	string prevDelta;
 	ComponentType comptype;
 	float mThreshold;
 	ComponentTracker::Direction mPreviousScrollWheelDirection;
