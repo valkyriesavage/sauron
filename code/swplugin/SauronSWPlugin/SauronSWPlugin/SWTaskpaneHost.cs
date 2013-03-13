@@ -335,7 +335,7 @@ namespace SauronSWPlugin
 
         }
 
-        private bool intersectsComponents()
+        private bool TESTEXAMPLEIntersectsComponents()
         {
             /*
              * see https://forum.solidworks.com/message/348151
@@ -412,8 +412,6 @@ namespace SauronSWPlugin
             double[] rayVectorOrigins = camera.rayVectorOrigins();
             double[] rayVectorDirections = camera.rayVectorDirections();
 
-            visualizeRay(mathUtils.CreateVector(rayVectorDirections), mathUtils.CreatePoint(rayVectorOrigins));
-
             int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
                                                                     (object)rayVectorOrigins,
                                                                     (object)rayVectorDirections,
@@ -427,7 +425,6 @@ namespace SauronSWPlugin
             }
 
             double[] horrifyingReturn = (double[])swDoc.GetRayIntersectionsPoints();
-
             
             for (int i = 0; i < horrifyingReturn.Length; i += 9)
             {
@@ -477,7 +474,7 @@ namespace SauronSWPlugin
             int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
                                                                     (object)rayOrigin,
                                                                     (object)rayDirection,
-                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS | swRayPtsOpts_e.swRayPtsOptsENTRY_EXIT),
                                                                     (double).0000001,
                                                                     (double).0000001);
 
@@ -492,6 +489,14 @@ namespace SauronSWPlugin
 
             for (int i = 0; i < numIntersectionsFound; i++)
             {
+                byte intersectionType = (byte)horrifyingReturn[i * lengthOfOneReturn + 2];
+
+                if ((intersectionType & (byte)swRayPtsResults_e.swRayPtsResultsENTER) == 0)
+                {
+                    // we need it to be just entry rays
+                    continue;
+                }
+
                 double x = horrifyingReturn[i * lengthOfOneReturn + 3];
                 double y = horrifyingReturn[i * lengthOfOneReturn + 4];
                 double z = horrifyingReturn[i * lengthOfOneReturn + 5];
@@ -514,7 +519,7 @@ namespace SauronSWPlugin
             for (int i = 0; i < componentBodies.Length; i++)
             {
                 IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
-                tempBody.ApplyTransform(mainBody.Transform2);
+                tempBody.ApplyTransform(component.Transform2);
                 bodies.Add(tempBody);
             }
 
@@ -544,8 +549,12 @@ namespace SauronSWPlugin
 
                 if (!hitMainBodyBefore(rayOrigin.ArrayData, rayDirection.ArrayData, hitPoint))
                 {
-                    visualizeRay(rayDirection, rayOrigin);
+                    visualizeRay(rayOrigin, rayDirection);
                     return true;
+                }
+                else
+                {
+                    alert("we hit the main body first with this ray");
                 }
             }
 
@@ -565,13 +574,15 @@ namespace SauronSWPlugin
                 bodies.Add(tempBody);
             }
 
-            double[] rayOrigins = camera.rayVectorOrigins();
-            double[] rayDirections = camera.rayVectorDirections();
+            double[] rayOrigins = new double[camera.rayVectorOrigins().Length];
+            camera.rayVectorOrigins().CopyTo(rayOrigins, 0);
+            double[] rayDirections = new double[camera.rayVectorDirections().Length];
+            camera.rayVectorDirections().CopyTo(rayDirections, 0);
 
             int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
                                                                     (object)rayOrigins,
                                                                     (object)rayDirections,
-                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS | swRayPtsOpts_e.swRayPtsOptsENTRY_EXIT),
                                                                     (double).0000001,
                                                                     (double).0000001);
 
@@ -587,7 +598,15 @@ namespace SauronSWPlugin
 
             for (int i = 0; i < numIntersectionsFound; i++)
             {
+                byte intersectionType = (byte)horrifyingReturn[i * lengthOfOneReturn + 2];
+
+                if((intersectionType & (byte)swRayPtsResults_e.swRayPtsResultsENTER) == 0) {
+                    // we need it to be just entry rays
+                    continue;
+                }
+
                 int rayIndex = (int)horrifyingReturn[i * lengthOfOneReturn + 1];
+
                 double x = horrifyingReturn[i * lengthOfOneReturn + 3];
                 double y = horrifyingReturn[i * lengthOfOneReturn + 4];
                 double z = horrifyingReturn[i * lengthOfOneReturn + 5];
@@ -599,8 +618,12 @@ namespace SauronSWPlugin
                 double[] reflectionDir = camera.calculateReflectionDir(camera.rayVectors().ElementAt(rayIndex).ArrayData, rp.nxnynz);
                 MathVector reflectedRay = mathUtils.CreateVector(reflectionDir);
 
+                // TODO remove
+                visualizeRay(rp.location, reflectedRay);
+
                 if (rayHitsComponent(component, rp.location, reflectedRay))
                 {
+                    visualizeRay(rp.location, reflectedRay);
                     return rp;
                 }
             }
@@ -873,15 +896,36 @@ namespace SauronSWPlugin
             if (rawRaysCanSeeComponentDirectly(ourComponents.ElementAt(0).component))
             {
                 alert("we found it!");
-            } else if (reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component) != null) {
+                if (!rayHitsComponent(ourComponents.ElementAt(0).component, camera.centreOfVision, camera.cameraDirection))
+                {
+                    alert("why the hell are these different?");
+                }
+            }
+            else if (reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component) != null)
+            {
                 alert("we reflected to find it");
                 createMirrorExtrusion(reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component));
+            }
+            else
+            {
+                alert("we cannae find it, lass");
             }
         }
 
         private void alert(string text)
         {
             swApp.SendMsgToUser2(text, 1, 1);
+        }
+
+        private string stringify(double[] someArray)
+        {
+            string ret = "";
+            for (int i = 0; i < someArray.Length; i++)
+            {
+                ret += i + ",";
+            }
+            ret = ret.Remove(ret.Length - 1);
+            return ret;
         }
     }
 }
