@@ -256,7 +256,7 @@ namespace SauronSWPlugin
             return rayCentres;
         }
 
-        private static MathTransform reverseTransform(MathTransform transform, MathUtility mathUtility)
+        public static MathTransform reverseTransform(MathTransform transform, MathUtility mathUtility)
         {
             double[] transformData = (double[])transform.ArrayData;
             for (int i = 0; i < transformData.GetLength(0); i++)

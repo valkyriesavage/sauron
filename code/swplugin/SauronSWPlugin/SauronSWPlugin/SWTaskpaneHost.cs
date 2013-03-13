@@ -297,10 +297,24 @@ namespace SauronSWPlugin
             return true;
         }
 
+        private double[] putInMainBodySpace(ReflectionPoint rp)
+        {
+            return rp.xyz;
+        }
+
         private void createMirrorExtrusion(ReflectionPoint reflectionPoint)
         {
+            swDoc.SketchManager.Insert3DSketch(true);
+            swDoc.SketchManager.AddToDB = true;
+            swDoc.SketchManager.CreatePoint(reflectionPoint.xyz[0], reflectionPoint.xyz[1], reflectionPoint.xyz[2]);
+            swDoc.SketchManager.AddToDB = false;
+            swDoc.SketchManager.Insert3DSketch(true);
+
+            return;
+
+            // TODO make this work!  need to debug putInMainBodySpace, above
             double mirrorWidth = inchesToMeters(1);
-            double[] pointLocation = reflectionPoint.xyz;
+            double[] pointLocation = putInMainBodySpace(reflectionPoint);
 
             double[] surfaceNormal = reflectionPoint.nxnynz;
             
@@ -308,14 +322,13 @@ namespace SauronSWPlugin
             mainBody.Select(false);
             int status = 0;
             swAssembly.EditPart2(true, false, ref status);
-            swSelectionMgr.SetSelectionPoint2(0, -1, pointLocation[0], pointLocation[1], pointLocation[2]);
+            swSelectionMgr.SetSelectionPoint2(1, -1, pointLocation[0], pointLocation[1], pointLocation[2]);
             swSketchMgr.InsertSketch(true);
-            swSketchMgr.CreatePoint(pointLocation[0], pointLocation[1], pointLocation[2]);
 
             swSketchMgr.CreateCenterRectangle(pointLocation[0], pointLocation[1], pointLocation[2],
-                                              pointLocation[0] + mirrorWidth * (1 - surfaceNormal[0]),
-                                              pointLocation[1] + mirrorWidth * (1 - surfaceNormal[1]),
-                                              pointLocation[2] + mirrorWidth * (1 - surfaceNormal[2]));
+                                              pointLocation[0] + .5 * mirrorWidth * (1 - surfaceNormal[0]),
+                                              pointLocation[1] + .5 * mirrorWidth * (1 - surfaceNormal[1]),
+                                              pointLocation[2] + .5 * mirrorWidth * (1 - surfaceNormal[2]));
             
             swFeatureMgr.FeatureExtrusion2(true, false, false,
                                            0, 0, 0.00254, 0.00254,
@@ -332,6 +345,7 @@ namespace SauronSWPlugin
             generatedMirrorExtrusions.Add(swSelectionMgr.GetSelectedObject6(1, -1) as IFeature);
 
             swDoc.ClearSelection2(true);
+            swAssembly.EditAssembly();
 
         }
 
@@ -445,7 +459,10 @@ namespace SauronSWPlugin
 
                 if (!hitMainBodyBefore(rayOrigin, rayDirection, hitPoint))
                 {
-                    visualizeRay(mathUtils.CreateVector(rayDirection), mathUtils.CreatePoint(rayOrigin));
+                    if (visualize.Checked)
+                    {
+                        visualizeRay(mathUtils.CreateVector(rayDirection), mathUtils.CreatePoint(rayOrigin));
+                    }
                     return true;
                 }
             }
@@ -549,12 +566,7 @@ namespace SauronSWPlugin
 
                 if (!hitMainBodyBefore(rayOrigin.ArrayData, rayDirection.ArrayData, hitPoint))
                 {
-                    visualizeRay(rayOrigin, rayDirection);
                     return true;
-                }
-                else
-                {
-                    alert("we hit the main body first with this ray");
                 }
             }
 
@@ -618,12 +630,12 @@ namespace SauronSWPlugin
                 double[] reflectionDir = camera.calculateReflectionDir(camera.rayVectors().ElementAt(rayIndex).ArrayData, rp.nxnynz);
                 MathVector reflectedRay = mathUtils.CreateVector(reflectionDir);
 
-                // TODO remove
-                visualizeRay(rp.location, reflectedRay);
-
                 if (rayHitsComponent(component, rp.location, reflectedRay))
                 {
-                    visualizeRay(rp.location, reflectedRay);
+                    if (visualize.Checked)
+                    {
+                        visualizeRay(rp.location, reflectedRay);
+                    }
                     return rp;
                 }
             }
@@ -896,15 +908,11 @@ namespace SauronSWPlugin
             if (rawRaysCanSeeComponentDirectly(ourComponents.ElementAt(0).component))
             {
                 alert("we found it!");
-                if (!rayHitsComponent(ourComponents.ElementAt(0).component, camera.centreOfVision, camera.cameraDirection))
-                {
-                    alert("why the hell are these different?");
-                }
             }
             else if (reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component) != null)
             {
-                alert("we reflected to find it");
                 createMirrorExtrusion(reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component));
+                alert("enjoy your snazzy mirror extrusion");
             }
             else
             {

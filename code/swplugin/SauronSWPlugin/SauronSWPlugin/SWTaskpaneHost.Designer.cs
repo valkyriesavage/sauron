@@ -39,6 +39,7 @@
             this.print = new System.Windows.Forms.Button();
             this.saurontitle = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
+            this.visualize = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -145,10 +146,21 @@
             this.label4.TabIndex = 11;
             this.label4.Text = "your models";
             // 
+            // visualize
+            // 
+            this.visualize.AutoSize = true;
+            this.visualize.Location = new System.Drawing.Point(77, 331);
+            this.visualize.Name = "visualize";
+            this.visualize.Size = new System.Drawing.Size(66, 17);
+            this.visualize.TabIndex = 12;
+            this.visualize.Text = "visualize";
+            this.visualize.UseVisualStyleBackColor = true;
+            // 
             // SWTaskpaneHost
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.visualize);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.saurontitle);
             this.Controls.Add(this.print);
@@ -180,5 +192,6 @@
         private System.Windows.Forms.Button print;
         private System.Windows.Forms.Label saurontitle;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.CheckBox visualize;
     }
 }
