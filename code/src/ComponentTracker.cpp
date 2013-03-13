@@ -12,7 +12,8 @@ void ComponentTracker::init(ComponentType type, int id){
 	mIsRegistered = false;
 	ROI = ofRectangle();
 	mThreshold = 2.0f;//just a guess
-	
+	this->delta = "";
+	this->prevDelta = "";
 	this->id = id;
 	this->comptype = type;
 	
@@ -383,8 +384,17 @@ string ComponentTracker::getDelta(){
 }
 
 void ComponentTracker::setDelta(string f){
-	this->prevDelta = this->delta;
+	if (!isPrevDeltaInitialized()) {
+		this->prevDelta = this->delta;
+	}
+	if (isDeltaSignificant()) {
+		this->prevDelta = this->delta;
+	}
 	this->delta = f;
+}
+
+bool ComponentTracker::isPrevDeltaInitialized(){
+	return strcmp(prevDelta.c_str(), "") != 0;
 }
 
 int ComponentTracker::getId(){
@@ -443,7 +453,7 @@ bool ComponentTracker::isDeltaSignificant(){
 			return true;//for now until we get some values
 			break;
 		case ComponentTracker::slider://significant on a numerical significance
-			significance =  0.5f;
+			significance =  0.01f;
 			if (abs(atof(delta.c_str())-atof(prevDelta.c_str()))>significance) {
 				return true;
 			}else return false;
@@ -458,13 +468,13 @@ bool ComponentTracker::isDeltaSignificant(){
 			}else return false;
 			break;
 		case ComponentTracker::scroll_wheel://significant when direction changes
-			if(strcmp(delta.c_str(), prevDelta.c_str()) == 0){
+			if(strcmp(delta.c_str(), prevDelta.c_str()) != 0){
 				return true;
 			}else return false;
 
 			break;
 		case ComponentTracker::joystick://significant on a point by point change significance
-			if(strcmp(delta.c_str(), prevDelta.c_str()) == 0){//does a bit of throttling. but not to the extent we want. Probably need an aToOfPoint() in util
+			if(strcmp(delta.c_str(), prevDelta.c_str()) != 0){//does a bit of throttling. but not to the extent we want. Probably need an aToOfPoint() in util
 				return true;
 			}else return false;
 			break;

@@ -103,7 +103,7 @@ void Sauron::update(){
 			for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
 				ComponentTracker* component = *it;
 				if (!component->isDeltaSignificant()){
-					break;
+					continue;
 				}
 				
 				string componentType = component->getComponentTypeString();

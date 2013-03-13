@@ -50,6 +50,7 @@ public:
 		//deltas
 	string getDelta();
 	void setDelta(string f);
+	bool isPrevDeltaInitialized();
 	
 	int getId();
 	ComponentTracker::ComponentType getComponentType();
