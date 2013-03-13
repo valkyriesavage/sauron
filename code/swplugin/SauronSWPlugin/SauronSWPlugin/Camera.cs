@@ -192,7 +192,7 @@ namespace SauronSWPlugin
             double dotProduct = rayDir[0] * surfaceNormal[0] + rayDir[1] * surfaceNormal[1] + rayDir[2] * surfaceNormal[2];
             for (int i = 0; i < 3; i++)
             {
-                reflectedDir[i] = 2 * dotProduct * surfaceNormal[i] - rayDir[i];
+                reflectedDir[i] = -((2 * dotProduct * surfaceNormal[i]) - rayDir[i]);
             }
            
             return reflectedDir;
