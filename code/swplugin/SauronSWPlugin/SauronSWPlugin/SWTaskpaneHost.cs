@@ -544,7 +544,6 @@ namespace SauronSWPlugin
 
                 if (!hitMainBodyBefore(rayOrigin.ArrayData, rayDirection.ArrayData, hitPoint))
                 {
-                    alert("successful hit!");
                     visualizeRay(rayDirection, rayOrigin);
                     return true;
                 }
@@ -871,8 +870,13 @@ namespace SauronSWPlugin
             getModelDoc();
             getFOV();
 
-            //intersectsComponents();
-            rawRaysCanSeeComponentDirectly(ourComponents.ElementAt(0).component);
+            if (rawRaysCanSeeComponentDirectly(ourComponents.ElementAt(0).component))
+            {
+                alert("we found it!");
+            } else if (reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component) != null) {
+                alert("we reflected to find it");
+                createMirrorExtrusion(reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component));
+            }
         }
 
         private void alert(string text)
