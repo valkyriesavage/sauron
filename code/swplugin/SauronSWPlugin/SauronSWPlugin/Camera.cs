@@ -35,6 +35,9 @@ namespace SauronSWPlugin
 
         private static String CAMERA_RAY_NAME = "camera ray";
 
+        double VECTORSRIGHTLEFT = 10;
+        double VECTORSUPDOWN = 10;
+
         private List<MathVector> castRayVectors = null;
         private List<MathPoint> castRayCentres = null;
 
@@ -198,18 +201,113 @@ namespace SauronSWPlugin
             return reflectedDir;
         }
 
+        public MathVector transformBack(MathVector alreadyTransformed)
+        {
+            // see http://help.solidworks.com/2012/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IMathTransform.html
+            // for documentation about what this horrific hack might mean
+
+            double[] mathTransform = new double[] {0,0,0, 0,
+                                                   0,0,0, 0,
+                                                   0,0,0, 0,
+                                                   0,0,0, 0};
+
+            MathVector newXAxis = mathUtils.CreateVector(cameraDirection.ArrayData).Normalise();
+            MathVector newYAxis = getRayFromNamedPoint("y-basis").Normalise();
+            MathVector newZAxis = getRayFromNamedPoint("z-basis").Normalise();
+
+            mathTransform[0] = newXAxis.ArrayData[0];
+            mathTransform[1] = newXAxis.ArrayData[1];
+            mathTransform[2] = newXAxis.ArrayData[2];
+            
+            mathTransform[3] = newYAxis.ArrayData[0];
+            mathTransform[4] = newYAxis.ArrayData[1];
+            mathTransform[5] = newYAxis.ArrayData[2];
+            
+            mathTransform[6] = newZAxis.ArrayData[0];
+            mathTransform[7] = newZAxis.ArrayData[1];
+            mathTransform[8] = newZAxis.ArrayData[2];
+
+            int translatex = 9, translatey = 10, translatez = 11;
+            mathTransform[translatex] = centreOfVision.ArrayData[0];
+            mathTransform[translatey] = centreOfVision.ArrayData[1];
+            mathTransform[translatez] = centreOfVision.ArrayData[2];
+
+            int scale = 12;
+            mathTransform[scale] = 1;
+
+            return alreadyTransformed.MultiplyTransform(mathUtils.CreateTransform(mathTransform));
+        }
+
         public List<MathVector> rayVectors()
         {
+            // Do a bunch of nasty math and get all the vectors we're interested in <3
+
             if (castRayVectors == null)
             {
                 castRayVectors = new List<MathVector>();
                 castRayVectors.Add(cameraDirection);
 
-                // TODO important: direction reference {12,13,14,15} are the bounding corners of the shape!  we can just interpolate from there
-                /*for (int i = 12; i < 16; i++)
+                // direction reference {12,13,14,15} are the bounding corners of the field of view cone
+                for (int i = 12; i < 16; i++)
                 {
-                    castRayVectors.Add(getRayFromNamedPoint("direction reference " + i).multiplyTransform(fieldOfView.Transform2));
-                }*/
+                    castRayVectors.Add(getRayFromNamedPoint("direction reference " + i));
+                }
+
+                double viewingAngleRightLeft = 55*2*Math.PI/360;  // radians
+                double viewingAngleUpDown = 50*2*Math.PI/360;  // radians
+                
+                double pixelsRightLeft = 480;
+                double pixelsUpDown = 320;
+
+                double pixelsPerGapRightLeft = pixelsRightLeft / VECTORSRIGHTLEFT;
+                double pixelsPerGapUpDown = pixelsUpDown / VECTORSUPDOWN;
+
+                for (int i = 0; i < (VECTORSRIGHTLEFT / 2); i++)
+                {
+                    for (int j = 0; j < (VECTORSUPDOWN / 2); j++)
+                    {
+                        // note that we are doing all our math in a transformed basis where the camera normal = [1,0,0]
+                        double upDownAngle = i * pixelsPerGapUpDown * viewingAngleUpDown / (pixelsUpDown / 2);
+                        double rightLeftAngle = j * pixelsPerGapRightLeft * viewingAngleRightLeft / (pixelsRightLeft / 2);
+
+                        MathVector xyVect = mathUtils.CreateVector(new double[] {Math.Cos(upDownAngle),
+                                                                                 Math.Sin(upDownAngle),
+                                                                                 0});
+                        MathVector xzVect = mathUtils.CreateVector(new double[] {Math.Cos(rightLeftAngle),
+                                                                                 0,
+                                                                                 Math.Sin(rightLeftAngle)});
+                        MathVector Q1Ray = (xyVect.Add(xzVect)).Normalise;
+
+                        xyVect = mathUtils.CreateVector(new double[] {Math.Cos(-upDownAngle),
+                                                                      Math.Sin(-upDownAngle),
+                                                                      0});
+                        xzVect = mathUtils.CreateVector(new double[] {Math.Cos(rightLeftAngle),
+                                                                      0,
+                                                                      Math.Sin(rightLeftAngle)});
+                        MathVector Q2Ray = (xyVect.Add(xzVect)).Normalise;
+
+                        xyVect = mathUtils.CreateVector(new double[] {Math.Cos(-upDownAngle),
+                                                                      Math.Sin(-upDownAngle),
+                                                                      0});
+                        xzVect = mathUtils.CreateVector(new double[] {Math.Cos(-rightLeftAngle),
+                                                                      0,
+                                                                      Math.Sin(-rightLeftAngle)});
+                        MathVector Q3Ray = (xyVect.Add(xzVect)).Normalise;
+
+                        xyVect = mathUtils.CreateVector(new double[] {Math.Cos(upDownAngle),
+                                                                      Math.Sin(upDownAngle),
+                                                                      0});
+                        xzVect = mathUtils.CreateVector(new double[] {Math.Cos(-rightLeftAngle),
+                                                                      0,
+                                                                      Math.Sin(-rightLeftAngle)});
+                        MathVector Q4Ray = (xyVect.Add(xzVect)).Normalise;
+
+                        castRayVectors.Add(transformBack(Q1Ray));
+                        castRayVectors.Add(transformBack(Q2Ray));
+                        castRayVectors.Add(transformBack(Q3Ray));
+                        castRayVectors.Add(transformBack(Q4Ray));
+                    }
+                }
             }
             return castRayVectors;
         }

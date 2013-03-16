@@ -213,26 +213,99 @@ namespace SauronSWPlugin
 
             swAssembly.EditRebuild();
             swDoc.ForceRebuild3(false);
+
+            swAssembly.EditAssembly();
+        }
+
+        private IMathPoint getNamedPoint(string name, Component2 parent)
+        {
+            swDoc.ClearSelection2(true);
+            swDoc.Extension.SelectByID2(name + "@" + parent.GetSelectByIDString(),
+                                        "DATUMPOINT", 0, 0, 0, false, 0, null, 0);
+            IFeature namedPointFeature = swSelectionMgr.GetSelectedObject6(1, -1) as IFeature;
+
+            if (namedPointFeature == null)
+            {
+                return null;
+            }
+
+            measure.Calculate(null);
+            IMathPoint namedPoint = mathUtils.CreatePoint(new double[] { measure.X, measure.Y, measure.Z });
+
+            return namedPoint;
         }
 
         private double distanceFromFlagToCamera(Component2 component)
         {
-            return distanceBetween(component, camera.fieldOfView);
-            // TODO : check this function out!  what the hell?
-            IFeature flag = component.FeatureByName("flag");
-            Object[] faces = (Object[])flag.GetFaces();
+            swFeatureMgr.EditRollback((int)swMoveRollbackBarTo_e.swMoveRollbackBarToEnd, "");
+            swAssembly.EditRebuild();
 
-            double maxDistance = 0;
-            for (int i = 0; i < faces.Length; i++)
+            IMathPoint centreOfFlagBase = getNamedPoint("centre of flag base", component).MultiplyTransform(component.Transform2);
+            IMathPoint centreOfFlagTip = getNamedPoint("centre of flag top", component).MultiplyTransform(component.Transform2);
+
+            double[] dataBase = centreOfFlagBase.ArrayData;
+            double[] dataTip = centreOfFlagTip.ArrayData;
+
+            double[] flagDir = new double[] { dataTip[0] - dataBase[0],
+                                              dataTip[1] - dataBase[1],
+                                              dataTip[2] - dataBase[2] };
+
+            List<IBody2> bodies = new List<IBody2>();
+
+            object vBodyInfo;
+            object[] componentBodies = (object[])camera.fieldOfView.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
+            for (int i = 0; i < componentBodies.Length; i++)
             {
-                Face2 face = (Face2)faces[i];
-                measure.Calculate((object)(new object[] { face, camera.fieldOfView }));
-                if (maxDistance < measure.Distance)
-                {
-                    maxDistance = measure.Distance;
-                }
+                IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
+                tempBody.ApplyTransform(camera.fieldOfView.Transform2);
+                bodies.Add(tempBody);
             }
-            return maxDistance;
+
+            int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
+                                                                    (object)dataTip,
+                                                                    (object)flagDir,
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (double).0000001,
+                                                                    (double).0000001);
+
+            if (numIntersectionsFound == 0)
+            {
+                return 0;
+            }
+
+            double[] horrifyingReturn = (double[])swDoc.GetRayIntersectionsPoints();
+            
+            for (int i = 0; i < horrifyingReturn.Length; i += 9)
+            {
+                double[] pt = new double[] { horrifyingReturn[i + 3], horrifyingReturn[i + 4], horrifyingReturn[i + 5] };
+            }
+
+            int lengthOfOneReturn = 9;
+            double[] intersectionPoint = new double[3];
+            for (int i = 0; i < numIntersectionsFound; i++)
+            {
+                int rayIndex = (int)horrifyingReturn[i * lengthOfOneReturn + 1];
+                double x = horrifyingReturn[i * lengthOfOneReturn + 3];
+                double y = horrifyingReturn[i * lengthOfOneReturn + 4];
+                double z = horrifyingReturn[i * lengthOfOneReturn + 5];
+                intersectionPoint[0] = x;
+                intersectionPoint[1] = y;
+                intersectionPoint[2] = z;
+                break;
+            }
+
+            return distanceFormula(intersectionPoint, dataTip);
+        }
+
+        private double distanceFormula(double[] pt1, double[] pt2)
+        {
+            double total = 0;
+            for (int i = 0; i < Math.Min(pt1.Length, pt2.Length); i++)
+            {
+                total += Math.Pow(pt1[i] - pt2[i], 2);
+            }
+
+            return Math.Sqrt(total);
         }
 
         private double distanceBetween(Component2 component, Component2 otherComponent)
@@ -243,20 +316,9 @@ namespace SauronSWPlugin
             return measure.Distance;
         }
 
-        private bool isFlagPerpendicularToCameraLens(Component2 component)
-        {
-            // TODO : Figure out how to get the face or axis of the flag.  we can't do this from just the flag feature, or just the camera lens feature
-            // TODO : use feature.getfaces
-            component.FeatureByName("flag").Select(false);
-            IFeature cameraFace = camera.fieldOfView.FeatureByName("camera lens");
-            cameraFace.Select(true);
-            measure.Calculate(null);
-            return !measure.IsPerpendicular;
-        }
-
         private bool lengthenFlag(Component2 swComponent)
         {
-            double threshold = inchesToMeters(.05);
+            double threshold = inchesToMeters(.01);
             IFeature extrusionFeature = swComponent.FeatureByName("flag");
             
             if (extrusionFeature == null)
@@ -270,26 +332,31 @@ namespace SauronSWPlugin
             double originalDepth = extrusion.GetDepth(true);
             double defaultDepth = inchesToMeters(.15);
 
+            updateExtrudeDepth(extrusionFeature, defaultDepth);
+
             double distance = distanceFromFlagToCamera(swComponent);
+
             updateExtrudeDepth(extrusionFeature, distance + originalDepth);
 
             if (!(distanceBetween(swComponent, camera.fieldOfView) < threshold))
             {
                 // back off ; they are separated in some way that we can't extrude through (e.g. angles are wrong)
-                updateExtrudeDepth(extrusionFeature, defaultDepth);
+                alert("we can't extrude to make it there for " + swComponent.Name);
+                updateExtrudeDepth(extrusionFeature, originalDepth);
                 return false;
             }
 
             // we are intersecting successfully, but we need to make sure to check we aren't intersecting anything else...
             foreach (Component2 otherComponent in allSolidComponents)
             {
-                if (otherComponent.Name.Equals(swComponent.Name) || otherComponent.Name.Equals(camera.fieldOfView.Name) || otherComponent.Name.Equals(mainBody.Name))
+                if (otherComponent.Name.Equals(swComponent.Name) || otherComponent.Name.Equals(camera.fieldOfView.Name))
                 {
                     continue;
                 }
                 if (distanceBetween(swComponent, otherComponent) < threshold)
                 {
-                    updateExtrudeDepth(extrusionFeature, defaultDepth);
+                    alert("we extruded through something else for " + swComponent.Name);
+                    updateExtrudeDepth(extrusionFeature, originalDepth);
                     return false;
                 }
             }
@@ -299,7 +366,10 @@ namespace SauronSWPlugin
 
         private double[] putInMainBodySpace(ReflectionPoint rp)
         {
-            return rp.xyz;
+            MathVector offsetOfMainBody = mathUtils.CreateVector(new double[] { mainBody.Transform2.ArrayData[9],
+                                                                                mainBody.Transform2.ArrayData[10],
+                                                                                mainBody.Transform2.ArrayData[11] });
+            return rp.location.ISubtractVector(offsetOfMainBody).ArrayData;
         }
 
         private void createMirrorExtrusion(ReflectionPoint reflectionPoint)
@@ -477,6 +547,8 @@ namespace SauronSWPlugin
 
         private bool hitMainBodyBefore(double[] rayOrigin, double[] rayDirection, double[] hitPointToCompareTo)
         {
+            // TODO : need to check if it hit anything *else* before, too
+
             List<IBody2> bodies = new List<IBody2>();
 
             object vBodyInfo;
@@ -795,6 +867,14 @@ namespace SauronSWPlugin
                         // cry
                         alert("we can't seem to see component " + c.component.Name + " you will have to move it or tweak it manually");
                     }
+                    else
+                    {
+                        alert("we found " + c.component.Name + " via reflection");
+                    }
+                }
+                else
+                {
+                    alert("we found " + c.component.Name + " with flagging");
                 }
             }
 
@@ -904,20 +984,6 @@ namespace SauronSWPlugin
         {
             getModelDoc();
             getFOV();
-
-            if (rawRaysCanSeeComponentDirectly(ourComponents.ElementAt(0).component))
-            {
-                alert("we found it!");
-            }
-            else if (reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component) != null)
-            {
-                createMirrorExtrusion(reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component));
-                alert("enjoy your snazzy mirror extrusion");
-            }
-            else
-            {
-                alert("we cannae find it, lass");
-            }
         }
 
         private void alert(string text)
