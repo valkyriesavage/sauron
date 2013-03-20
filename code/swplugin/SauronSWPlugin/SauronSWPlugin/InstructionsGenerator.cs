@@ -27,6 +27,8 @@ namespace SauronSWPlugin
         public static AssemblyDoc swAssembly = null;
         public static SelectionMgr swSelectionMgr = null;
 
+        public const string IMAGE_DIR = "C:\\Users\\Valkyrie\\projects\\sauron\\etc\\webImages\\";
+
         static int stepNumber = 0;
 
         public static void createInstructions(List<ComponentIdentifier> componentsToAssemble, List<IFeature> mirrorExtrusions, string STLLocation) {
@@ -38,7 +40,7 @@ namespace SauronSWPlugin
 
             html += tableHeader();
 
-            html += step("print <a href='file:///" + STLLocation.Replace("\\", "/") + "'>" + STLLocation + "</a> on your favourite 3D printer", "C:\\Users\\Valkyrie\\projects\\sauron\\etc\\webImages\\uprint.jpg");
+            html += step("print <a href='file:///" + STLLocation.Replace("\\", "/") + "'>" + STLLocation + "</a> on your favourite 3D printer", IMAGE_DIR + "uprint.jpg");
 
             foreach (ComponentIdentifier ci in componentsToAssemble)
             {
@@ -50,7 +52,7 @@ namespace SauronSWPlugin
                 html += mirrorAssemblyInstruction(mirror);
             }
 
-            html += step("screw the camera rig onto the body", "");
+            html += step("screw the camera rig onto the body", IMAGE_DIR + "screw-on-camera.jpg");
 
             html += tableFooter();
 
@@ -112,32 +114,33 @@ namespace SauronSWPlugin
             swDoc.Extension.SaveAs(screenshotLocation, 0, 0, null, ref errors, ref warnings);
 
             string allApplicable = "";
+            string exampleImage = "file:///" + IMAGE_DIR;
             // TODO : add in images for examples of all of these!
             if (ci.component.Name.StartsWith("button"))
             {
-                allApplicable += step("stick a circle of reflective material on the bottom of the button as in the example below<br/>", screenshotLocation);
-                allApplicable += step("use tweezers to put a small spring between the button and the body", "");
+                allApplicable += step("stick a circle of reflective material on the bottom of the button as in the example below<br/><img src='" + exampleImage + "button.jpg'>", screenshotLocation);
+                allApplicable += step("use tweezers to put a small spring between the button and the body", IMAGE_DIR + "button-spring.jpg");
             }
             if (ci.component.Name.StartsWith("slider"))
             {
-                allApplicable += step("stick a rectangle of reflective material on the bottom of the slider as in the example below<br/>", screenshotLocation);
+                allApplicable += step("stick a rectangle of reflective material on the bottom of the slider as in the example below<br/><img src='" + exampleImage + "slider.jpg'>", screenshotLocation);
             }
             if (ci.component.Name.StartsWith("dpad"))
             {
-                allApplicable += step("stick a circle of reflective material on the bottom of each of the direction pad's protrusions as in the example below<br/>", screenshotLocation);
-                allApplicable += step("use tweezers to put a small spring between the direction pad and the body", "");
+                allApplicable += step("stick a circle of reflective material on the bottom of each of the direction pad's protrusions as in the example below<br/><img src='" + exampleImage + "dpad.jpg'>", screenshotLocation);
+                allApplicable += step("use tweezers to put a small spring between the direction pad and the body", IMAGE_DIR + "dpad-spring.jpg");
             }
             if (ci.component.Name.StartsWith("scroll-wheel"))
             {
-                allApplicable += step("stick horizontal stripes (about 10) of reflective material on the outside of the scroll wheel as in the example below<br/>", screenshotLocation);
+                allApplicable += step("stick horizontal stripes (about 10) of reflective material on the outside of the scroll wheel as in the example below<br/><img src='" + exampleImage + "scrollwheel.jpg'>", screenshotLocation);
             }
             if (ci.component.Name.StartsWith("joystick"))
             {
-                allApplicable += step("stick a rectangle of reflective material on the bottom of each of the joystick's protrusions as in the example below<br/>", screenshotLocation);
+                allApplicable += step("stick a rectangle of reflective material on the bottom of each of the joystick's protrusions as in the example below<br/><img src='" + exampleImage + "joystick.jpg'>", screenshotLocation);
             }
             if (ci.component.Name.StartsWith("dial"))
             {
-                allApplicable += step("stick a circle of reflective material on the bottom of the dial's protrusion as in the example below<br/>", screenshotLocation);
+                allApplicable += step("stick a circle of reflective material on the bottom of the dial's protrusion as in the example below<br/><img src='" + exampleImage + "dial.jpg'>", screenshotLocation);
             }
 
             return allApplicable;
