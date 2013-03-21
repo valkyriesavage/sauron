@@ -329,10 +329,9 @@ namespace SauronSWPlugin
 
             updateExtrudeDepth(extrusionFeature, distance + originalDepth);
 
-            if (!(distanceBetween(swComponent, camera.fieldOfView) < threshold))
+            if (!rawRaysCanSeeComponentDirectly(swComponent))
             {
                 // back off ; they are separated in some way that we can't extrude through (e.g. angles are wrong)
-                alert("we can't extrude to make it there for " + swComponent.Name);
                 updateExtrudeDepth(extrusionFeature, originalDepth);
                 return false;
             }
@@ -346,17 +345,17 @@ namespace SauronSWPlugin
                 }
                 if (distanceBetween(swComponent, otherComponent) < threshold)
                 {
-                    alert("we extruded through something else for " + swComponent.Name);
                     updateExtrudeDepth(extrusionFeature, originalDepth);
                     return false;
                 }
             }
-            
-            return true;
+
+            return rawRaysCanSeeComponentDirectly(swComponent);
         }
 
         private double[] putInMainBodySpace(ReflectionPoint rp)
         {
+            // TODO : debug!
             MathVector offsetOfMainBody = mathUtils.CreateVector(new double[] { mainBody.Transform2.ArrayData[9],
                                                                                 mainBody.Transform2.ArrayData[10],
                                                                                 mainBody.Transform2.ArrayData[11] });
@@ -427,35 +426,30 @@ namespace SauronSWPlugin
                 return;
             }
 
-            // Sorry, this is terrible.  first, we select the componenta and what it's mated to (the main body) with mark 1
-            component.Select2(false, 1);
-            mainBody.Select2(true, 1);
-            // now we select the mate we are trying to modify
-            Mate2 mate = findAndSelectMate(component);
+            // see discussions at
+            // https://forum.solidworks.com/message/341157#341157#341157
 
-            bool flip = false;
-            double distance = 0;
-            double distanceAbsUpperLimit = 0;
-            double distanceAbsLowerLimit = 0;
-            double gearRatioNumerator = 0;
-            double gearRatioDenominator = 0;
-            double angle = 0;
-            double angleAbsUpperLimit = 0;
-            double angleAbsLowerLimit = 0;
-            int errorStatus = 0;
-            swAssembly.EditMate2((int)swMateType_e.swMateDISTANCE, (int)swMateAlign_e.swMateAlignCLOSEST,
-                                 flip, distance, distanceAbsUpperLimit, distanceAbsLowerLimit,
-                                 gearRatioNumerator, gearRatioDenominator,
-                                 angle, angleAbsUpperLimit, angleAbsLowerLimit,
-                                 out errorStatus);
+            double newDistance = position;
+
+            Feature mate = swAssembly.FeatureByName(component.Name2 + "-distance");
+            IDisplayDimension dispDim = (IDisplayDimension)mate.GetFirstDisplayDimension();
+            IDimension dim = dispDim.IGetDimension();
+
+            dim.SetSystemValue3(newDistance,
+                (int)swSetValueInConfiguration_e.swSetValue_InSpecificConfigurations,
+                new string[] { component.ReferencedConfiguration });
+
+            swAssembly.EditRebuild();
+            swDoc.ForceRebuild3(false);
+
+            swAssembly.EditAssembly();
+    
         }
 
         private bool rawRaysSeeComponentInCurrentConfig(Component2 component)
         {
             /*
              * see https://forum.solidworks.com/message/348151
-             * 
-             * TODO : need to determine if a ray hit anything *else* before, too, not just mainbody
              */
 
             List<IBody2> bodies = new List<IBody2>();
@@ -507,7 +501,9 @@ namespace SauronSWPlugin
                 {
                     if (visualize.Checked)
                     {
+                        startSketch();
                         visualizeRay(mathUtils.CreateVector(rayDirection), mathUtils.CreatePoint(rayOrigin));
+                        finishSketch();
                     }
                     return true;
                 }
@@ -521,23 +517,50 @@ namespace SauronSWPlugin
             
             double pos = 1;
             bool canSeeInAllConfigs = true;
-            while (pos > 0)
+            while (pos >= 0)
             {
                 canSeeInAllConfigs &= rawRaysSeeComponentInCurrentConfig(component);
-                moveToPosition(component, pos);
 
+                double distance = 0;
                 if (component.Name2.StartsWith("button"))
                 {
-                    pos = 0;
+                    if (pos == 1 || pos == 0)
+                    {
+                        distance = .15;
+                    }
+                    else if (pos == .5)
+                    {
+                        distance = 0;
+                    }
+                    pos -= 0.5;
                 }
                 else if (component.Name2.StartsWith("dial"))
                 {
+                    if (pos == 0)
+                    {
+                        distance = .35;
+                    }
+                    else
+                    {
+                        distance = pos*.5;
+                    }
                     pos -= .33;
                 }
                 else
                 {
+                    if (pos == 0)
+                    {
+                        distance = 3;
+                    }
+                    else
+                    {
+                        distance = pos * 3;
+                    }
                     pos -= .25;
                 }
+
+                moveToPosition(component, inchesToMeters(distance));
+                pos = 0;
 
                 if (!canSeeInAllConfigs)
                 {
@@ -708,11 +731,19 @@ namespace SauronSWPlugin
 
             int lengthOfOneReturn = 9;
 
+            ReflectionPoint rp = null;
+
+            if (visualize.Checked)
+            {
+                startSketch();
+            }
+
             for (int i = 0; i < numIntersectionsFound; i++)
             {
                 byte intersectionType = (byte)horrifyingReturn[i * lengthOfOneReturn + 2];
 
-                if((intersectionType & (byte)swRayPtsResults_e.swRayPtsResultsENTER) == 0) {
+                if ((intersectionType & (byte)swRayPtsResults_e.swRayPtsResultsENTER) == 0)
+                {
                     // we need it to be just entry rays
                     continue;
                 }
@@ -726,38 +757,54 @@ namespace SauronSWPlugin
                 double ny = horrifyingReturn[i * lengthOfOneReturn + 7];
                 double nz = horrifyingReturn[i * lengthOfOneReturn + 8];
 
-                ReflectionPoint rp = new ReflectionPoint(mathUtils, new double[] { x, y, z }, new double[] { nx, ny, nz });
+                rp = new ReflectionPoint(mathUtils, new double[] { x, y, z }, new double[] { nx, ny, nz });
                 double[] reflectionDir = camera.calculateReflectionDir(camera.rayVectors().ElementAt(rayIndex).ArrayData, rp.nxnynz);
                 MathVector reflectedRay = mathUtils.CreateVector(reflectionDir);
 
                 if (rayHitsComponent(component, rp.location, reflectedRay))
                 {
+                    swDoc.SketchManager.CreatePoint(x, y, z);
                     if (visualize.Checked)
                     {
+                        visualizeRay(camera.centreOfVision, mathUtils.CreateVector(new double[] {rayDirections[rayIndex * 3], rayDirections[rayIndex * 3 + 1], rayDirections[rayIndex * 3 + 2]}));
                         visualizeRay(rp.location, reflectedRay);
                     }
-                    return rp;
                 }
             }
 
-            return null;
+            if (visualize.Checked)
+            {
+                // TODO : would be nice if we could name the sketch...
+                finishSketch();
+            }
+
+            return rp;
         }
 
         private void visualizeRay(MathVector ray, IMathPoint origin)
         {
             double[] rayData = (double[])ray.ArrayData;
             double[] originData = (double[])origin.ArrayData;
-            swDoc.Insert3DSketch2(true);
-            swDoc.SketchManager.AddToDB = true;
+            
             swDoc.CreateLine2(originData[0], originData[1], originData[2],
                               originData[0] + rayData[0], originData[1] + rayData[1], originData[2] + rayData[2]);
-            swDoc.SketchManager.AddToDB = false;
-            swDoc.Insert3DSketch2(true);
         }
 
         private void visualizeRay(IMathPoint origin, MathVector ray)
         {
             visualizeRay(ray, origin);
+        }
+
+        public void startSketch()
+        {
+            swDoc.Insert3DSketch2(true);
+            swDoc.SketchManager.AddToDB = true;
+        }
+
+        public void finishSketch()
+        {
+            swDoc.SketchManager.AddToDB = false;
+            swDoc.Insert3DSketch2(true);
         }
 
         private bool placeMirror(Component2 swComponent)
@@ -782,14 +829,6 @@ namespace SauronSWPlugin
             }
 
             return false;
-        }
-
-        private Mate2 findAndSelectMate(Component2 matedComponent)
-        {
-            // TODO : need to label all these fucking mates... in the assemblies
-            swDoc.Extension.SelectByID2(matedComponent.Name2 + "-SAURON", "MATE", 0, 0, 0, false, 0, null, 0);
-            Mate2 mate = (Mate2) swSelectionMgr.GetSelectedObject6(1, -1);
-            return mate;
         }
 
         private Component2 findComponent(Component2 swComp, String searchFor)
@@ -824,7 +863,7 @@ namespace SauronSWPlugin
                 swChildComp = (Component2)vChildComp[i];
                 foreach (String compName in ourComponentNames)
                 {
-                    if (swChildComp.Name2.StartsWith(compName) && !swChildComp.Equals(mainBody))
+                    if (swChildComp.Name2.StartsWith(compName) && !swChildComp.Equals(mainBody) && !swChildComp.IsSuppressed())
                     {
                         ComponentIdentifier ci = new ComponentIdentifier(swChildComp);
                         found.Add(ci);
@@ -902,6 +941,14 @@ namespace SauronSWPlugin
                         // cry
                         alert("we can't seem to see component " + c.component.Name + " you will have to move it or tweak it manually");
                     }
+                    else
+                    {
+                        alert("we reflected to find " + c.component.Name2);
+                    }
+                }
+                else
+                {
+                    alert("we found " + c.component.Name2 + " with extrusion");
                 }
             }
 
@@ -1013,6 +1060,10 @@ namespace SauronSWPlugin
             getFOV();
 
             moveToPosition(ourComponents.ElementAt(0).component, 0);
+
+            // try visualizing all the rays
+            //visualize.Checked = true;
+            //ReflectionPoint rp = reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component);
         }
 
         private void alert(string text)
