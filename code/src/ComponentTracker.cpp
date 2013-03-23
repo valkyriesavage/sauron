@@ -362,7 +362,7 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 	ofxCvBlob* flank0 = new ofxCvBlob();
 	ofxCvBlob* flank1 = new ofxCvBlob();
 	
-	distributeJoystickBlobs(blobs, middle, flank0, flank1, numBlobsNeeded);
+	distributeJoystickBlobs(joystickBlobs, middle, flank0, flank1, numBlobsNeeded);
 	
 		//TODO: going to need something smarter than this to account for joystick orientation
 	ofPoint p1 = middle->centroid;
