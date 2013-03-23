@@ -427,19 +427,27 @@ std::vector<ofxCvBlob> ComponentTracker::keepInsideBlobs(std::vector<ofxCvBlob> 
 }
 
 ComponentTracker::Direction ComponentTracker::getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> blobs){
-//	blobs.erase(std::remove(blobs.begin(), blobs.end(), largestBlob), blobs.end());
-	ofPoint p0 = blobs[0].centroid;
-	ofPoint p1 = blobs[1].centroid;
-	ofPoint p2 = blobs[2].centroid;
+	if (blobs.size() != 4) {
+		cout << "error in getRelativeDirection()"<<endl;
+		return ComponentTracker::none;
+	}
+	std:vector<ofPoint> p;
+	for(std::vector<ofxCvBlob>::iterator it = blobs.begin(); it!= blobs.end(); ++it){
+		ofxCvBlob b = *it;
+		if (b.centroid != largestBlob.centroid) {
+			p.push_back(b.centroid);
+		}
+	}
 	
 	ofPoint currentP = largestBlob.centroid;
-	if (currentP.x >p0.x && currentP.x > p1.x && currentP.x > p2.x){
+		
+	if (currentP.x >p[0].x && currentP.x > p[1].x && currentP.x > p[2].x){
 		return ComponentTracker::right;
-	}else if (currentP.y >p0.y && currentP.y > p1.y && currentP.y > p2.y) {
+	}else if (currentP.y >p[0].y && currentP.y > p[1].y && currentP.y > p[2].y) {
 		return ComponentTracker::up;
-	}else if (currentP.y < p0.y && currentP.y < p1.y && currentP.y < p2.y) {
+	}else if (currentP.y < p[0].y && currentP.y < p[1].y && currentP.y < p[2].y) {
 		return ComponentTracker::down;
-	}else if (currentP.x < p0.x && currentP.x < p1.x && currentP.x < p2.x){
+	}else if (currentP.x < p[0].x && currentP.x < p[1].x && currentP.x < p[2].x){
 		return ComponentTracker::left;
 	}else {
 		return ComponentTracker::none;
