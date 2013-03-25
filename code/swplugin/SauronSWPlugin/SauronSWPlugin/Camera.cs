@@ -35,8 +35,8 @@ namespace SauronSWPlugin
 
         private static String CAMERA_RAY_NAME = "camera ray";
 
-        double VECTORSRIGHTLEFT = 10;
-        double VECTORSUPDOWN = 10;
+        double VECTORSRIGHTLEFT = 20;
+        double VECTORSUPDOWN = 20;
 
         private List<MathVector> castRayVectors = null;
         private List<MathPoint> castRayCentres = null;

@@ -200,6 +200,11 @@ namespace SauronSWPlugin
 
         private void updateExtrudeDepth(IFeature feat, double depth)
         {
+            if (depth < 0)
+            {
+                return;
+            }
+
             IComponent2 comp = (feat as IEntity).IGetComponent2();
 
             IDisplayDimension dispDim = (IDisplayDimension)feat.GetFirstDisplayDimension();
@@ -238,11 +243,16 @@ namespace SauronSWPlugin
 
         private double distanceFromFlagToCamera(Component2 component)
         {
+            if (distanceBetween(component, camera.fieldOfView) < 0)
+            {
+                return distanceBetween(component, camera.fieldOfView);
+            }
+
             swFeatureMgr.EditRollback((int)swMoveRollbackBarTo_e.swMoveRollbackBarToEnd, "");
             swAssembly.EditRebuild();
 
-            IMathPoint centreOfFlagBase = getNamedPoint("centre of flag base", component).MultiplyTransform(component.Transform2);
-            IMathPoint centreOfFlagTip = getNamedPoint("centre of flag top", component).MultiplyTransform(component.Transform2);
+            IMathPoint centreOfFlagBase = getNamedPoint("centre of flag base", component);
+            IMathPoint centreOfFlagTip = getNamedPoint("centre of flag top", component);
 
             double[] dataBase = centreOfFlagBase.ArrayData;
             double[] dataTip = centreOfFlagTip.ArrayData;
@@ -265,7 +275,7 @@ namespace SauronSWPlugin
             int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
                                                                     (object)dataTip,
                                                                     (object)flagDir,
-                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS | swRayPtsOpts_e.swRayPtsOptsENTRY_EXIT),
                                                                     (double).0000001,
                                                                     (double).0000001);
 
@@ -275,18 +285,33 @@ namespace SauronSWPlugin
             }
 
             double[] horrifyingReturn = (double[])swDoc.GetRayIntersectionsPoints();
-            
-            double[] intersectionPoint = new double[3];
-            double x = horrifyingReturn[3];
-            double y = horrifyingReturn[4];
-            double z = horrifyingReturn[5];
-            intersectionPoint[0] = x;
-            intersectionPoint[1] = y;
-            intersectionPoint[2] = z;
-            
-            double distanceFromFlag = distanceFormula(intersectionPoint, dataTip);
 
-            return Math.Min(distanceFromFlag, distanceBetween(component, camera.fieldOfView));
+            int lengthOfOneReturn = 9;
+            double[] intersectionPoint = new double[3];
+
+            for (int i = 0; i < numIntersectionsFound; i++)
+            {
+                byte intersectionType = (byte)horrifyingReturn[i * lengthOfOneReturn + 2];
+
+                if ((intersectionType & (byte)swRayPtsResults_e.swRayPtsResultsENTER) == 0)
+                {
+                    // we need it to be just entry rays
+                    continue;
+                }
+
+                double x = horrifyingReturn[i * lengthOfOneReturn + 3];
+                double y = horrifyingReturn[i * lengthOfOneReturn + 4];
+                double z = horrifyingReturn[i * lengthOfOneReturn + 5];
+
+                // check to see if the distance along the ray is shorter?  we want the shortest distance!
+                
+                intersectionPoint[0] = x;
+                intersectionPoint[1] = y;
+                intersectionPoint[2] = z;
+                break;
+            }
+            
+            return distanceFormula(intersectionPoint, dataTip);
         }
 
         private double distanceFormula(double[] pt1, double[] pt2)
@@ -310,7 +335,6 @@ namespace SauronSWPlugin
 
         private bool lengthenFlag(Component2 swComponent)
         {
-            double aHealthyBit = .15; // this is the full range of motion for the button.. TODO : we could determine this per component type
             double threshold = inchesToMeters(.01);
             IFeature extrusionFeature = swComponent.FeatureByName("flag");
             
@@ -323,25 +347,26 @@ namespace SauronSWPlugin
             extrusion.AccessSelections(swAssembly, swComponent);
 
             double originalDepth = extrusion.GetDepth(true);
-            double defaultDepth = inchesToMeters(.15);
+            double defaultDepth = inchesToMeters(.10);
 
             updateExtrudeDepth(extrusionFeature, defaultDepth);
 
-            double distance = distanceFromFlagToCamera(swComponent) + aHealthyBit;
+            double distance = distanceFromFlagToCamera(swComponent);
+
+            if (distance < 0)
+            {
+                // back off ; they are separated in some way that we can't extrude through (e.g. angles are wrong)
+                // or perhaps they are already intersecting.  that would be good!
+                return false;
+            }
 
             updateExtrudeDepth(extrusionFeature, distance + defaultDepth);
 
-            if (!rawRaysCanSeeComponentDirectly(swComponent))
-            {
-                // back off ; they are separated in some way that we can't extrude through (e.g. angles are wrong)
-                updateExtrudeDepth(extrusionFeature, originalDepth);
-                return false;
-            }
 
             // we are intersecting successfully, but we need to make sure to check we aren't intersecting anything else...
             foreach (Component2 otherComponent in allSolidComponents)
             {
-                if (otherComponent.Name.Equals(swComponent.Name) || otherComponent.Name.Equals(camera.fieldOfView.Name))
+                if (otherComponent.Name2.Equals(swComponent.Name2) || otherComponent.Name2.Equals(camera.fieldOfView.Name2))
                 {
                     continue;
                 }
@@ -352,7 +377,13 @@ namespace SauronSWPlugin
                 }
             }
 
-            return rawRaysCanSeeComponentDirectly(swComponent);
+            if (!rawRaysCanSeeComponentDirectly(swComponent))
+            {
+                updateExtrudeDepth(extrusionFeature, originalDepth);
+                return false;
+            }
+
+            return true;
         }
 
         private double[] putInMainBodySpace(ReflectionPoint rp)
@@ -421,7 +452,7 @@ namespace SauronSWPlugin
              */
 
             // for now, we will just try to move around the buttons, sliders, and dials, because that is least impossible!
-            if (component.Name2.StartsWith("joystick") || component.Name2.StartsWith("dpad")  || component.Name2.StartsWith("scrollwheel"))
+            if (position == -1)
             {
                 return;
             }
@@ -444,6 +475,18 @@ namespace SauronSWPlugin
 
             swAssembly.EditAssembly();
     
+        }
+
+        private double getMateValue(Component2 component)
+        {
+            Feature mate = swAssembly.FeatureByName(component.Name2 + "-distance");
+            IDisplayDimension dispDim = (IDisplayDimension)mate.GetFirstDisplayDimension();
+            IDimension dim = dispDim.IGetDimension();
+
+            double[] someRet = dim.GetSystemValue3((int)swSetValueInConfiguration_e.swSetValue_InSpecificConfigurations,
+                new string[] { component.ReferencedConfiguration });
+
+            return someRet[0];
         }
 
         private bool rawRaysSeeComponentInCurrentConfig(Component2 component)
@@ -517,6 +560,9 @@ namespace SauronSWPlugin
             
             double pos = 1;
             bool canSeeInAllConfigs = true;
+
+            double originalValue = getMateValue(component);
+
             while (pos >= 0)
             {
                 canSeeInAllConfigs &= rawRaysSeeComponentInCurrentConfig(component);
@@ -524,13 +570,13 @@ namespace SauronSWPlugin
                 double distance = 0;
                 if (component.Name2.StartsWith("button"))
                 {
-                    if (pos == 1 || pos == 0)
+                    if (pos == 0)
                     {
-                        distance = .15;
+                        distance = originalValue;
                     }
-                    else if (pos == .5)
+                    else
                     {
-                        distance = 0;
+                        distance = pos * originalValue;
                     }
                     pos -= 0.5;
                 }
@@ -538,34 +584,32 @@ namespace SauronSWPlugin
                 {
                     if (pos == 0)
                     {
-                        distance = .35;
+                        distance = originalValue;
                     }
                     else
                     {
-                        distance = pos*.5;
+                        distance = originalValue + pos;
                     }
                     pos -= .33;
                 }
-                else // component.name2.startswith("slider")
+                else if (component.Name2.StartsWith("slider"))
                 {
                     if (pos == 0)
                     {
-                        distance = 3;
+                        distance = originalValue;
                     }
                     else
                     {
-                        distance = pos * 3;
+                        distance = originalValue * pos;
                     }
                     pos -= .25;
                 }
+                else
+                {
+                    pos = -1;
+                }
 
                 moveToPosition(component, inchesToMeters(distance));
-                pos = 0;
-
-                if (!canSeeInAllConfigs)
-                {
-                    break;
-                }
             }
 
             return canSeeInAllConfigs;
@@ -793,6 +837,13 @@ namespace SauronSWPlugin
         private void visualizeRay(IMathPoint origin, MathVector ray)
         {
             visualizeRay(ray, origin);
+        }
+
+        private void visualizePoint(IMathPoint point)
+        {
+            double[] pointData = (double[])point.ArrayData;
+
+            swDoc.CreatePoint2(pointData[0], pointData[1], pointData[2]);
         }
 
         public void startSketch()
@@ -1075,11 +1126,12 @@ namespace SauronSWPlugin
             getModelDoc();
             getFOV();
 
-            moveToPosition(ourComponents.ElementAt(0).component, 0);
 
-            // try visualizing all the rays
-            //visualize.Checked = true;
-            //ReflectionPoint rp = reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component);
+            double dist = distanceBetween(ourComponents.ElementAt(0).component, camera.fieldOfView);
+            alert("distance between is " + dist);
+
+            dist = distanceFromFlagToCamera(ourComponents.ElementAt(0).component);
+            alert("with flag distance " + dist);
         }
 
         private void alert(string text)
