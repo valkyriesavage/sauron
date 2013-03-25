@@ -64,7 +64,7 @@ void Sauron::update(){
 		if(registering){
 			sauronRegister();
 		}
-
+			//set progress amounts for drawing from each registered component
 		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
 			ComponentTracker* c = *it;
 			if(c->isRegistered()){
@@ -245,6 +245,7 @@ void Sauron::draw(){
 
 
 	//--------------------------------------------------------------
+	//keyPressed allows us to simulate receieved OSC messages for registering components
 void Sauron::keyPressed(int key){
 	
 	switch (key){
