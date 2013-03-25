@@ -188,7 +188,12 @@ bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
 	*yPosition = 0;
 	return false;
 }
-
+/*
+ * setROI is called repeatedly from Sauron to set the ROI of a particular component. setROI starts to build an ROI by detecting the greatest difference in blob placement and building a ofRectangle to 
+ * emcompass those differences.
+ * setROI can get confused if other blobs (besides the one you are measuring) move significantly - like if the controller shakes or if another component is accidentally touched. When setROI
+ * is confused in such a way, it will emcompass unintended blobs, in which case, you can finalize ROI setting, and restart it. Restarting this process will overwrite ROI.
+ */
 void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 		//ok save all in previous blobs and replace it every time. the blob that changes the most beyond a threshhold is the one we are interested in.
 		//if not set
@@ -269,6 +274,10 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 	}else return rotation-angle;
 }
 
+/*
+ * calculateScrollWheelDirection takes the blobs from the view and returns the direction of the scroll wheel. The direction is determined by camera perspective up and down.
+ * calculateScrollWheelDirection uses a variety of thresholding and past-diffing and miscellaneous strategies to return a intelligent/smooth directions for a scroll wheel.
+ */
 ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs){
 	std::vector<ofxCvBlob> scrollBlobs = keepInsideBlobs(blobs);
 	
@@ -281,8 +290,9 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	
 	float totalDistance = 0.0f;
 	float movementThreshhold = 1.5f;//based on empirical evidence. 
-	float movementTolerance = 20.0f;
+	float movementTolerance = 20.0f;//empirically, sometimes blobs would jump significantly
 	
+
 	for(int i = 0; i < min(scrollBlobs.size(), previousBlobs.size()); i++) {
 		float xDisp = scrollBlobs[i].centroid.x - previousBlobs[i].centroid.x;
 		float yDisp = scrollBlobs[i].centroid.y - previousBlobs[i].centroid.y;
@@ -335,7 +345,9 @@ bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
 		return false;
 	}
 }
-
+/*
+ *calculateDpadDirection takes all the blobs in the field and returns a ComponentTracker::Direction that corresponds to the direction that button faces relateive to the others.
+ */
 ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector<ofxCvBlob> blobs){
 	std::vector<ofxCvBlob> dpadBlobs = keepInsideBlobs(blobs);
 	
@@ -350,6 +362,10 @@ ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector
 	return getRelativeDirection(largestBlob, dpadBlobs);
 }
 
+/*
+ * measureJoystickLocation returns an ofPoint that is a coordinate representation of the joystick location. 
+ * This function is meant for the iteration 1 joystick (the red one that has three blobs of measurement)
+ */
 ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 	std::vector<ofxCvBlob> joystickBlobs = keepInsideBlobs(blobs);
 
@@ -362,6 +378,7 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 	ofxCvBlob* flank0 = new ofxCvBlob();
 	ofxCvBlob* flank1 = new ofxCvBlob();
 	
+		//of the joystick blobs, sets middle, flank0, flank1 to their corresponding semantic blobs. middle is the large rectangular piece, and the flanks are the surrounding pieces
 	distributeJoystickBlobs(joystickBlobs, middle, flank0, flank1, numBlobsNeeded);
 	
 		//TODO: going to need something smarter than this to account for joystick orientation
@@ -405,10 +422,17 @@ ComponentTracker::ComponentType ComponentTracker::getComponentType(){
 	return comptype;
 }
 
+/*
+ *ROIUnset determines whether the ROI field has been set.
+ */
 bool ComponentTracker::ROIUnset(){
 	return ROI.width == 0 && ROI.height == 0;
 }
-
+/*
+ *keepInsideBlobs is a function that take a vector of blobs, blobs, and return blobs in the ofRectangle ROI. 
+ *ROI should be set before keepInsideBlobs is called
+ *This function should be called to start every measurement stage, in order to only play the the blobs of interest to your particular measurement
+ */
 std::vector<ofxCvBlob> ComponentTracker::keepInsideBlobs(std::vector<ofxCvBlob> blobs){
 	std::vector<ofxCvBlob> result;
 	if(ROIUnset()){
@@ -425,7 +449,10 @@ std::vector<ofxCvBlob> ComponentTracker::keepInsideBlobs(std::vector<ofxCvBlob> 
 	}
 	return result;
 }
-
+/*
+ * getRelativeDirection is a helper function for the calculateDpadDirection function. With four blob vector (presumably passed in the shape of a dpad), blobs,  and another blob, largestBlob,  which is a member of 
+ * the four blob vector, it will return the relative position of largestBlob (a ComponentTracker direction).
+ */
 ComponentTracker::Direction ComponentTracker::getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> blobs){
 	if (blobs.size() != 4) {
 		cout << "error in getRelativeDirection()"<<endl;
@@ -453,7 +480,9 @@ ComponentTracker::Direction ComponentTracker::getRelativeDirection(ofxCvBlob lar
 		return ComponentTracker::none;
 	}
 }
-
+/*
+ * isDeltaSignificant is what determines the amount of throttling in the OSC message passing stage. Throttling amounts were determined 'by eye' (read: non-algorithmically).
+ */
 bool ComponentTracker::isDeltaSignificant(){
 	float significance;
 	switch(this->comptype){
