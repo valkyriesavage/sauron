@@ -753,10 +753,8 @@ namespace SauronSWPlugin
                 bodies.Add(tempBody);
             }
 
-            double[] rayOrigins = new double[camera.rayVectorOrigins().Length];
-            camera.rayVectorOrigins().CopyTo(rayOrigins, 0);
-            double[] rayDirections = new double[camera.rayVectorDirections().Length];
-            camera.rayVectorDirections().CopyTo(rayDirections, 0);
+            double[] rayOrigins = camera.rayVectorOrigins();
+            double[] rayDirections = camera.rayVectorDirections();
 
             int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
                                                                     (object)rayOrigins,
@@ -769,6 +767,7 @@ namespace SauronSWPlugin
 
             if (numIntersectionsFound == 0)
             {
+                finishSketch("all the rays we are casting...");
                 // we didn't hit the main body at all...??
                 return null;
             }
@@ -1126,12 +1125,8 @@ namespace SauronSWPlugin
             getModelDoc();
             getFOV();
 
-
-            double dist = distanceBetween(ourComponents.ElementAt(0).component, camera.fieldOfView);
-            alert("distance between is " + dist);
-
-            dist = distanceFromFlagToCamera(ourComponents.ElementAt(0).component);
-            alert("with flag distance " + dist);
+            visualize.Checked = true;
+            reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component);
         }
 
         private void alert(string text)

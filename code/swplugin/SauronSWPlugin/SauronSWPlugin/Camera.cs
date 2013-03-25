@@ -320,7 +320,7 @@ namespace SauronSWPlugin
                 castRayCentres = new List<MathPoint>();
                 for (int i = 0; i < castRayVectors.Count; i++)
                 {
-                    castRayCentres.Add(centreOfVision.MultiplyTransform(fieldOfView.Transform2));
+                    castRayCentres.Add(centreOfVision);
                 }
             }
             return castRayCentres;
