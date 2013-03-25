@@ -123,9 +123,11 @@ namespace SauronSWPlugin
             double[] cameraDirData = (double[])cameraDirection.ArrayData;
             double[] cameraOriginData = (double[])centreOfVision.ArrayData;
             swDoc.Insert3DSketch2(true);
+            swDoc.SketchManager.AddToDB = true;
             swDoc.CreateLine2(cameraOriginData[0], cameraOriginData[1], cameraOriginData[2],
                               cameraOriginData[0] + cameraDirData[0], cameraOriginData[1] + cameraDirData[1], cameraOriginData[2] + cameraDirData[2]);
             swDoc.Insert3DSketch2(true);
+            swDoc.SketchManager.AddToDB = false;
             Feature sketch = swSelectionMgr.GetSelectedObject6(1, 0);
             sketch.Name = CAMERA_RAY_NAME;
             swDoc.ClearSelection2(true);
@@ -157,8 +159,6 @@ namespace SauronSWPlugin
 
         public void drawInitalRay()
         {
-            Camera.removeRayIfPresent(swDoc);
-
             centreOfVision = (MathPoint) Camera.getCentreOfVision(fieldOfView, swDoc, swSelectionMgr, mathUtils);
 
             if (centreOfVision == null)
@@ -320,7 +320,7 @@ namespace SauronSWPlugin
                 castRayCentres = new List<MathPoint>();
                 for (int i = 0; i < castRayVectors.Count; i++)
                 {
-                    castRayCentres.Add(centreOfVision);
+                    castRayCentres.Add(centreOfVision.MultiplyTransform(fieldOfView.Transform2));
                 }
             }
             return castRayCentres;

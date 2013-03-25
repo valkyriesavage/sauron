@@ -212,6 +212,7 @@ namespace SauronSWPlugin
             swFeatureMgr.EditRollback((int)swMoveRollbackBarTo_e.swMoveRollbackBarToEnd, feat.Name);
 
             swAssembly.EditRebuild();
+            swDoc.EditRebuild3();
             swDoc.ForceRebuild3(false);
 
             swAssembly.EditAssembly();
@@ -309,6 +310,7 @@ namespace SauronSWPlugin
 
         private bool lengthenFlag(Component2 swComponent)
         {
+            double aHealthyBit = .15; // this is the full range of motion for the button.. TODO : we could determine this per component type
             double threshold = inchesToMeters(.01);
             IFeature extrusionFeature = swComponent.FeatureByName("flag");
             
@@ -325,9 +327,9 @@ namespace SauronSWPlugin
 
             updateExtrudeDepth(extrusionFeature, defaultDepth);
 
-            double distance = distanceFromFlagToCamera(swComponent);
+            double distance = distanceFromFlagToCamera(swComponent) + aHealthyBit;
 
-            updateExtrudeDepth(extrusionFeature, distance + originalDepth);
+            updateExtrudeDepth(extrusionFeature, distance + defaultDepth);
 
             if (!rawRaysCanSeeComponentDirectly(swComponent))
             {
@@ -355,22 +357,19 @@ namespace SauronSWPlugin
 
         private double[] putInMainBodySpace(ReflectionPoint rp)
         {
-            // TODO : debug!
-            MathVector offsetOfMainBody = mathUtils.CreateVector(new double[] { mainBody.Transform2.ArrayData[9],
-                                                                                mainBody.Transform2.ArrayData[10],
-                                                                                mainBody.Transform2.ArrayData[11] });
-            return rp.location.ISubtractVector(offsetOfMainBody).ArrayData;
+            // TODO : debug!!
+            return rp.location.IMultiplyTransform(mainBody.Transform2).ArrayData;
         }
 
         private void createMirrorExtrusion(ReflectionPoint reflectionPoint)
         {
-            swDoc.SketchManager.Insert3DSketch(true);
+            /*swDoc.SketchManager.Insert3DSketch(true);
             swDoc.SketchManager.AddToDB = true;
             swDoc.SketchManager.CreatePoint(reflectionPoint.xyz[0], reflectionPoint.xyz[1], reflectionPoint.xyz[2]);
             swDoc.SketchManager.AddToDB = false;
             swDoc.SketchManager.Insert3DSketch(true);
 
-            return;
+            return;*/
             
             /*
             // TODO make this work!  need to debug putInMainBodySpace, above
@@ -418,10 +417,11 @@ namespace SauronSWPlugin
              * Dials move in a circle from 1 to 0 in .25 (90 degree) steps
              * Joysticks move x 1-0 and y 1-0
              * Dpads move up (1), down (.75), left (.5), right (.25)
+             * Scroll wheels do not move...
              */
 
             // for now, we will just try to move around the buttons, sliders, and dials, because that is least impossible!
-            if (component.Name2.StartsWith("joystick") || component.Name2.StartsWith("dpad"))
+            if (component.Name2.StartsWith("joystick") || component.Name2.StartsWith("dpad")  || component.Name2.StartsWith("scrollwheel"))
             {
                 return;
             }
@@ -546,7 +546,7 @@ namespace SauronSWPlugin
                     }
                     pos -= .33;
                 }
-                else
+                else // component.name2.startswith("slider")
                 {
                     if (pos == 0)
                     {
@@ -731,7 +731,7 @@ namespace SauronSWPlugin
 
             int lengthOfOneReturn = 9;
 
-            ReflectionPoint rp = null;
+            ReflectionPoint reflectionWorksAt = null;
 
             if (visualize.Checked)
             {
@@ -757,7 +757,7 @@ namespace SauronSWPlugin
                 double ny = horrifyingReturn[i * lengthOfOneReturn + 7];
                 double nz = horrifyingReturn[i * lengthOfOneReturn + 8];
 
-                rp = new ReflectionPoint(mathUtils, new double[] { x, y, z }, new double[] { nx, ny, nz });
+                ReflectionPoint rp = new ReflectionPoint(mathUtils, new double[] { x, y, z }, new double[] { nx, ny, nz });
                 double[] reflectionDir = camera.calculateReflectionDir(camera.rayVectors().ElementAt(rayIndex).ArrayData, rp.nxnynz);
                 MathVector reflectedRay = mathUtils.CreateVector(reflectionDir);
 
@@ -766,19 +766,19 @@ namespace SauronSWPlugin
                     swDoc.SketchManager.CreatePoint(x, y, z);
                     if (visualize.Checked)
                     {
-                        visualizeRay(camera.centreOfVision, mathUtils.CreateVector(new double[] {rayDirections[rayIndex * 3], rayDirections[rayIndex * 3 + 1], rayDirections[rayIndex * 3 + 2]}));
+                        visualizeRay(camera.centreOfVision, mathUtils.CreateVector(new double[] { rayDirections[rayIndex * 3], rayDirections[rayIndex * 3 + 1], rayDirections[rayIndex * 3 + 2] }));
                         visualizeRay(rp.location, reflectedRay);
                     }
+                    reflectionWorksAt = rp;
                 }
             }
 
             if (visualize.Checked)
             {
-                // TODO : would be nice if we could name the sketch...
-                finishSketch();
+                finishSketch("reflections for " + component.Name2);
             }
 
-            return rp;
+            return reflectionWorksAt;
         }
 
         private void visualizeRay(MathVector ray, IMathPoint origin)
@@ -799,12 +799,28 @@ namespace SauronSWPlugin
         {
             swDoc.Insert3DSketch2(true);
             swDoc.SketchManager.AddToDB = true;
+            swDoc.SetDisplayWhenAdded(false);
         }
 
         public void finishSketch()
         {
+            finishSketch("SAURON-" + randomString());
+        }
+
+        public void finishSketch(string name)
+        {
             swDoc.SketchManager.AddToDB = false;
             swDoc.Insert3DSketch2(true);
+            swDoc.SetDisplayWhenAdded(true);
+
+            Feature sketch = swSelectionMgr.GetSelectedObject6(1, 0);
+            if (sketch == null)
+            {
+                // we didn't actually put anything in the sketch
+                return;
+            }
+            sketch.Name = name;
+            swDoc.ClearSelection2(true);
         }
 
         private bool placeMirror(Component2 swComponent)
