@@ -463,6 +463,12 @@ namespace SauronSWPlugin
             double newDistance = position;
 
             Feature mate = swAssembly.FeatureByName(component.Name2 + "-distance");
+
+            if (mate == null)
+            {
+                return;
+            }
+
             IDisplayDimension dispDim = (IDisplayDimension)mate.GetFirstDisplayDimension();
             IDimension dim = dispDim.IGetDimension();
 
@@ -480,6 +486,12 @@ namespace SauronSWPlugin
         private double getMateValue(Component2 component)
         {
             Feature mate = swAssembly.FeatureByName(component.Name2 + "-distance");
+
+            if (mate == null)
+            {
+                return -1;
+            }
+
             IDisplayDimension dispDim = (IDisplayDimension)mate.GetFirstDisplayDimension();
             IDimension dim = dispDim.IGetDimension();
 
@@ -767,8 +779,7 @@ namespace SauronSWPlugin
 
             if (numIntersectionsFound == 0)
             {
-                finishSketch("all the rays we are casting...");
-                // we didn't hit the main body at all...??
+                alert("we can't see the main body with the camera.  the thing we think is the main body is " + mainBody.Name2);
                 return null;
             }
 
