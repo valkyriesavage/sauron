@@ -239,43 +239,40 @@ ofRectangle ComponentTracker::getROI(){
  */
 bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 	char s[32];
+		//keep blobs only in ROI
 	std::vector<ofxCvBlob> componentBlobs = keepInsideBlobs(blobs);
+		//error check for number of blobs in ROI for particular comptype
 	if (!verifyNumBlobs(componentBlobs.size())) {
 		cout<<"error blobs passed into measureComponent " << getComponentTypeString() << ": " << componentBlobs.size() << endl;
 		sprintf(s, "error see console");
 		setDelta(s);
 		return false;
 	}
-	
+		//delegate measurement to comptype
 	switch (getComponentType()) {
 		case ComponentTracker::slider:
 			sprintf(s, "%f", calculateSliderProgress(componentBlobs));
-			setDelta(s);
 			break;
 		case ComponentTracker::dial:
 			sprintf(s, "%f", calculateDialProgress(componentBlobs));
-			setDelta(s);
 			break;
 		case ComponentTracker::scroll_wheel:
 			sprintf(s,"%s", EnumDirectionToString(calculateScrollWheelDirection(componentBlobs)));
-			setDelta( s);
 			break;
 		case ComponentTracker::button:
 			sprintf(s, "%i", isButtonPressed(componentBlobs));
-			setDelta(s);
 			break;
 		case ComponentTracker::dpad:
 			sprintf(s, "%s", EnumDirectionToString(calculateDpadDirection(componentBlobs)));
-			setDelta(s);
 			break;
 		case ComponentTracker::joystick:
 			sprintf(s, "%s", ofPointToA(measureJoystickLocation(componentBlobs)).c_str());
-			setDelta(s);
 			break;
 		default:
 			return false;
-	}		
-	
+	}	
+		//set delta
+	setDelta(s);	
 }
 
 float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){ 
