@@ -538,7 +538,7 @@ bool ComponentTracker::isDeltaSignificant(){
 
 bool ComponentTracker::verifyNumBlobs(int numBlobs){
 	if (comptype == ComponentTracker::scroll_wheel){
-		return numBlobs == 2 || numBlobs == 3;
+		return numBlobs == 2 || numBlobs == 3 || numBlobs ==1;
 	}else {
 		return numBlobs == numBlobsNeeded;
 	}
