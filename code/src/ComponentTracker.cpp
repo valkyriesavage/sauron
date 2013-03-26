@@ -201,11 +201,18 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 		previousBlobs = blobs;
 		return;
 	}
+
 	if(ROIUnset()){
 			//if movement is beyond movement threshhold
 			//make a box around the previous and this blobs and set it as roi
 		ofxCvBlob* blob = new ofxCvBlob();
 		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
+			
+				//for buttons, keep the original blob
+			if(comptype == ComponentTracker::button){
+				mButtonOrigin = *blob;
+			}
+			
 			ROI = blob->boundingRect;
 		}
 	}else{
@@ -223,6 +230,15 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 
 ofRectangle ComponentTracker::getROI(){
 	return ROI;	
+}
+
+/*
+ * measureComponent calls the appropriate component type measurement call with the perscribed number of blob
+ * sets the delta
+ * returns false if there is an error with measurement. returns true otherwise.
+ */
+bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
+		//TODO: we like object orientedness
 }
 
 float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
@@ -333,18 +349,19 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
 	std::vector<ofxCvBlob> buttonBlobs = keepInsideBlobs(blobs);
 	
-	float precisionThreshhold = 0.5f;
 	if (buttonBlobs.size() !=numBlobsNeeded) {
 		cout<<"error blobs passed into isButtonPressed: " << buttonBlobs.size() << endl;
 		return false;
 	} 
-
-	if(buttonBlobs[0].area/ROI.getArea() > 1-precisionThreshhold && buttonBlobs[0].area/ROI.getArea() < 1+precisionThreshhold){
+	float centerThreshold = 10.0f;
+	
+	ofRectangle* temp = new ofRectangle();
+	temp->setFromCenter(buttonBlobs[0].centroid.x, buttonBlobs[0].centroid.y, centerThreshold, centerThreshold);
+	if(buttonBlobs[0].area >mButtonOrigin.area || !temp->inside(mButtonOrigin.centroid)){//this checks whether the area is greater than start position or whether center is out of some thresholded origin area
 		return true;
-	}else{
-		return false;
-	}
+	}else return false;
 }
+
 /*
  *calculateDpadDirection takes all the blobs in the field and returns a ComponentTracker::Direction that corresponds to the direction that button faces relateive to the others.
  */

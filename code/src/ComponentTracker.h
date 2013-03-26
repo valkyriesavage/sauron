@@ -40,6 +40,7 @@ public:
 	bool ROIUnset();
 	
 		//component calculations
+	bool measureComponent(std::vector<ofxCvBlob> blobs);
 	float calculateSliderProgress(std::vector<ofxCvBlob> blobs);
 	float calculateDialProgress(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs);
@@ -71,6 +72,8 @@ private:
 
     std::vector<ofxCvBlob> previousBlobs;
 	std::vector<ofRectangle> previousRectangles;//rectangles are used during the ROI set stage of registration (instead of blobs)
+	
+	ofxCvBlob mButtonOrigin;
 	
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);

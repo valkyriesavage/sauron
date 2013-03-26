@@ -278,6 +278,10 @@ void Sauron::keyPressed(int key){
 			stageComponent(ComponentTracker::dpad, 0);
 			startRegistrationMode();
 			break;
+		case 'b':
+			stageComponent(ComponentTracker::button, 0);
+			startRegistrationMode();
+			break;
 		case ' ':
 			stopRegistrationMode();
 			break;
