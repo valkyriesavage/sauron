@@ -57,6 +57,7 @@ public:
 	ComponentTracker::ComponentType getComponentType();
 	void setContourFinder(ofRectangle ROI, int numBlobs);
 	bool isDeltaSignificant();
+	bool verifyNumBlobs(int numBlobs);
 	
 private:
 	bool mIsRegistered;

@@ -68,35 +68,30 @@ void Sauron::update(){
 		for (std::vector<ComponentTracker*>::iterator it = components.begin(); it != components.end(); ++it){
 			ComponentTracker* c = *it;
 			if(c->isRegistered()){
+				c->measureComponent(contourFinderGrayImage.blobs);
 				switch (c->getComponentType()) {
 					case ComponentTracker::slider:
-						sprintf(mSliderProgress, "%f", c->calculateSliderProgress(contourFinderGrayImage.blobs));
-						c->setDelta(mSliderProgress);
+						sprintf(mSliderProgress, "%s", c->getDelta().c_str());
 						break;
 					case ComponentTracker::dial:
-						sprintf(mDialProgress, "%f", c->calculateDialProgress(contourFinderGrayImage.blobs));
-						c->setDelta(mDialProgress);
+						sprintf(mDialProgress, "%s", c->getDelta().c_str());
 						break;
 					case ComponentTracker::scroll_wheel:
-						sprintf(mScrollWheelDirection,"%s", c->EnumDirectionToString(c->calculateScrollWheelDirection(contourFinderGrayImage.blobs)));
-						c->setDelta( mScrollWheelDirection);
+						sprintf(mScrollWheelDirection,"%s", c->getDelta().c_str());
 						break;
 					case ComponentTracker::button:
-						sprintf(mButtonPressed, "%i", c->isButtonPressed(contourFinderGrayImage.blobs));
-						c->setDelta(mButtonPressed);
+						sprintf(mButtonPressed, "%s", c->getDelta().c_str());
 						break;
 					case ComponentTracker::dpad:
-						sprintf(mDpadDirection, "%s", c->EnumDirectionToString(c->calculateDpadDirection(contourFinderGrayImage.blobs)));
-						c->setDelta(mDpadDirection);
+						sprintf(mDpadDirection, "%s", c->getDelta().c_str());
 						break;
 					case ComponentTracker::joystick:
-						sprintf(mJoystickLocation, "%s", ofPointToA(c->measureJoystickLocation(contourFinderGrayImage.blobs)).c_str());
-						c->setDelta(mJoystickLocation);
+						sprintf(mJoystickLocation, "%s", c->getDelta().c_str());
 						break;
 					default:
-						
 						break;
 				}
+				
 			}
 		}	
 		if(testing) {

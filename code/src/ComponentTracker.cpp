@@ -238,19 +238,49 @@ ofRectangle ComponentTracker::getROI(){
  * returns false if there is an error with measurement. returns true otherwise.
  */
 bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
-		//TODO: we like object orientedness
+	char s[32];
+	std::vector<ofxCvBlob> componentBlobs = keepInsideBlobs(blobs);
+	if (!verifyNumBlobs(componentBlobs.size())) {
+		cout<<"error blobs passed into measureComponent " << getComponentTypeString() << ": " << componentBlobs.size() << endl;
+		sprintf(s, "error see console");
+		setDelta(s);
+		return false;
+	}
+	
+	switch (getComponentType()) {
+		case ComponentTracker::slider:
+			sprintf(s, "%f", calculateSliderProgress(componentBlobs));
+			setDelta(s);
+			break;
+		case ComponentTracker::dial:
+			sprintf(s, "%f", calculateDialProgress(componentBlobs));
+			setDelta(s);
+			break;
+		case ComponentTracker::scroll_wheel:
+			sprintf(s,"%s", EnumDirectionToString(calculateScrollWheelDirection(componentBlobs)));
+			setDelta( s);
+			break;
+		case ComponentTracker::button:
+			sprintf(s, "%i", isButtonPressed(componentBlobs));
+			setDelta(s);
+			break;
+		case ComponentTracker::dpad:
+			sprintf(s, "%s", EnumDirectionToString(calculateDpadDirection(componentBlobs)));
+			setDelta(s);
+			break;
+		case ComponentTracker::joystick:
+			sprintf(s, "%s", ofPointToA(measureJoystickLocation(componentBlobs)).c_str());
+			setDelta(s);
+			break;
+		default:
+			return false;
+	}		
+	
 }
 
-float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
-	
-	std::vector<ofxCvBlob> sliderBlobs;
-	sliderBlobs = keepInsideBlobs(blobs);
-	if (sliderBlobs.size() != numBlobsNeeded) {
-		cout<<"error blobs passed into calculateDialProgress: " << sliderBlobs.size() << endl;
-		return -1.0f;
-	} 
+float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){ 
 	ofxCvBlob blob;
-	blob = sliderBlobs.front();
+	blob = blobs.front();
 	
 	return	distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
 }
@@ -268,12 +298,7 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 		rotation = 2*PI;
 	}
 	
-	std::vector<ofxCvBlob> dialBlobs = keepInsideBlobs(blobs);
-	if (dialBlobs.size() != numBlobsNeeded) {
-		cout<<"error blobs passed into calculateDialProgress: " << dialBlobs.size() << endl;
-		return -1.0f;
-	} 
-	ofPoint p1 = dialBlobs[0].centroid;
+	ofPoint p1 = blobs[0].centroid;
 	ofPoint p2 = ROI.getCenter();
 	float r = ROI.height/2;
 	p2.y = p2.y + r;
@@ -295,12 +320,7 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
  * calculateScrollWheelDirection uses a variety of thresholding and past-diffing and miscellaneous strategies to return a intelligent/smooth directions for a scroll wheel.
  */
 ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std::vector<ofxCvBlob> blobs){
-	std::vector<ofxCvBlob> scrollBlobs = keepInsideBlobs(blobs);
-	
-	if (scrollBlobs.size() > numBlobsNeeded) {
-		cout<<"error blobs passed into calculateScrollWheelDirection: " << scrollBlobs.size() << endl;
-		return ComponentTracker::none;
-	}else if (scrollBlobs.size() == 1) {
+	if (blobs.size() == 1) {
 		return mPreviousScrollWheelDirection;
 	}
 	
@@ -308,21 +328,21 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	float movementThreshhold = 1.5f;//based on empirical evidence. 
 	float movementTolerance = 20.0f;//empirically, sometimes blobs would jump significantly
 	
-
-	for(int i = 0; i < min(scrollBlobs.size(), previousBlobs.size()); i++) {
-		float xDisp = scrollBlobs[i].centroid.x - previousBlobs[i].centroid.x;
-		float yDisp = scrollBlobs[i].centroid.y - previousBlobs[i].centroid.y;
+	
+	for(int i = 0; i < min(blobs.size(), previousBlobs.size()); i++) {
+		float xDisp = blobs[i].centroid.x - previousBlobs[i].centroid.x;
+		float yDisp = blobs[i].centroid.y - previousBlobs[i].centroid.y;
 		if (((abs(xDisp) > abs(yDisp)) && xDisp > 0) || ((abs(yDisp) > abs(xDisp)) && yDisp > 0)) {//yes I know, hacky.
-			totalDistance += distanceFormula(scrollBlobs[i].centroid.x, scrollBlobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
-			//I guess we don't technically need to do this here, but it'll set up nicely for measuring scrollwheel movement later.
+			totalDistance += distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
+				//I guess we don't technically need to do this here, but it'll set up nicely for measuring scrollwheel movement later.
 		}else {
-			totalDistance -= distanceFormula(scrollBlobs[i].centroid.x, scrollBlobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
+			totalDistance -= distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
 		}
 	}
 	
-	float meanDistance =  totalDistance /min(scrollBlobs.size(), previousBlobs.size());	
+	float meanDistance =  totalDistance /min(blobs.size(), previousBlobs.size());	
 	
-	this->previousBlobs = scrollBlobs;//gotta replace our previous blobs
+	this->previousBlobs = blobs;//gotta replace our previous blobs
 	
 	if (meanDistance > movementTolerance || meanDistance < -movementTolerance) {//sometimes scroll wheel gets whacky (possibly due to blob id shifting). This is a bandaid to the symptoms.
 		return mPreviousScrollWheelDirection;
@@ -347,17 +367,11 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 }
 
 bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
-	std::vector<ofxCvBlob> buttonBlobs = keepInsideBlobs(blobs);
-	
-	if (buttonBlobs.size() !=numBlobsNeeded) {
-		cout<<"error blobs passed into isButtonPressed: " << buttonBlobs.size() << endl;
-		return false;
-	} 
 	float centerThreshold = 10.0f;
 	
 	ofRectangle* temp = new ofRectangle();
-	temp->setFromCenter(buttonBlobs[0].centroid.x, buttonBlobs[0].centroid.y, centerThreshold, centerThreshold);
-	if(buttonBlobs[0].area >mButtonOrigin.area || !temp->inside(mButtonOrigin.centroid)){//this checks whether the area is greater than start position or whether center is out of some thresholded origin area
+	temp->setFromCenter(blobs.front().centroid.x, blobs.front().centroid.y, centerThreshold, centerThreshold);
+	if(blobs.front().area >mButtonOrigin.area || !temp->inside(mButtonOrigin.centroid)){//this checks whether the area is greater than start position or whether center is out of some thresholded origin area
 		return true;
 	}else return false;
 }
@@ -366,17 +380,11 @@ bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
  *calculateDpadDirection takes all the blobs in the field and returns a ComponentTracker::Direction that corresponds to the direction that button faces relateive to the others.
  */
 ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector<ofxCvBlob> blobs){
-	std::vector<ofxCvBlob> dpadBlobs = keepInsideBlobs(blobs);
-	
-	if (dpadBlobs.size() !=numBlobsNeeded) {
-		cout<<"error blobs passed into calculateDpadDirection: " << dpadBlobs.size() << endl;
-		return ComponentTracker::none;
-	} 
-	
+
 		//assuming they are all the same size blobs (which may be a tricky 'hardware' problem (i.e. make sure the reflective tape is all the same size))
-	ofxCvBlob largestBlob = getLargestBlob(dpadBlobs);
+	ofxCvBlob largestBlob = getLargestBlob(blobs);
 	
-	return getRelativeDirection(largestBlob, dpadBlobs);
+	return getRelativeDirection(largestBlob, blobs);
 }
 
 /*
@@ -384,19 +392,12 @@ ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector
  * This function is meant for the iteration 1 joystick (the red one that has three blobs of measurement)
  */
 ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
-	std::vector<ofxCvBlob> joystickBlobs = keepInsideBlobs(blobs);
-
-	if (joystickBlobs.size() !=numBlobsNeeded) {
-		cout<<"error blobs passed into measureJoystickLocation: " << joystickBlobs.size() << endl;
-		return ofPoint(-1, -1);
-	} 
-	
 	ofxCvBlob* middle = new ofxCvBlob();
 	ofxCvBlob* flank0 = new ofxCvBlob();
 	ofxCvBlob* flank1 = new ofxCvBlob();
 	
 		//of the joystick blobs, sets middle, flank0, flank1 to their corresponding semantic blobs. middle is the large rectangular piece, and the flanks are the surrounding pieces
-	distributeJoystickBlobs(joystickBlobs, middle, flank0, flank1, numBlobsNeeded);
+	distributeJoystickBlobs(blobs, middle, flank0, flank1, numBlobsNeeded);
 	
 		//TODO: going to need something smarter than this to account for joystick orientation
 	ofPoint p1 = middle->centroid;
@@ -409,7 +410,7 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 	if (adjustRelativePoint(&p2, ROI)) {
 		y = p2.y;
 	}
-
+	
 	return ofPoint(x, y);
 }
 
@@ -536,4 +537,13 @@ bool ComponentTracker::isDeltaSignificant(){
 			return false;
 			break;
 	}
+}
+
+bool ComponentTracker::verifyNumBlobs(int numBlobs){
+	if (comptype == ComponentTracker::scroll_wheel){
+		return numBlobs == 2 || numBlobs == 3;
+	}else {
+		return numBlobs == numBlobsNeeded;
+	}
+
 }
