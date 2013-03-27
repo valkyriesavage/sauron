@@ -41,6 +41,15 @@ void ComponentTracker::init(ComponentType type, int id){
 			numBlobsNeeded = 0;
 			break;
 	}
+
+	this->sliderStart = *(new ofPoint(0,0));
+	this->sliderEnd = *(new ofPoint(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()));
+
+	this->dialEllipseCenter = *(new ofPoint(0,0));
+	this->dialEllipseWidth = -1;
+	this->dialEllipseHeight = -1;
+
+	this->jiggleThreshold = 5;
 }
 	
 string ComponentTracker::getComponentTypeString(){
@@ -189,13 +198,17 @@ bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
 	return false;
 }
 /*
- * setROI is called repeatedly from Sauron to set the ROI of a particular component. setROI starts to build an ROI by detecting the greatest difference in blob placement and building a ofRectangle to 
+ * setROI is called repeatedly from Sauron to set the ROI of a particular component. setROI starts to 
+ * build an ROI by detecting the greatest difference in blob placement and building a ofRectangle to 
  * emcompass those differences.
- * setROI can get confused if other blobs (besides the one you are measuring) move significantly - like if the controller shakes or if another component is accidentally touched. When setROI
- * is confused in such a way, it will emcompass unintended blobs, in which case, you can finalize ROI setting, and restart it. Restarting this process will overwrite ROI.
+ * setROI can get confused if other blobs (besides the one you are measuring) move significantly - 
+ * like if the controller shakes or if another component is accidentally touched. When setROI
+ * is confused in such a way, it will emcompass unintended blobs, in which case, you can finalize ROI setting, 
+ * and restart it. Restarting this process will overwrite ROI.
  */
 void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
-		//ok save all in previous blobs and replace it every time. the blob that changes the most beyond a threshhold is the one we are interested in.
+		//ok save all in previous blobs and replace it every time. the blob that changes the most beyond a threshhold is
+	    // the one we are interested in.
 		//if not set
 	if (previousBlobs.empty()) {
 		previousBlobs = blobs;
@@ -225,7 +238,94 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 
 		}
 	}
+
+	// here is some unfortunate casing
+	if(this->comptype == ComponentTracker::slider) {
+		// we want the start to be the min X or min Y WRT the camera
+		ofxCvBlob* blob = new ofxCvBlob();
+		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
+			if(blob->centroid.x < this->sliderStart.x || blob->centroid.y < this->sliderStart.y) {
+				this->sliderStart = blob->centroid;
+			} else if(blob->centroid.x > this->sliderEnd.x || blob->centroid.y > this->sliderEnd.y) {
+				this->sliderEnd = blob->centroid;
+			}
+		}
+	}
+
+	if(this->comptype == ComponentTracker::dial) {
+		// TODO : VALKYRIE : MAKE A HOUGH TRANSFORM NONSENSE AROUND HERE!!!
+		ofxCvBlob* blob = new ofxCvBlob();
+		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {	
+			this->dialPoints.push_back(blob->centroid);
+			if(this->dialPoints.size() > 6) {
+				// the rest of this is only useful if we have actually gotten away from the original blob
+				// otherwise we may terminate with just a couple blobs that happen to be close together.
+				ofPoint firstPoint = dialPoints.at(0);
+				if(distanceFormula(blob->centroid.x, blob->centroid.y, firstPoint.x, firstPoint.y) < this->jiggleThreshold) {
+					// that means we are around the circle, so we need to figure out our ellipse
+					determineDialEllipse();
+				}
+			}
+		}
+	}
+	
 	previousBlobs = blobs;
+}
+
+void ComponentTracker::determineDialEllipse() {
+	// so, we have a bunch of points in a dial ring.  probably they are an ellipse of some kind.  we gotta figure out what it is.
+	// this code was copy/pasted (and slightly modified) from
+	// http://opencv-extension-library.googlecode.com/svn/trunk/QtOpenCV/example/fitellipse/fitellipse.c
+	CvMemStorage* stor;
+    CvSeq* cont;
+    CvBox2D32f* box;
+    CvPoint* PointArray;
+    CvPoint2D32f* PointArray2D32f;
+    
+    // Create dynamic structure and sequence.
+    stor = cvCreateMemStorage(0);
+    cont = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq), sizeof(CvPoint) , stor);
+    
+    // This cycle draw all contours and approximate it by ellipses.
+    CvPoint center;
+    CvSize size;
+        
+    // Alloc memory for contour point set.    
+    PointArray = (CvPoint*)malloc( this->dialPoints.size()*sizeof(CvPoint) );
+    PointArray2D32f= (CvPoint2D32f*)malloc( this->dialPoints.size()*sizeof(CvPoint2D32f) );
+        
+    // Alloc memory for ellipse data.
+    box = (CvBox2D32f*)malloc(sizeof(CvBox2D32f));
+        
+    // Get contour point set.
+    cvCvtSeqToArray(cont, PointArray, CV_WHOLE_SEQ);
+        
+    // Convert CvPoint set to CvBox2D32f set.
+    for(int i=0; i<this->dialPoints.size(); i++)
+    {
+        PointArray2D32f[i].x = (float)PointArray[i].x;
+        PointArray2D32f[i].y = (float)PointArray[i].y;
+    }
+        
+    // Fits ellipse to current contour.
+    cvFitEllipse(PointArray2D32f, this->dialPoints.size(), box);
+        
+    // Convert ellipse data from float to integer representation.
+    center.x = cvRound(box->center.x);
+    center.y = cvRound(box->center.y);
+    size.width = cvRound(box->size.width*0.5);
+    size.height = cvRound(box->size.height*0.5);
+    box->angle = -box->angle;
+    
+	// actually store our values!
+	this->dialEllipseCenter = *(new ofPoint(center.x, center.y));
+	this->dialEllipseWidth = size.width;
+	this->dialEllipseHeight = size.height;
+
+    // Free memory.          
+    free(PointArray);
+    free(PointArray2D32f);
+    free(box);
 }
 
 ofRectangle ComponentTracker::getROI(){
@@ -242,12 +342,12 @@ bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 		//keep blobs only in ROI
 	std::vector<ofxCvBlob> componentBlobs = keepInsideBlobs(blobs);
 		//error check for number of blobs in ROI for particular comptype
-	if (!verifyNumBlobs(componentBlobs.size())) {
+	/*if (!verifyNumBlobs(componentBlobs.size())) {
 		cout<<"error blobs passed into measureComponent " << getComponentTypeString() << ": " << componentBlobs.size() << endl;
 		sprintf(s, "error see console");
 		setDelta(s);
 		return false;
-	}
+	}*/
 		//delegate measurement to comptype
 	switch (getComponentType()) {
 		case ComponentTracker::slider:
@@ -275,11 +375,25 @@ bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 	setDelta(s);	
 }
 
-float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){ 
-	ofxCvBlob blob;
-	blob = blobs.front();
-	
-	return	distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
+float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
+	std::vector<ofxCvBlob> sliderBlobs;
+
+	// we want to check if any of the blobs we have is basically linearly between our start and end
+	double slopeOfLine = (this->sliderEnd.y - this->sliderStart.y)/(this->sliderEnd.x - this->sliderStart.x);
+
+	for(int i = 0; i < sliderBlobs.size(); i++) {
+		ofxCvBlob blob = sliderBlobs.at(i);
+		double expectedYAtXGivenSlope = (blob.centroid.x - this->sliderStart.x)*slopeOfLine + blob.centroid.x;
+		double offBy = expectedYAtXGivenSlope - blob.centroid.y;
+
+		if(abs(offBy) < this->jiggleThreshold) {
+			// we want to process this, it's good!
+			return distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
+		}
+	}
+
+	// we didn't find anything along our line
+	return -1.0f;
 }
 
 /*
@@ -287,29 +401,50 @@ float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
  Formula from http://math.stackexchange.com/questions/185829/how-do-you-find-an-angle-between-two-points-on-the-edge-of-a-circle
  */
 float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
-	bool degrees = true;//change to false if you want radians
-	float rotation;
-	if (degrees) {
-		rotation = 360;
-	}else {
-		rotation = 2*PI;
+
+	// TODO : VALKYRIE :: fix this to find the angle around an ellipse!
+
+	// let's decide first if we are "close" to some point around the registered ellipse.
+	// if not, we are probably not looking at the right ROI
+	ofxCvBlob closeBlob;
+	bool closeToSomething = false;
+	for(int j=0; j < blobs.size(); j++) {
+		ofxCvBlob trackedBlob = blobs.at(j);
+		for(int i=0; i < this->dialPoints.size(); i++) {
+			ofPoint registeredPoint = dialPoints.at(i);
+			if(distanceFormula(registeredPoint.x, trackedBlob.centroid.x, registeredPoint.y, trackedBlob.centroid.y) < this->jiggleThreshold) {
+				closeToSomething = true;
+				closeBlob = trackedBlob;
+			}
+		}
+	}
+
+	if(!closeToSomething) {
+		// nawp
+		return 0.0f;
+	}
+
+	// ok, so x = acost , y = bsint for ellipses
+	// where a = width/2 and b = height/2
+	// that means that in order to solve for t, we can do...
+	double x = closeBlob.centroid.x;
+	double y = closeBlob.centroid.y;
+
+	double cost = x/(this->dialEllipseWidth/2);
+	double sint = y/(this->dialEllipseHeight/2);
+
+	float theta = acos(cost);
+	float thetaInDegrees = theta*180/PI;
+
+	// because of lameness, we only get theta in the [0, pi) range
+	// so we need to figure out if we should be in the 3rd or 4th quadrant
+	// which basically means this: is our y value below our center's y value
+	if(y < dialEllipseCenter.y) {
+		// ok, then rotate into those quadrants
+		theta = theta + 180;
 	}
 	
-	ofPoint p1 = blobs[0].centroid;
-	ofPoint p2 = ROI.getCenter();
-	float r = ROI.height/2;
-	p2.y = p2.y + r;
-	
-	float c = distanceFormula(p1.x, p1.y, p2.x, p2.y);
-	float angle = acos((2*pow(r, 2)- pow(c, 2))/(2*pow(r, 2)));
-	
-	if (degrees) {
-		angle = angle* 180/PI;
-	}
-	
-	if (p1.x>ROI.getCenter().x) {
-		return angle;
-	}else return rotation-angle;
+	return theta;
 }
 
 /*

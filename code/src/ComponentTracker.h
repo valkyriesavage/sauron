@@ -1,4 +1,5 @@
 #include <math.h>
+#include <limits>
 #include <vector>
 
 #include "ofxOpenCv.h"
@@ -58,8 +59,11 @@ public:
 	void setContourFinder(ofRectangle ROI, int numBlobs);
 	bool isDeltaSignificant();
 	bool verifyNumBlobs(int numBlobs);
+
+	void determineDialEllipse();
 	
 private:
+	double jiggleThreshold;
 	bool mIsRegistered;
 	void init(ComponentType type, int id);
 	int numBlobsNeeded;
@@ -78,4 +82,14 @@ private:
 	
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);
+
+
+	// can I just say that this NEEDS TO BE REFACTORED
+	// we should split this crap out into detectors for each type of component, rather than this horrible, horrible thing
+	ofPoint sliderStart;
+	ofPoint sliderEnd;
+
+	std::vector<ofPoint> dialPoints;
+	ofPoint dialEllipseCenter;
+	double dialEllipseWidth, dialEllipseHeight;
 };
