@@ -371,7 +371,8 @@ bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 		default:
 			return false;
 	}	
-		//set delta
+
+	//set delta
 	setDelta(s);	
 }
 
@@ -401,8 +402,6 @@ float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
  Formula from http://math.stackexchange.com/questions/185829/how-do-you-find-an-angle-between-two-points-on-the-edge-of-a-circle
  */
 float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
-
-	// TODO : VALKYRIE :: fix this to find the angle around an ellipse!
 
 	// let's decide first if we are "close" to some point around the registered ellipse.
 	// if not, we are probably not looking at the right ROI
@@ -512,11 +511,43 @@ bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
  *calculateDpadDirection takes all the blobs in the field and returns a ComponentTracker::Direction that corresponds to the direction that button faces relateive to the others.
  */
 ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector<ofxCvBlob> blobs){
+	ComponentTracker::Direction direction = ComponentTracker::none;
 
-		//assuming they are all the same size blobs (which may be a tricky 'hardware' problem (i.e. make sure the reflective tape is all the same size))
-	ofxCvBlob largestBlob = getLargestBlob(blobs);
-	
-	return getRelativeDirection(largestBlob, blobs);
+	// we want to look at the centre of the centres of the blobs. it points the opposite direction from where the user
+	// pushed
+    // determine whether the center of the four blobs' centers is off-center
+    double xCenter = this->ROI.x + this->ROI.width/2;
+    double yCenter = this->ROI.y + this->ROI.height/2;
+    
+    double xCenterBlobs = 0;
+    double yCenterBlobs = 0;
+    for (int i=0; i < blobs.size(); i++) {
+        xCenterBlobs += blobs.at(i).centroid.x;
+        yCenterBlobs += blobs.at(i).centroid.y;
+    }
+    xCenterBlobs = xCenterBlobs/blobs.size();
+    yCenterBlobs = yCenterBlobs/blobs.size();
+
+	if((abs(xCenterBlobs - xCenter) < jiggleThreshold) && (abs(yCenterBlobs - yCenter) < jiggleThreshold)) {
+		// we didn't actually detect any movement
+		return direction;
+	}
+    
+    if(xCenterBlobs < xCenter) {
+        if(yCenterBlobs < yCenter) {
+            direction = ComponentTracker::up;
+        } else {
+            direction = ComponentTracker::right;
+        }
+    } else {
+        if(yCenterBlobs < yCenter) {
+            direction = ComponentTracker::left;
+        } else {
+            direction = ComponentTracker::down;
+        }
+    }
+
+	return direction;
 }
 
 /*
