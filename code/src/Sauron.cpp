@@ -34,9 +34,11 @@ void Sauron::setup(){
 	sender.setup(HOST, SEND_PORT);
 	websocketsSender.setup(HOST, WEBSOCKETS_PORT);
 	
-	testing = true;
+	testing = false;
 	
 	currentRegisteringComponent = new ComponentTracker();
+	
+	mArduinoTest = true;
 }
 
 	//--------------------------------------------------------------
@@ -58,6 +60,7 @@ void Sauron::update(){
 		grayImage = colorImg;
 		int minAreaOfContours = 20;
 		
+			grayImage.invert(); //if you are testing white controller with black marker
 		grayImage.threshold(threshold);
 		contourFinderGrayImage.findContours(grayImage, minAreaOfContours, (340*240)/4, mNumBlobsConsidered, false, true);
 		
@@ -94,6 +97,11 @@ void Sauron::update(){
 				
 			}
 		}	
+		
+		if (mArduinoTest) {
+			arduinoTest(ComponentTracker::slider, 0);
+		}
+		
 		if(testing) {
 			for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
 				ComponentTracker* component = *it;
@@ -277,6 +285,8 @@ void Sauron::keyPressed(int key){
 			stageComponent(ComponentTracker::button, 0);
 			startRegistrationMode();
 			break;
+		case 'l':
+			resetSauron();
 		case ' ':
 			stopRegistrationMode();
 			break;
@@ -338,4 +348,34 @@ void Sauron::sauronLoad(){}
  */
 void Sauron::registerComponent(ComponentTracker* ct){
 	ct->setROI(contourFinderGrayImage.blobs);
+}
+
+/*
+ *resetRegistration removes all registered components
+ */
+void Sauron::resetSauron(){
+	components.clear();
+}
+/*
+ *tests an individual component: registers it, then records its measurements, then kills it
+ */
+void Sauron::arduinoTest(ComponentTracker::ComponentType comp, int id){
+	stageComponent(comp, id);
+	startRegistrationMode();
+	
+	stopRegistrationMode();
+	
+	
+	recordMeasurements(comp, id);
+	resetSauron();
+}
+/*
+ *writes measurements to file for x ms
+ */
+void Sauron::recordMeasurements(ComponentTracker::ComponentType comp, int id){
+	ofstream myfile;
+	string s = comp + id + ".txt";
+	myfile.open ("example.txt");
+	myfile << "Writing this to a file.\n";
+	myfile.close();
 }
