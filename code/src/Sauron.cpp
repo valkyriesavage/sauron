@@ -38,7 +38,7 @@ void Sauron::setup(){
 	
 	currentRegisteringComponent = new ComponentTracker();
 	
-	mArduinoTest = true;
+	mArduinoTest = false;
 }
 
 	//--------------------------------------------------------------
@@ -60,7 +60,7 @@ void Sauron::update(){
 		grayImage = colorImg;
 		int minAreaOfContours = 20;
 		
-			grayImage.invert(); //if you are testing white controller with black marker
+//			grayImage.invert(); //if you are testing white controller with black marker
 		grayImage.threshold(threshold);
 		contourFinderGrayImage.findContours(grayImage, minAreaOfContours, (340*240)/4, mNumBlobsConsidered, false, true);
 		

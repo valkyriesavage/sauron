@@ -42,8 +42,8 @@ void ComponentTracker::init(ComponentType type, int id){
 			break;
 	}
 
-	this->sliderStart = *(new ofPoint(0,0));
-	this->sliderEnd = *(new ofPoint(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()));
+	this->sliderStart = *(new ofPoint(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()));
+	this->sliderEnd = *(new ofPoint(std::numeric_limits<int>::min(), std::numeric_limits<int>::min()));
 
 	this->dialEllipseCenter = *(new ofPoint(0,0));
 	this->dialEllipseWidth = -1;
@@ -243,10 +243,16 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 	if(this->comptype == ComponentTracker::slider) {
 		// we want the start to be the min X or min Y WRT the camera
 		ofxCvBlob* blob = new ofxCvBlob();
-		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
+		if ( getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
+			
+			if(blob->centroid.x < this->sliderStart.x || blob->centroid.y < this->sliderStart.y) {
+				cout<<"dang";
+			} if(blob->centroid.x > this->sliderEnd.x || blob->centroid.y > this->sliderEnd.y) {
+				cout<<"also dang";
+			}
 			if(blob->centroid.x < this->sliderStart.x || blob->centroid.y < this->sliderStart.y) {
 				this->sliderStart = blob->centroid;
-			} else if(blob->centroid.x > this->sliderEnd.x || blob->centroid.y > this->sliderEnd.y) {
+			} if(blob->centroid.x > this->sliderEnd.x || blob->centroid.y > this->sliderEnd.y) {
 				this->sliderEnd = blob->centroid;
 			}
 		}
@@ -377,19 +383,20 @@ bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 }
 
 float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
-	std::vector<ofxCvBlob> sliderBlobs;
+
 
 	// we want to check if any of the blobs we have is basically linearly between our start and end
 	double slopeOfLine = (this->sliderEnd.y - this->sliderStart.y)/(this->sliderEnd.x - this->sliderStart.x);
+	double yIntercept = this->sliderEnd.y - this->sliderEnd.x*slopeOfLine;
 
-	for(int i = 0; i < sliderBlobs.size(); i++) {
-		ofxCvBlob blob = sliderBlobs.at(i);
-		double expectedYAtXGivenSlope = (blob.centroid.x - this->sliderStart.x)*slopeOfLine + blob.centroid.x;
+	for(int i = 0; i < blobs.size(); i++) {
+		ofxCvBlob blob = blobs.at(i);
+		double expectedYAtXGivenSlope = blob.centroid.x*slopeOfLine + yIntercept;
 		double offBy = expectedYAtXGivenSlope - blob.centroid.y;
 
 		if(abs(offBy) < this->jiggleThreshold) {
 			// we want to process this, it's good!
-			return distanceFormula(ROI.x, ROI.y, blob.centroid.x, blob.centroid.y)/max(ROI.height, ROI.width);
+			return distanceFormula(this->sliderStart.x, this->sliderStart.y, blob.centroid.x, blob.centroid.y)/distanceFormula(this->sliderStart.x, this->sliderStart.y, this->sliderEnd.x, this->sliderEnd.y);
 		}
 	}
 
