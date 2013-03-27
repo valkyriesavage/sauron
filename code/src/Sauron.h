@@ -32,6 +32,8 @@ class Sauron : public ofBaseApp{
 	void sauronRegister();
 	void sauronLoad();
 	void registerComponent(ComponentTracker*);
+	
+	void resetSauron();
 
 	ofVideoGrabber 		vidGrabber;
 
@@ -43,8 +45,9 @@ class Sauron : public ofBaseApp{
 
 	int 				threshold;
 	bool				registering;
-	bool				testing;//just since we are testing testing
+	bool				testing;
 	int					mNumBlobsConsidered;
+	bool				mArduinoTest;
 
 	std::vector<ComponentTracker*> components;
 	ComponentTracker* currentRegisteringComponent;
@@ -60,5 +63,8 @@ class Sauron : public ofBaseApp{
 	ofxOscReceiver receiver;
 	ofxOscSender sender;
 	ofxOscSender websocketsSender;
+	
+	void arduinoTest(ComponentTracker::ComponentType comp, int id);
+	void recordMeasurements(ComponentTracker::ComponentType comp, int id);
 };
 
