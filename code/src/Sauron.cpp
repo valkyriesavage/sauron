@@ -39,6 +39,10 @@ void Sauron::setup(){
 	currentRegisteringComponent = new ComponentTracker();
 	
 	mArduinoTest = false;
+	
+	mStepCounter = 0;
+	
+
 }
 
 	//--------------------------------------------------------------
@@ -98,8 +102,8 @@ void Sauron::update(){
 			}
 		}	
 		
-		if (mArduinoTest) {
-			arduinoTest(ComponentTracker::slider, 0);
+		if (mArduinoTest && !components.empty()) {
+			arduinoTest();
 		}
 		
 		if(testing) {
@@ -260,33 +264,37 @@ void Sauron::keyPressed(int key){
 			threshold --;
 			if (threshold < 0) threshold = 0;
 			break;
-		case 'r':
+		case '1':
 			stageComponent(ComponentTracker::slider, 0);
 			startRegistrationMode();
 			break;
-		case 'e':
+		case '2':
 			stageComponent(ComponentTracker::scroll_wheel, 0);
 			startRegistrationMode();
 			break;
-		case 'w':
+		case '3':
 			stageComponent(ComponentTracker::dial, 0);
 			startRegistrationMode();
 			break;
-		case 'q':
+		case '4':
 			stageComponent(ComponentTracker::joystick, 0);
 			threshold = 150;
 			startRegistrationMode();
 			break;
-		case 'd':
+		case '5':
 			stageComponent(ComponentTracker::dpad, 0);
 			startRegistrationMode();
 			break;
-		case 'b':
+		case '6':
 			stageComponent(ComponentTracker::button, 0);
 			startRegistrationMode();
 			break;
-		case 'l':
+		case '0':
+			if (registering) {
+				stopRegistrationMode();
+			}
 			resetSauron();
+			break;
 		case ' ':
 			stopRegistrationMode();
 			break;
@@ -300,6 +308,7 @@ void Sauron::stageComponent(ComponentTracker::ComponentType type, int id){
 		ComponentTracker* c = components[i];
 		if (c->getComponentType() == type && c->getId() == id) {
 			components.erase(components.begin()+i);
+
 			break;
 		}
 	}
@@ -323,6 +332,7 @@ void Sauron::stopRegistrationMode(){
 	components.push_back(currentRegisteringComponent);
 	currentRegisteringComponent = new ComponentTracker();
 	registering = false;
+
 }
 
 /*
@@ -355,27 +365,38 @@ void Sauron::registerComponent(ComponentTracker* ct){
  */
 void Sauron::resetSauron(){
 	components.clear();
+
 }
 /*
  *tests an individual component: registers it, then records its measurements, then kills it
  */
-void Sauron::arduinoTest(ComponentTracker::ComponentType comp, int id){
-	stageComponent(comp, id);
-	startRegistrationMode();
-	
-	stopRegistrationMode();
-	
-	
-	recordMeasurements(comp, id);
-	resetSauron();
+void Sauron::arduinoTest(){
+	if(components.empty()){
+		return;
+	}
+	for(std::vector<ComponentTracker*>::size_type i = 0; i != components.size(); i++) {
+	char s[128];
+	sprintf(s, "%s%d%s", components[i]->getComponentTypeString().c_str(), components[i]->getId(), ".txt");
+	if (mStepCounter == 0) {
+		remove(s);
+	}
+	recordMeasurements(components[i], s);
+	}
+	mStepCounter++;
 }
 /*
  *writes measurements to file for x ms
  */
-void Sauron::recordMeasurements(ComponentTracker::ComponentType comp, int id){
+void Sauron::recordMeasurements(ComponentTracker* comp, char* filename){
 	ofstream myfile;
-	string s = comp + id + ".txt";
-	myfile.open ("example.txt");
-	myfile << "Writing this to a file.\n";
+	myfile.open (filename, ios::app);
+	myfile << mStepCounter << " " << comp->getDelta() << endl;
 	myfile.close();
+	
+}
+/*
+ *numComponentsRegistered returns the number of registered components
+ */
+int Sauron::getNumComponentsRegistered(){
+	return components.size();
 }

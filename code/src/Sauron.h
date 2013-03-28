@@ -65,7 +65,11 @@ class Sauron : public ofBaseApp{
 	ofxOscSender sender;
 	ofxOscSender websocketsSender;
 	
-	void arduinoTest(ComponentTracker::ComponentType comp, int id);
-	void recordMeasurements(ComponentTracker::ComponentType comp, int id);
+	void arduinoTest();
+	void recordMeasurements(ComponentTracker* comp, char* filename);
+	
+	int mStepCounter;
+
+	int getNumComponentsRegistered();
 };
 
