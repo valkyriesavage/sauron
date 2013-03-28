@@ -252,7 +252,7 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 			}
 			if(blob->centroid.x < this->sliderStart.x || blob->centroid.y < this->sliderStart.y) {
 				this->sliderStart = blob->centroid;
-			} if(blob->centroid.x > this->sliderEnd.x || blob->centroid.y > this->sliderEnd.y) {
+			} else if(blob->centroid.x > this->sliderEnd.x || blob->centroid.y > this->sliderEnd.y) {
 				this->sliderEnd = blob->centroid;
 			}
 		}
