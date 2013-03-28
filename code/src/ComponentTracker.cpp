@@ -259,7 +259,6 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 	}
 
 	if(this->comptype == ComponentTracker::dial) {
-		// TODO : VALKYRIE : MAKE A HOUGH TRANSFORM NONSENSE AROUND HERE!!!
 		ofxCvBlob* blob = new ofxCvBlob();
 		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {	
 			if(distanceFormula(this->dialPoints.back().x, blob->centroid.x, this->dialPoints.back().y, blob->centroid.y) > 1) {
