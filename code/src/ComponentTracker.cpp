@@ -262,14 +262,17 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 		// TODO : VALKYRIE : MAKE A HOUGH TRANSFORM NONSENSE AROUND HERE!!!
 		ofxCvBlob* blob = new ofxCvBlob();
 		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {	
-			this->dialPoints.push_back(blob->centroid);
-			if(this->dialPoints.size() > 6) {
-				// the rest of this is only useful if we have actually gotten away from the original blob
-				// otherwise we may terminate with just a couple blobs that happen to be close together.
-				ofPoint firstPoint = dialPoints.at(0);
-				if(distanceFormula(blob->centroid.x, blob->centroid.y, firstPoint.x, firstPoint.y) < this->jiggleThreshold) {
-					// that means we are around the circle, so we need to figure out our ellipse
-					determineDialEllipse();
+			if(distanceFormula(this->dialPoints.back().x, blob->centroid.x, this->dialPoints.back().y, blob->centroid.y) > 1) {
+				// we want to make sure that we are actually progressing around the circle.  if not, don't save the blob.
+				this->dialPoints.push_back(blob->centroid);
+				if(this->dialPoints.size() > 6) {
+					// the rest of this is only useful if we have actually gotten away from the original blob
+					// otherwise we may terminate with just a couple blobs that happen to be close together.
+					ofPoint firstPoint = dialPoints.at(0);
+					if(distanceFormula(blob->centroid.x, blob->centroid.y, firstPoint.x, firstPoint.y) < this->jiggleThreshold) {
+						// that means we are around the circle, so we need to figure out our ellipse
+						determineDialEllipse();
+					}
 				}
 			}
 		}
