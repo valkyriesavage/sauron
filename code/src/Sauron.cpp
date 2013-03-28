@@ -37,7 +37,9 @@ void Sauron::setup(){
 	testing = false;
 	
 	currentRegisteringComponent = new ComponentTracker();
-	
+
+		// if mArduinoTest is set to true, every registered component will write it's deltas to a 
+		//file titled comptype+id + ".txt" (e.g. slider0.txt)
 	mArduinoTest = false;
 	
 	mStepCounter = 0;
@@ -368,7 +370,8 @@ void Sauron::resetSauron(){
 
 }
 /*
- *tests an individual component: registers it, then records its measurements, then kills it
+ * arduinoTest writes the deltas of any registered components during every update().
+ * file manages our delta test files (overwritting when appropriate, appending when appropriate)
  */
 void Sauron::arduinoTest(){
 	if(components.empty()){
@@ -385,7 +388,7 @@ void Sauron::arduinoTest(){
 	mStepCounter++;
 }
 /*
- *writes measurements to file for x ms
+ *writes measurements to file
  */
 void Sauron::recordMeasurements(ComponentTracker* comp, char* filename){
 	ofstream myfile;
