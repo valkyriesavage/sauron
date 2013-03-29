@@ -27,7 +27,7 @@ namespace SauronSWPlugin
     [ProgId(SWTASKPANE_PROGID)]
     public partial class SWTaskpaneHost : UserControl
     {
-        public bool DEBUG = true;
+        public bool DEBUG = false;
         
         public const string SWTASKPANE_PROGID = "Sauron.SWTaskPane_SwPlugin";
         public const string BASE_SW_FOLDER = "C:\\Users\\Valkyrie\\projects\\sauron\\solidworks";
@@ -66,13 +66,14 @@ namespace SauronSWPlugin
         {
             InitializeComponent();
             initOSC();
-            if (!DEBUG)
+            /* removing this for now. it seems like more of a hassle than a feature.
+             * if (!DEBUG)
             {
                 processFeatures.Enabled = false;
                 print.Enabled = false;
                 register.Enabled = false;
                 test_mode.Enabled = false;
-            }
+            }*/
         }
 
         private void initOSC()
@@ -344,11 +345,14 @@ namespace SauronSWPlugin
 
         private bool lengthenFlag(Component2 swComponent)
         {
+            double some = inchesToMeters(.05);
             double threshold = inchesToMeters(.01);
             IFeature extrusionFeature = swComponent.FeatureByName("flag");
             
             if (extrusionFeature == null)
             {
+                if (DEBUG)
+                    alert(swComponent.Name2 + " has no feature 'flag'");
                 return false;
             }
 
@@ -366,10 +370,14 @@ namespace SauronSWPlugin
             {
                 // back off ; they are separated in some way that we can't extrude through (e.g. angles are wrong)
                 // or perhaps they are already intersecting.  that would be good!
+                if (DEBUG)
+                {
+                    alert("can't extrude " + swComponent.Name2 + " to hit FOV");
+                }
                 return false;
             }
 
-            updateExtrudeDepth(extrusionFeature, distance + defaultDepth);
+            updateExtrudeDepth(extrusionFeature, distance + defaultDepth + some);
 
 
             // we are intersecting successfully, but we need to make sure to check we aren't intersecting anything else...
@@ -381,6 +389,10 @@ namespace SauronSWPlugin
                 }
                 if (distanceBetween(swComponent, otherComponent) < threshold)
                 {
+                    if (DEBUG)
+                    {
+                        alert("we intersected " + otherComponent.Name2);
+                    }
                     updateExtrudeDepth(extrusionFeature, originalDepth);
                     return false;
                 }
@@ -1100,9 +1112,15 @@ namespace SauronSWPlugin
                 return;
             }
 
+            findComponentsVisible();
+
             foreach (ComponentIdentifier c in ourComponents)
             {
                 createNewConfiguration(c.component);
+                if (c.visibleToRawRays)
+                {
+                    continue;
+                }
                 bool success = lengthenFlag(c.component);
                 if (!success)
                 {
@@ -1115,12 +1133,14 @@ namespace SauronSWPlugin
                     }
                     else
                     {
-                        //alert("we reflected to find " + c.component.Name2);
+                        if(DEBUG)
+                            alert("we reflected to find " + c.component.Name2);
                     }
                 }
                 else
                 {
-                    //alert("we found " + c.component.Name2 + " with extrusion");
+                    if(DEBUG)
+                        alert("we found " + c.component.Name2 + " with extrusion");
                 }
             }
 

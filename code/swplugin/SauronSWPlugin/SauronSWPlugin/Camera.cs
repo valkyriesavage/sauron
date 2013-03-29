@@ -254,8 +254,8 @@ namespace SauronSWPlugin
                     castRayVectors.Add(getRayFromNamedPoint("direction reference " + i));
                 }
 
-                double viewingAngleRightLeft = 110*2*Math.PI/360;  // radians
-                double viewingAngleUpDown = 100*2*Math.PI/360;  // radians
+                double viewingAngleRightLeft = 55*2*Math.PI/360;  // radians
+                double viewingAngleUpDown = 50*2*Math.PI/360;  // radians
                 
                 double pixelsRightLeft = 480;
                 double pixelsUpDown = 320;
