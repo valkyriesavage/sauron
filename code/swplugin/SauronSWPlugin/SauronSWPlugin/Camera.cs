@@ -164,6 +164,7 @@ namespace SauronSWPlugin
             if (centreOfVision == null)
             {
                 swApp.SendMsgToUser2("you need to insert the camera first!", 1, 1);
+                return;
             }
 
             IMathPoint otherReference = Camera.getDirectionReference(fieldOfView, swDoc, swSelectionMgr, mathUtils);
@@ -253,8 +254,8 @@ namespace SauronSWPlugin
                     castRayVectors.Add(getRayFromNamedPoint("direction reference " + i));
                 }
 
-                double viewingAngleRightLeft = 55*2*Math.PI/360;  // radians
-                double viewingAngleUpDown = 50*2*Math.PI/360;  // radians
+                double viewingAngleRightLeft = 110*2*Math.PI/360;  // radians
+                double viewingAngleUpDown = 100*2*Math.PI/360;  // radians
                 
                 double pixelsRightLeft = 480;
                 double pixelsUpDown = 320;

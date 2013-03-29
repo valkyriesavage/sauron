@@ -21,6 +21,9 @@ namespace SauronSWPlugin
         public Component2 component;
         public string OSC_string;
 
+        public bool visibleToRawRays = false;
+        public bool visibleWithExtrusion = false;
+
         public ComponentIdentifier(Component2 component)
         {
             this.component = component;

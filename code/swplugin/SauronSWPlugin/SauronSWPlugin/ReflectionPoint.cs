@@ -20,10 +20,13 @@ namespace SauronSWPlugin
         public MathPoint location;
         public MathVector normal;
 
-        public ReflectionPoint(MathUtility mathUtils, double[] xyz, double[] nxnynz)
+        public Component2 component;
+
+        public ReflectionPoint(MathUtility mathUtils, double[] xyz, double[] nxnynz, Component2 component)
         {
             this.xyz = xyz;
             this.nxnynz = nxnynz;
+            this.component = component;
 
             location = mathUtils.CreatePoint(xyz);
             normal = mathUtils.CreateVector(nxnynz);

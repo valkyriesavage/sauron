@@ -47,8 +47,8 @@ namespace SauronSWPlugin
         public bool testing = false;
 
         private Component2 mainBody = null;
-        private String[] ourComponentNames = { "button-4post", "dial", "joystick-all-pieces",
-                                               "slider", "scroll-wheel", "dpad" };
+        private String[] ourComponentNames = { "button-", "dial", "joystick-all-pieces",
+                                               "slider", "scroll-wheel", "dpad", "trackball" };
 
         private static readonly int SENDPORT = 5001;
         private static readonly int RECEIVEPORT = 5002;
@@ -130,6 +130,10 @@ namespace SauronSWPlugin
             if (mainBody == null)
             {
                 mainBody = findComponent(swConf.GetRootComponent3(true), "base");
+                if (mainBody == null)
+                {
+                    alert("we need a component with 'body' in its name to be the main body");
+                }
             }
 
             allSolidComponents = getAllComponents();
@@ -154,6 +158,11 @@ namespace SauronSWPlugin
                 Component2 fieldOfView = findComponent(swConf.GetRootComponent3(true), Camera.FOV);
                 camera = Camera.createCamera(fieldOfView, swApp, swDoc, swAssembly, swSelectionMgr, mathUtils);
             }
+            camera.swDoc = swDoc;
+            camera.swAssembly = swAssembly;
+            camera.swSelectionMgr = swSelectionMgr;
+            camera.mathUtils = mathUtils;
+            camera.swApp = swApp;
             camera.drawInitalRay();
         }
 
@@ -389,21 +398,22 @@ namespace SauronSWPlugin
         private double[] putInMainBodySpace(ReflectionPoint rp)
         {
             // TODO : debug!!
-            return rp.location.IMultiplyTransform(mainBody.Transform2).ArrayData;
+            MathTransform invertMainBodyXForm = mainBody.Transform2.Inverse();
+            return rp.location.IMultiplyTransform(invertMainBodyXForm).ArrayData;
         }
 
         private void createMirrorExtrusion(ReflectionPoint reflectionPoint)
         {
-            /*swDoc.SketchManager.Insert3DSketch(true);
-            swDoc.SketchManager.AddToDB = true;
-            swDoc.SketchManager.CreatePoint(reflectionPoint.xyz[0], reflectionPoint.xyz[1], reflectionPoint.xyz[2]);
-            swDoc.SketchManager.AddToDB = false;
-            swDoc.SketchManager.Insert3DSketch(true);
+            startSketch();
+            visualizePoint(reflectionPoint.location);
+            /*swDoc.SketchManager.CreateCenterRectangle(reflectionPoint.xyz[0], reflectionPoint.xyz[1], reflectionPoint.xyz[2],
+                                                      reflectionPoint.xyz[0] + (inchesToMeters(1) * (1 - reflectionPoint.nxnynz[0])),
+                                                      reflectionPoint.xyz[1] + (inchesToMeters(1) * (1 - reflectionPoint.nxnynz[1])),
+                                                      reflectionPoint.xyz[2] + (inchesToMeters(1) * (1 - reflectionPoint.nxnynz[2])));*/
+            finishSketch("place mirror for " + reflectionPoint.component.Name2);
 
-            return;*/
-            
+            return;
             /*
-            // TODO make this work!  need to debug putInMainBodySpace, above
             double mirrorWidth = inchesToMeters(1);
             double[] pointLocation = putInMainBodySpace(reflectionPoint);
 
@@ -414,12 +424,15 @@ namespace SauronSWPlugin
             int status = 0;
             swAssembly.EditPart2(true, false, ref status);
             swSelectionMgr.SetSelectionPoint2(1, -1, pointLocation[0], pointLocation[1], pointLocation[2]);
+            swSketchMgr.AddToDB = true;
             swSketchMgr.InsertSketch(true);
 
             swSketchMgr.CreateCenterRectangle(pointLocation[0], pointLocation[1], pointLocation[2],
                                               pointLocation[0] + .5 * mirrorWidth * (1 - surfaceNormal[0]),
                                               pointLocation[1] + .5 * mirrorWidth * (1 - surfaceNormal[1]),
                                               pointLocation[2] + .5 * mirrorWidth * (1 - surfaceNormal[2]));
+
+            swSketchMgr.AddToDB = false;
             
             swFeatureMgr.FeatureExtrusion2(true, false, false,
                                            0, 0, 0.00254, 0.00254,
@@ -436,8 +449,8 @@ namespace SauronSWPlugin
             generatedMirrorExtrusions.Add(swSelectionMgr.GetSelectedObject6(1, -1) as IFeature);
 
             swDoc.ClearSelection2(true);
-            swAssembly.EditAssembly();
-            */
+            swAssembly.EditAssembly();*/
+            
         }
 
         private void moveToPosition(Component2 component, double position)
@@ -627,6 +640,88 @@ namespace SauronSWPlugin
             return canSeeInAllConfigs;
         }
 
+        private void findComponentsVisible()
+        {
+            List<IBody2> bodies = new List<IBody2>();
+            Dictionary<IBody2, ComponentIdentifier> bodiesToComponents = new Dictionary<IBody2, ComponentIdentifier>();
+
+            object vBodyInfo;
+            foreach (ComponentIdentifier ci in ourComponents)
+            {
+                object[] componentBodies = (object[])ci.component.GetBodies3((int)swBodyType_e.swSolidBody, out vBodyInfo);
+                for (int i = 0; i < componentBodies.Length; i++)
+                {
+                    IBody2 tempBody = ((Body2)componentBodies[i]).ICopy();
+                    tempBody.ApplyTransform(ci.component.Transform2);
+                    bodies.Add(tempBody);
+                    bodiesToComponents.Add(tempBody, ci);
+                }
+                ci.visibleToRawRays = false;
+            }
+
+            int numIntersectionsFound = (int)swDoc.RayIntersections((object)bodies.ToArray(),
+                                                                    (object)camera.rayVectorOrigins(),
+                                                                    (object)camera.rayVectorDirections(),
+                                                                    (int)(swRayPtsOpts_e.swRayPtsOptsTOPOLS | swRayPtsOpts_e.swRayPtsOptsNORMALS),
+                                                                    (double).0000001,
+                                                                    (double).0000001);
+
+            double[] horrifyingReturn = (double[])swDoc.GetRayIntersectionsPoints();
+
+            int lengthOfOneReturn = 9;
+
+            for (int i = 0; i < numIntersectionsFound; i++)
+            {
+                int bodyIndex = (int)horrifyingReturn[i * lengthOfOneReturn];
+
+                IBody2 body = bodies.ElementAt(bodyIndex);
+                if (bodiesToComponents[body].visibleToRawRays)
+                {
+                    continue;
+                }
+
+                int rayIndex = (int)horrifyingReturn[i * lengthOfOneReturn + 1];
+                double x = horrifyingReturn[i * lengthOfOneReturn + 3];
+                double y = horrifyingReturn[i * lengthOfOneReturn + 4];
+                double z = horrifyingReturn[i * lengthOfOneReturn + 5];
+
+                double[] rayOrigin = camera.rayVectorSources().ElementAt(rayIndex).ArrayData;
+                double[] rayDirection = camera.rayVectors().ElementAt(rayIndex).ArrayData;
+                double[] hitPoint = new double[] { x, y, z };
+
+                if (!hitMainBodyBefore(rayOrigin, rayDirection, hitPoint) && !hitSomethingElseBefore(rayOrigin, rayDirection, hitPoint))
+                {
+                    bodiesToComponents[body].visibleToRawRays = true;
+                }
+            }
+        }
+
+        private void highlightComponents()
+        {
+            double[] notVisible = new double[9] { 1, 0, 0, 1, 1, 1, 0.3, 0, 0 };
+            double[] visible = new double[9] { 0, 1, 0, 1, 1, 1, 0.3, 0, 0 };
+            foreach (ComponentIdentifier ci in ourComponents)
+            {
+                object bodyInfo;
+                object[] bodies = (object[])ci.component.GetBodies3((int)swBodyType_e.swAllBodies, out bodyInfo);
+                if (bodies != null && bodies.Length > 0)
+                {
+                    for (int i = 0; i < bodies.Length; i++)
+                    {
+                        Body2 body = (Body2)bodies[i];
+                        if (ci.visibleToRawRays)
+                        {
+                            body.MaterialPropertyValues2 = visible;
+                        }
+                        else
+                        {
+                            body.MaterialPropertyValues2 = notVisible;
+                        }
+                    }
+                }
+            }
+        }
+
         private double distanceAlongRay(double[] rayOrigin, double[] xyz)
         {
             return Math.Sqrt(Math.Pow(rayOrigin[0] - xyz[0], 2) + Math.Pow(rayOrigin[1] - xyz[1], 2) + Math.Pow(rayOrigin[2] - xyz[2], 2));
@@ -811,7 +906,7 @@ namespace SauronSWPlugin
                 double ny = horrifyingReturn[i * lengthOfOneReturn + 7];
                 double nz = horrifyingReturn[i * lengthOfOneReturn + 8];
 
-                ReflectionPoint rp = new ReflectionPoint(mathUtils, new double[] { x, y, z }, new double[] { nx, ny, nz });
+                ReflectionPoint rp = new ReflectionPoint(mathUtils, new double[] { x, y, z }, new double[] { nx, ny, nz }, component);
                 double[] reflectionDir = camera.calculateReflectionDir(camera.rayVectors().ElementAt(rayIndex).ArrayData, rp.nxnynz);
                 MathVector reflectedRay = mathUtils.CreateVector(reflectionDir);
 
@@ -1020,12 +1115,12 @@ namespace SauronSWPlugin
                     }
                     else
                     {
-                        alert("we reflected to find " + c.component.Name2);
+                        //alert("we reflected to find " + c.component.Name2);
                     }
                 }
                 else
                 {
-                    alert("we found " + c.component.Name2 + " with extrusion");
+                    //alert("we found " + c.component.Name2 + " with extrusion");
                 }
             }
 
@@ -1131,13 +1226,13 @@ namespace SauronSWPlugin
             camera.fieldOfView.SetSuppression2((int)swComponentSuppressionState_e.swComponentFullyResolved);
         }
 
-        private void testPart_Click(object sender, EventArgs e)
+        private void quick_check_Click(object sender, EventArgs e)
         {
             getModelDoc();
             getFOV();
 
-            visualize.Checked = true;
-            reflectedRayCanSeeComponent(ourComponents.ElementAt(0).component);
+            findComponentsVisible();
+            highlightComponents();
         }
 
         private void alert(string text)

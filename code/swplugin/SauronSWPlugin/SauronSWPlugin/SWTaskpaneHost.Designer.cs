@@ -35,7 +35,7 @@
             this.insert_camera = new System.Windows.Forms.Button();
             this.register = new System.Windows.Forms.Button();
             this.test_mode = new System.Windows.Forms.Button();
-            this.testPart = new System.Windows.Forms.Button();
+            this.quick_check = new System.Windows.Forms.Button();
             this.print = new System.Windows.Forms.Button();
             this.saurontitle = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
@@ -68,7 +68,7 @@
             // 
             // processFeatures
             // 
-            this.processFeatures.Location = new System.Drawing.Point(44, 98);
+            this.processFeatures.Location = new System.Drawing.Point(44, 176);
             this.processFeatures.Name = "processFeatures";
             this.processFeatures.Size = new System.Drawing.Size(139, 49);
             this.processFeatures.TabIndex = 4;
@@ -88,7 +88,7 @@
             // 
             // register
             // 
-            this.register.Location = new System.Drawing.Point(44, 208);
+            this.register.Location = new System.Drawing.Point(44, 286);
             this.register.Name = "register";
             this.register.Size = new System.Drawing.Size(139, 49);
             this.register.TabIndex = 6;
@@ -98,7 +98,7 @@
             // 
             // test_mode
             // 
-            this.test_mode.Location = new System.Drawing.Point(44, 263);
+            this.test_mode.Location = new System.Drawing.Point(44, 341);
             this.test_mode.Name = "test_mode";
             this.test_mode.Size = new System.Drawing.Size(139, 49);
             this.test_mode.TabIndex = 7;
@@ -106,19 +106,19 @@
             this.test_mode.UseVisualStyleBackColor = true;
             this.test_mode.Click += new System.EventHandler(this.test_mode_Click);
             // 
-            // testPart
+            // quick_check
             // 
-            this.testPart.Location = new System.Drawing.Point(44, 354);
-            this.testPart.Name = "testPart";
-            this.testPart.Size = new System.Drawing.Size(139, 49);
-            this.testPart.TabIndex = 8;
-            this.testPart.Text = "test something";
-            this.testPart.UseVisualStyleBackColor = true;
-            this.testPart.Click += new System.EventHandler(this.testPart_Click);
+            this.quick_check.Location = new System.Drawing.Point(44, 98);
+            this.quick_check.Name = "quick_check";
+            this.quick_check.Size = new System.Drawing.Size(139, 49);
+            this.quick_check.TabIndex = 8;
+            this.quick_check.Text = "quick check";
+            this.quick_check.UseVisualStyleBackColor = true;
+            this.quick_check.Click += new System.EventHandler(this.quick_check_Click);
             // 
             // print
             // 
-            this.print.Location = new System.Drawing.Point(44, 153);
+            this.print.Location = new System.Drawing.Point(44, 231);
             this.print.Name = "print";
             this.print.Size = new System.Drawing.Size(139, 49);
             this.print.TabIndex = 9;
@@ -149,7 +149,7 @@
             // visualize
             // 
             this.visualize.AutoSize = true;
-            this.visualize.Location = new System.Drawing.Point(77, 331);
+            this.visualize.Location = new System.Drawing.Point(77, 153);
             this.visualize.Name = "visualize";
             this.visualize.Size = new System.Drawing.Size(66, 17);
             this.visualize.TabIndex = 12;
@@ -164,7 +164,7 @@
             this.Controls.Add(this.label4);
             this.Controls.Add(this.saurontitle);
             this.Controls.Add(this.print);
-            this.Controls.Add(this.testPart);
+            this.Controls.Add(this.quick_check);
             this.Controls.Add(this.test_mode);
             this.Controls.Add(this.register);
             this.Controls.Add(this.insert_camera);
@@ -188,7 +188,7 @@
         private System.Windows.Forms.Button insert_camera;
         private System.Windows.Forms.Button register;
         private System.Windows.Forms.Button test_mode;
-        private System.Windows.Forms.Button testPart;
+        private System.Windows.Forms.Button quick_check;
         private System.Windows.Forms.Button print;
         private System.Windows.Forms.Label saurontitle;
         private System.Windows.Forms.Label label4;

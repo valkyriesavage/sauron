@@ -47,9 +47,12 @@ namespace SauronSWPlugin
                 html += componentAssemblyInstruction(ci);
             }
 
-            foreach (IFeature mirror in mirrorExtrusions)
+            if (mirrorExtrusions != null)
             {
-                html += mirrorAssemblyInstruction(mirror);
+                foreach (IFeature mirror in mirrorExtrusions)
+                {
+                    html += mirrorAssemblyInstruction(mirror);
+                }
             }
 
             html += step("screw the camera rig onto the body", IMAGE_DIR + "screw-on-camera.jpg");
