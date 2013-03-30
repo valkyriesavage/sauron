@@ -64,10 +64,7 @@ string ofPointToA(ofPoint pt){
 }
 
 void distributeJoystickBlobs(std::vector<ofxCvBlob> blobs, ofxCvBlob* middle, ofxCvBlob* flank0, ofxCvBlob* flank1, int maxBlobs){
-	if (blobs.size() != maxBlobs) {
-		return;
-	}
-	for(std::vector<ofxCvBlob>::iterator it = blobs.begin(); it != blobs.end();++it){
+	/*for(std::vector<ofxCvBlob>::iterator it = blobs.begin(); it != blobs.end();++it){
 		ofxCvBlob blob = *it;
 		if(blob.area > middle->area){
 			*flank0 = *flank1;
@@ -77,7 +74,17 @@ void distributeJoystickBlobs(std::vector<ofxCvBlob> blobs, ofxCvBlob* middle, of
 			*flank0 = *flank1;
 			*flank1 = blob;
 		}
+		// TODO : COLIN/VALKYRIE : what do we do in a case where we only have 2 blobs?  I think this is
+		// what we will have when we get the game controller out.
+	}*/
 
+	*middle = getLargestBlob(blobs);
+	// we will just take the flank to be the other blob
+	for(std::vector<ofxCvBlob>::iterator it = blobs.begin(); it != blobs.end();++it){
+		ofxCvBlob blob = *it;
+		if(blob.centroid.x < middle->centroid.x || blob.centroid.y < middle->centroid.y) {
+			*flank0 = blob;
+		}
 	}
 }
 

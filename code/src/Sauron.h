@@ -19,7 +19,7 @@
 #define WEBSOCKETS_PORT 4344
 #define HOST "localhost"
 
-#define PRINTED_IN_WHITE true
+#define PRINTED_IN_WHITE false
 
 class Sauron : public ofBaseApp{
 
@@ -63,6 +63,7 @@ class Sauron : public ofBaseApp{
 	char mButtonPressed[128];
 	char mDpadDirection[128];
 	char mJoystickLocation[128];
+	char mTrackballValue[128];
 
 	ofxOscReceiver receiver;
 	ofxOscSender sender;

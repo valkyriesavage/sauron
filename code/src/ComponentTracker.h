@@ -9,7 +9,7 @@
 class ComponentTracker {
 public:
 		//enums
-	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel, no_component};
+	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel, trackball, no_component};
 	enum Direction {up, down, left, right, none};
 
 		//constructors
@@ -48,6 +48,10 @@ public:
 	bool isButtonPressed(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction calculateDpadDirection(std::vector<ofxCvBlob> blobs);
 	ofPoint measureJoystickLocation(std::vector<ofxCvBlob> blobs);
+	ofPoint calculateTrackballValue(std::vector<ofxCvBlob> blobs);
+
+	float xJoystick(ofPoint middleCentroid);
+	float yJoystick(ofPoint flankCentroid);
 	
 		//deltas
 	string getDelta();
@@ -83,13 +87,13 @@ private:
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);
 
-
 	// can I just say that this NEEDS TO BE REFACTORED
 	// we should split this crap out into detectors for each type of component, rather than this horrible, horrible thing
 	ofPoint sliderStart;
 	ofPoint sliderEnd;
 
-	std::vector<ofPoint> dialPoints;
-	ofPoint dialEllipseCenter;
-	double dialEllipseWidth, dialEllipseHeight;
+	ofPoint joystickMiddleStart;
+	ofPoint joystickMiddleEnd;
+	ofPoint joystickFlankStart;
+	ofPoint joystickFlankEnd;
 };

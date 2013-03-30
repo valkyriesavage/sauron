@@ -99,6 +99,9 @@ void Sauron::update(){
 					case ComponentTracker::joystick:
 						sprintf(mJoystickLocation, "%s", c->getDelta().c_str());
 						break;
+					case ComponentTracker::trackball:
+						sprintf(mTrackballValue, "%s", c->getDelta().c_str());
+						break;
 					default:
 						break;
 				}
@@ -211,6 +214,17 @@ void Sauron::update(){
 					stopRegistrationMode();
 				}
 			}
+
+			if(tld.compare("trackball") == 0) {
+				if(command.compare("start") == 0) {
+						// enter trackball registration mode for id componentId
+					stageComponent(ComponentTracker::trackball, componentId);
+					startRegistrationMode();
+				} else {
+						// exit trackball registration mode for id componentId
+					stopRegistrationMode();
+				}
+			}
 		}
 	}
 }
@@ -249,8 +263,8 @@ void Sauron::draw(){
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
 	const char* ctype = currentRegisteringComponent->getComponentTypeString().c_str();
-	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s",
-			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection);
+	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s\nTrackball value: %s",
+			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection, mTrackballValue);
 	ofDrawBitmapString(reportStr, 20, 280);
 }
 
@@ -291,6 +305,10 @@ void Sauron::keyPressed(int key){
 			break;
 		case '6':
 			stageComponent(ComponentTracker::button, 0);
+			startRegistrationMode();
+			break;
+		case '7':
+			stageComponent(ComponentTracker::trackball, 0);
 			startRegistrationMode();
 			break;
 		case '0':

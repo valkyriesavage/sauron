@@ -37,6 +37,9 @@ void ComponentTracker::init(ComponentType type, int id){
 		case ComponentTracker::joystick:
 			numBlobsNeeded = 3;
 			break;
+		case ComponentTracker::trackball:
+			numBlobsNeeded = 1;
+			break;
 		default:
 			numBlobsNeeded = 0;
 			break;
@@ -45,9 +48,10 @@ void ComponentTracker::init(ComponentType type, int id){
 	this->sliderStart = *(new ofPoint(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()));
 	this->sliderEnd = *(new ofPoint(std::numeric_limits<int>::min(), std::numeric_limits<int>::min()));
 
-	this->dialEllipseCenter = *(new ofPoint(0,0));
-	this->dialEllipseWidth = -1;
-	this->dialEllipseHeight = -1;
+	this->joystickMiddleStart = *(new ofPoint(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()));
+	this->joystickMiddleEnd = *(new ofPoint(std::numeric_limits<int>::min(), std::numeric_limits<int>::min()));
+	this->joystickFlankStart = *(new ofPoint(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()));
+	this->joystickFlankEnd = *(new ofPoint(std::numeric_limits<int>::min(), std::numeric_limits<int>::min()));
 
 	this->jiggleThreshold = 5;
 }
@@ -71,6 +75,9 @@ string ComponentTracker::getComponentTypeString(){
 			break;
 		case ComponentTracker::scroll_wheel:
 			return "scroll_wheel";
+			break;
+		case ComponentTracker::trackball:
+			return "trackball";
 			break;
 		case ComponentTracker::no_component:
 			return "no_component";
@@ -244,16 +251,41 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 		// we want the start to be the min X or min Y WRT the camera
 		ofxCvBlob* blob = new ofxCvBlob();
 		if ( getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
-			
-			if(blob->centroid.x < this->sliderStart.x || blob->centroid.y < this->sliderStart.y) {
-				cout<<"dang";
-			} if(blob->centroid.x > this->sliderEnd.x || blob->centroid.y > this->sliderEnd.y) {
-				cout<<"also dang";
-			}
 			if(blob->centroid.x < this->sliderStart.x || blob->centroid.y < this->sliderStart.y) {
 				this->sliderStart = blob->centroid;
 			} else if(blob->centroid.x > this->sliderEnd.x || blob->centroid.y > this->sliderEnd.y) {
 				this->sliderEnd = blob->centroid;
+			}
+		}
+	}
+
+	// here is some more unfortunate casing
+	if(this->comptype == ComponentTracker::joystick) {
+		// we want the start to be the min X or min Y WRT the camera
+		ofxCvBlob* blob = new ofxCvBlob();
+		if ( getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
+			if(blob->area > ROI.getArea()/3) { // TODO : get rid of this stupid assumption
+				// what we basically want is to ensure that we are looking at the biggest blob
+				// in the ROI, and if it's a joystick we're looking at, then the center blob
+				// should be bigger than 1/3 the ROI's area...
+				if(blob->centroid.x < this->joystickMiddleStart.x || blob->centroid.y < this->joystickMiddleStart.y) {
+					this->joystickMiddleStart = blob->centroid;
+				} else if(blob->centroid.x > this->joystickMiddleEnd.x || blob->centroid.y > this->joystickMiddleEnd.y) {
+					this->joystickMiddleEnd = blob->centroid;
+				}
+			} else {
+				// if the farthest moved blob is not the middle blob, it is a flank blob
+				// we want to be consistent in which blob we pick... so we'll always pick the one with an x or y lower
+				// than the middle blob's x
+				if(blob->centroid.x < this->joystickMiddleStart.x || blob->centroid.y < this->joystickMiddleStart.y) {
+					// ok, now we know we have the right blob
+					// so we want to do the same basic logic that we do for all the other tracks!
+					if(blob->centroid.x < this->joystickFlankStart.x || blob->centroid.y < this->joystickFlankStart.y) {
+						this->joystickFlankStart = blob->centroid;
+					} else if(blob->centroid.x > this->joystickFlankEnd.x || blob->centroid.y > this->joystickFlankEnd.y) {
+						this->joystickFlankEnd = blob->centroid;
+					}
+				}
 			}
 		}
 	}
@@ -300,6 +332,9 @@ bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 			break;
 		case ComponentTracker::joystick:
 			sprintf(s, "%s", ofPointToA(measureJoystickLocation(componentBlobs)).c_str());
+			break;
+		case ComponentTracker::trackball:
+			sprintf(s, "%s", ofPointToA(calculateTrackballValue(componentBlobs)).c_str());
 			break;
 		default:
 			return false;
@@ -477,19 +512,46 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 		//of the joystick blobs, sets middle, flank0, flank1 to their corresponding semantic blobs. middle is the large rectangular piece, and the flanks are the surrounding pieces
 	distributeJoystickBlobs(blobs, middle, flank0, flank1, numBlobsNeeded);
 	
-		//TODO: going to need something smarter than this to account for joystick orientation
-	ofPoint p1 = middle->centroid;
-	ofPoint p2 = flank0->centroid;
-	int x = -1;
-	int y = -1;
-	if (adjustRelativePoint(&p1, ROI)) {
-		x = p1.x;
-	}
-	if (adjustRelativePoint(&p2, ROI)) {
-		y = p2.y;
-	}
+		//TODO: TEST ME
+	
+	float x = xJoystick(middle->centroid);
+	float y = yJoystick(flank0->centroid);
 	
 	return ofPoint(x, y);
+}
+
+float ComponentTracker::xJoystick(ofPoint middleCentroid) {
+	// for the middle, we want to see how far it is along the middle track.
+	ofPoint centreOfTrack = midpoint(joystickMiddleStart, joystickMiddleEnd);
+	float distanceFromCentre = distanceFormula(middleCentroid.x, middleCentroid.y, centreOfTrack.x, centreOfTrack.y);
+	//ok, so which end is it closer to?
+	bool closerToStart = (distanceFormula(middleCentroid.x, middleCentroid.y, joystickMiddleStart.x, joystickMiddleStart.y) <
+						  distanceFormula(middleCentroid.x, middleCentroid.y, joystickMiddleEnd.x, joystickMiddleEnd.y));
+
+	if (closerToStart) {
+		distanceFromCentre = -distanceFromCentre;
+	}
+
+	return distanceFromCentre;
+}
+
+float ComponentTracker::yJoystick(ofPoint flankCentroid) {
+	// for the flank, we want to see how far it is along the middle track.
+	ofPoint centreOfTrack = midpoint(joystickFlankStart, joystickFlankEnd);
+	float distanceFromCentre = distanceFormula(flankCentroid.x, flankCentroid.y, centreOfTrack.x, centreOfTrack.y);
+	//ok, so which end is it closer to?
+	bool closerToStart = (distanceFormula(flankCentroid.x, flankCentroid.y, joystickFlankStart.x, joystickFlankStart.y) <
+						  distanceFormula(flankCentroid.x, flankCentroid.y, joystickFlankEnd.x, joystickFlankEnd.y));
+
+	if (closerToStart) {
+		distanceFromCentre = -distanceFromCentre;
+	}
+
+	return distanceFromCentre;
+}
+
+ofPoint calculateTrackballValue(std::vector<ofxCvBlob> blobs) {
+	// TODO FUCKING WORK ON THIS
 }
 
 string ComponentTracker::getDelta(){
