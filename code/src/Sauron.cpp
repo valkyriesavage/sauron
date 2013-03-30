@@ -66,7 +66,9 @@ void Sauron::update(){
 		grayImage = colorImg;
 		int minAreaOfContours = 20;
 		
-//			grayImage.invert(); //if you are testing white controller with black marker
+		if(PRINTED_IN_WHITE)
+			grayImage.invert();
+
 		grayImage.threshold(threshold);
 		contourFinderGrayImage.findContours(grayImage, minAreaOfContours, (340*240)/4, mNumBlobsConsidered, false, true);
 		

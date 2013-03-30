@@ -257,83 +257,8 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 			}
 		}
 	}
-
-	if(this->comptype == ComponentTracker::dial) {
-		ofxCvBlob* blob = new ofxCvBlob();
-		if (getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {	
-			if(distanceFormula(this->dialPoints.back().x, blob->centroid.x, this->dialPoints.back().y, blob->centroid.y) > 1) {
-				// we want to make sure that we are actually progressing around the circle.  if not, don't save the blob.
-				this->dialPoints.push_back(blob->centroid);
-				if(this->dialPoints.size() > 6) {
-					// the rest of this is only useful if we have actually gotten away from the original blob
-					// otherwise we may terminate with just a couple blobs that happen to be close together.
-					ofPoint firstPoint = dialPoints.at(0);
-					if(distanceFormula(blob->centroid.x, blob->centroid.y, firstPoint.x, firstPoint.y) < this->jiggleThreshold) {
-						// that means we are around the circle, so we need to figure out our ellipse
-						determineDialEllipse();
-					}
-				}
-			}
-		}
-	}
 	
 	previousBlobs = blobs;
-}
-
-void ComponentTracker::determineDialEllipse() {
-	// so, we have a bunch of points in a dial ring.  probably they are an ellipse of some kind.  we gotta figure out what it is.
-	// this code was copy/pasted (and slightly modified) from
-	// http://opencv-extension-library.googlecode.com/svn/trunk/QtOpenCV/example/fitellipse/fitellipse.c
-	CvMemStorage* stor;
-    CvSeq* cont;
-    CvBox2D32f* box;
-    CvPoint* PointArray;
-    CvPoint2D32f* PointArray2D32f;
-    
-    // Create dynamic structure and sequence.
-    stor = cvCreateMemStorage(0);
-    cont = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq), sizeof(CvPoint) , stor);
-    
-    // This cycle draw all contours and approximate it by ellipses.
-    CvPoint center;
-    CvSize size;
-        
-    // Alloc memory for contour point set.    
-    PointArray = (CvPoint*)malloc( this->dialPoints.size()*sizeof(CvPoint) );
-    PointArray2D32f= (CvPoint2D32f*)malloc( this->dialPoints.size()*sizeof(CvPoint2D32f) );
-        
-    // Alloc memory for ellipse data.
-    box = (CvBox2D32f*)malloc(sizeof(CvBox2D32f));
-        
-    // Get contour point set.
-    cvCvtSeqToArray(cont, PointArray, CV_WHOLE_SEQ);
-        
-    // Convert CvPoint set to CvBox2D32f set.
-    for(int i=0; i<this->dialPoints.size(); i++)
-    {
-        PointArray2D32f[i].x = (float)PointArray[i].x;
-        PointArray2D32f[i].y = (float)PointArray[i].y;
-    }
-        
-    // Fits ellipse to current contour.
-    cvFitEllipse(PointArray2D32f, this->dialPoints.size(), box);
-        
-    // Convert ellipse data from float to integer representation.
-    center.x = cvRound(box->center.x);
-    center.y = cvRound(box->center.y);
-    size.width = cvRound(box->size.width*0.5);
-    size.height = cvRound(box->size.height*0.5);
-    box->angle = -box->angle;
-    
-	// actually store our values!
-	this->dialEllipseCenter = *(new ofPoint(center.x, center.y));
-	this->dialEllipseWidth = size.width;
-	this->dialEllipseHeight = size.height;
-
-    // Free memory.          
-    free(PointArray);
-    free(PointArray2D32f);
-    free(box);
 }
 
 ofRectangle ComponentTracker::getROI(){
@@ -411,35 +336,16 @@ float ComponentTracker::calculateSliderProgress(std::vector<ofxCvBlob> blobs){
  Formula from http://math.stackexchange.com/questions/185829/how-do-you-find-an-angle-between-two-points-on-the-edge-of-a-circle
  */
 float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
-
-	// let's decide first if we are "close" to some point around the registered ellipse.
-	// if not, we are probably not looking at the right ROI
-	ofxCvBlob closeBlob;
-	bool closeToSomething = false;
-	for(int j=0; j < blobs.size(); j++) {
-		ofxCvBlob trackedBlob = blobs.at(j);
-		for(int i=0; i < this->dialPoints.size(); i++) {
-			ofPoint registeredPoint = dialPoints.at(i);
-			if(distanceFormula(registeredPoint.x, trackedBlob.centroid.x, registeredPoint.y, trackedBlob.centroid.y) < this->jiggleThreshold) {
-				closeToSomething = true;
-				closeBlob = trackedBlob;
-			}
-		}
-	}
-
-	if(!closeToSomething) {
-		// nawp
-		return 0.0f;
-	}
+	ofxCvBlob blob = blobs.at(0);
 
 	// ok, so x = acost , y = bsint for ellipses
 	// where a = width/2 and b = height/2
 	// that means that in order to solve for t, we can do...
-	double x = closeBlob.centroid.x;
-	double y = closeBlob.centroid.y;
+	double x = blob.centroid.x;
+	double y = blob.centroid.y;
 
-	double cost = x/(this->dialEllipseWidth/2);
-	double sint = y/(this->dialEllipseHeight/2);
+	double cost = x/(this->ROI.width/2);
+	double sint = y/(this->ROI.height/2);
 
 	float theta = acos(cost);
 	float thetaInDegrees = theta*180/PI;
@@ -447,7 +353,7 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 	// because of lameness, we only get theta in the [0, pi) range
 	// so we need to figure out if we should be in the 3rd or 4th quadrant
 	// which basically means this: is our y value below our center's y value
-	if(y < dialEllipseCenter.y) {
+	if(y < ROI.y + ROI.height/2) {
 		// ok, then rotate into those quadrants
 		theta = theta + 180;
 	}

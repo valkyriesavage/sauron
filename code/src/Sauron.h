@@ -13,10 +13,13 @@
 #include "utilities.h"
 #include <iostream>
 #include <fstream>
+
 #define RECEIVE_PORT 5001
 #define SEND_PORT 5002
 #define WEBSOCKETS_PORT 4344
 #define HOST "localhost"
+
+#define PRINTED_IN_WHITE true
 
 class Sauron : public ofBaseApp{
 
