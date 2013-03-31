@@ -12,11 +12,11 @@ you are expected to run this when you run the bits in code: the
   where *delta* is different per component, but will always be a string
   slider : a float between 0 and 1
   dial : a number of degrees between 0 and 360
-  scroll wheel : a direction in {up, down, none}
+  scroll_wheel : a direction in {up, down, none}
   button : a bool {true, false} describing if it has been pushed
   dpad : a direction in {up, down, right, left, none}
-  joystick : a point where {x, y} are in {-1, 1}
-  trackball : a point where {x, y} represent the magnitude in each direction
+  joystick : ofPoint(x, y) where {x, y} are in {-1, 1}
+  trackball : ofPoint(x, y) where {x, y} are the magnitude in each direction
 
 src/
 this directory contains the openframeworks code for the vision system

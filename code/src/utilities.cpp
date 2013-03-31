@@ -57,6 +57,32 @@ bool getFarthestDisplacedBlob(ofxCvBlob* blob, std::vector<ofxCvBlob> oldBlobs, 
 	}else return false;
 }
 
+ofPoint getOpticalFlowOfBlob(ofxCvBlob blob, std::vector<ofxCvBlob> prevBlobs, std::vector<ofxCvBlob> newBlobs) {
+	// sorry, that point it's returning should be a vector
+
+	ofPoint ret;
+	ret.x = 0;
+	ret.y = 0;
+
+	// first, we have to figure out which old blob we are dealing with
+	for(int i =0; i< newBlobs.size(); i++) {
+		if(blob.centroid == newBlobs.at(i).centroid) {
+			// ok, this is our blob.  consider the blob in the same position at the previous frame
+			// note that.... we don't know if these blobs will stick around.
+			if(prevBlobs.size() > i) {
+				ofxCvBlob prevBlob = prevBlobs.at(i);
+				if(distanceFormula(prevBlob.centroid.x, prevBlob.centroid.y, blob.centroid.x, blob.centroid.y) < 50) {
+					// we'll just assume that we have the right blob.
+					ret.x = blob.centroid.x - prevBlob.centroid.x;
+					ret.y = blob.centroid.y - prevBlob.centroid.y;
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
 string ofPointToA(ofPoint pt){
 	std::ostringstream temp;
     temp << "ofPoint(" << pt.x << ", " << pt.y << ")"; 
@@ -74,8 +100,6 @@ void distributeJoystickBlobs(std::vector<ofxCvBlob> blobs, ofxCvBlob* middle, of
 			*flank0 = *flank1;
 			*flank1 = blob;
 		}
-		// TODO : COLIN/VALKYRIE : what do we do in a case where we only have 2 blobs?  I think this is
-		// what we will have when we get the game controller out.
 	}*/
 
 	*middle = getLargestBlob(blobs);
@@ -115,3 +139,71 @@ bool adjustRelativePoint(ofPoint* pt, ofRectangle rect){
 	}
 }
 
+ofPoint normalize(ofPoint somePoint) {
+	double length = sqrt(pow(somePoint.x, 2) + pow(somePoint.y, 2));
+	somePoint.x = somePoint.x/length;
+	somePoint.y = somePoint.y/length;
+
+	return somePoint;
+}
+
+ofPoint changeBasis(ofPoint toBeChanged, ofPoint xDirection, ofPoint yDirection) {
+	//our attitude matrix is
+	// xDirection.x   xDirection.y
+	// yDirection.x   yDirection.y
+	// and our change of basis matrix is
+	//  yDirection.y  -yDirection.x
+	// -xDirection.y   xDirection.x
+	// so when we multiply matrix-style, we get
+	// newx = yDirection.y(oldx) - yDirection.x(oldy)
+	// newY = -xDirection.y(oldx) + xDirection.x(oldy)
+	ofPoint newPoint = *(new ofPoint(0,0));
+	newPoint.x = yDirection.y*toBeChanged.x - yDirection.x*toBeChanged.y;
+	newPoint.y = -xDirection.y*toBeChanged.x + xDirection.x*toBeChanged.y;
+
+	return newPoint;
+}
+
+ofPoint averageOpticalFlow(std::vector<ofxCvBlob> previousBlobs, std::vector<ofxCvBlob> newBlobs, ofRectangle ROI) {
+	float movementTolerance = max(3*ROI.width/4, 3*ROI.height/4);
+	ofPoint avgOpticalFlow = *(new ofPoint());
+	int numPointsConsidered = 0;
+
+	for(int i = 0; i < newBlobs.size(); i++) {
+		ofxCvBlob blob = newBlobs.at(i);
+		if(previousBlobs.size() > i) {
+			ofxCvBlob prevBlob = previousBlobs.at(i);
+			if(ROI.inside(prevBlob.centroid) && ROI.inside(blob.centroid) && prevBlob.centroid.distance(blob.centroid) < movementTolerance) {
+				// ok, those are probably the same blob, since we are in the movement threshold, and we are in the ROI
+				avgOpticalFlow.x += blob.centroid.x - prevBlob.centroid.x; 
+				avgOpticalFlow.y += blob.centroid.y - prevBlob.centroid.y;
+
+				numPointsConsidered += 1;
+			}
+		}
+	}
+
+	cout << ofPointToA(avgOpticalFlow) << endl;
+
+	// actually do the average
+	if(numPointsConsidered > 0) {
+		avgOpticalFlow.x /= numPointsConsidered;
+		avgOpticalFlow.y /= numPointsConsidered;
+	}
+
+	return avgOpticalFlow;
+}
+
+ofPoint averageOfBlobCentres(std::vector<ofxCvBlob> blobs) {
+	ofPoint centre = *(new ofPoint(0,0));
+
+	for(int i = 0; i < blobs.size(); i++) {
+		centre.x += blobs.at(i).centroid.x;
+		centre.y += blobs.at(i).centroid.y;
+	}
+
+	centre.x /= blobs.size();
+	centre.y /= blobs.size();
+
+	return centre;
+}

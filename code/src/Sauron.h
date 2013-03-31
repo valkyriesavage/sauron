@@ -75,5 +75,7 @@ class Sauron : public ofBaseApp{
 	int mFrameCounter;
 
 	int getNumComponentsRegistered();
+
+	void visualizePoint(ofPoint point, int r, int g, int b);
 };
 
