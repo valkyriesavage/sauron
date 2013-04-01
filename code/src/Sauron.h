@@ -19,7 +19,7 @@
 #define WEBSOCKETS_PORT 4344
 #define HOST "localhost"
 
-#define PRINTED_IN_WHITE false
+#define PRINTED_IN_WHITE true
 
 class Sauron : public ofBaseApp{
 

@@ -529,19 +529,21 @@ ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector
  * This function is meant for the iteration 1 joystick (the red one that has three blobs of measurement)
  */
 ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
-	ofxCvBlob* middle = new ofxCvBlob();
-	ofxCvBlob* flank0 = new ofxCvBlob();
-	ofxCvBlob* flank1 = new ofxCvBlob();
-	
-		//of the joystick blobs, sets middle, flank0, flank1 to their corresponding semantic blobs. middle is the large rectangular piece, and the flanks are the surrounding pieces
-	distributeJoystickBlobs(blobs, middle, flank0, flank1, numBlobsNeeded);
-	
-		//TODO: TEST ME
-	
-	float x = xJoystick(middle->centroid);
-	float y = yJoystick(flank0->centroid);
-	
-	return ofPoint(x, y);
+	ofPoint direction = *(new ofPoint(0,0));
+
+	// we want to know if we are off from "at rest", based on centre of centres
+	ofPoint centreAtRest = averageOfBlobCentres(dpadAtRestBlobs);
+	ofPoint currentCentre = averageOfBlobCentres(blobs);
+
+	if(centreAtRest.distance(currentCentre) < 1) {
+		// not really likely to have been moved
+		return direction;
+	}
+
+	direction.x = currentCentre.x - centreAtRest.x;
+	direction.y = currentCentre.y - centreAtRest.y;
+
+	return direction;
 }
 
 float ComponentTracker::xJoystick(ofPoint middleCentroid) {
