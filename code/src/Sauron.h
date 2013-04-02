@@ -71,7 +71,7 @@ class Sauron : public ofBaseApp{
 	void arduinoTest();
 	void recordMeasurements(ComponentTracker* comp, char* filename);
 	
-	int mStepCounter;
+	int mFrameCounter;
 
 	int getNumComponentsRegistered();
 };
