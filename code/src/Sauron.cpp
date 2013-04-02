@@ -42,7 +42,7 @@ void Sauron::setup(){
 		//file titled comptype+id + ".txt" (e.g. slider0.txt)
 	mArduinoTest = false;
 	
-	mStepCounter = 0;
+	mFrameCounter = 0;
 	
 
 }
@@ -381,13 +381,13 @@ void Sauron::arduinoTest(){
 	}
 	for(std::vector<ComponentTracker*>::size_type i = 0; i != components.size(); i++) {
 	char s[128];
-	sprintf(s, "%s%d%s", components[i]->getComponentTypeString().c_str(), components[i]->getId(), ".txt");
-	if (mStepCounter == 0) {
+	sprintf(s, "%s%d%s", components[i]->getComponentTypeString().c_str(), components[i]->getId(), ".csv");
+	if (mFrameCounter == 0) {
 		remove(s);
 	}
 	recordMeasurements(components[i], s);
 	}
-	mStepCounter++;
+	mFrameCounter++;
 }
 /*
  *writes measurements to file
@@ -395,7 +395,7 @@ void Sauron::arduinoTest(){
 void Sauron::recordMeasurements(ComponentTracker* comp, char* filename){
 	ofstream myfile;
 	myfile.open (filename, ios::app);
-	myfile << mStepCounter << " " << comp->getDelta() << endl;
+	myfile << mFrameCounter << ", " << comp->getDelta() << endl;
 	myfile.close();
 	
 }
