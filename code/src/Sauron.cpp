@@ -5,7 +5,7 @@ void Sauron::setup(){
 	#if defined (_WIN32) // if we are on Valkyrie's computer, use the Eye camera rather than the FaceTime
 	vidGrabber.setDeviceID(1);
 	#else
-		vidGrabber.setDeviceID(3);//Colin likes using the marooned USB port
+		vidGrabber.setDeviceID(1);//Colin likes using the marooned USB port
 	#endif
 	
 	vidGrabber.setVerbose(true);
@@ -13,6 +13,7 @@ void Sauron::setup(){
 	
 	colorImg.allocate(320,240);
 	grayImage.allocate(320,240);
+	prevImage.allocate(320,420);
 	
 	threshold = 225;//threshold is such to account for the new camera and brightness
 	mNumBlobsConsidered = 10;//just an arbitrary number high enough to capture all components
@@ -34,6 +35,13 @@ void Sauron::setup(){
 	sender.setup(HOST, SEND_PORT);
 	websocketsSender.setup(HOST, WEBSOCKETS_PORT);
 	
+	ofxOscMessage m;
+	m.setRemoteEndpoint(HOST, WEBSOCKETS_PORT);
+	m.setAddress("/button/1");
+	m.addStringArg("on");
+	sender.sendMessage(m);
+	websocketsSender.sendMessage(m);
+	
 	testing = false;
 	
 	currentRegisteringComponent = new ComponentTracker();
@@ -44,7 +52,7 @@ void Sauron::setup(){
 	
 	mFrameCounter = 0;
 	
-
+	trackballer = *(new TrackballTracker());
 }
 
 	//--------------------------------------------------------------
@@ -72,6 +80,7 @@ void Sauron::update(){
 		grayImage.threshold(threshold);
 		contourFinderGrayImage.findContours(grayImage, minAreaOfContours, (340*240)/4, mNumBlobsConsidered, false, true);
 		
+		
 		if(registering){
 			sauronRegister();
 		}
@@ -80,6 +89,9 @@ void Sauron::update(){
 			ComponentTracker* c = *it;
 			if(c->isRegistered()){
 				c->measureComponent(contourFinderGrayImage.blobs);
+				// TODO : consider running the optical flow here
+				// trackballer.getTrackballFlow(colorImg, greyImg, prevImg, c->ROI);
+				
 				switch (c->getComponentType()) {
 					case ComponentTracker::slider:
 						sprintf(mSliderProgress, "%s", c->getDelta().c_str());
@@ -100,8 +112,13 @@ void Sauron::update(){
 						sprintf(mJoystickLocation, "%s", c->getDelta().c_str());
 						break;
 					case ComponentTracker::trackball:
+					{
+						ofPoint avgFlow = *(new ofPoint());
+						avgFlow = trackballer.getTrackballFlow(colorImg, grayImage, prevImage, c->ROI);
+						c->setDelta(ofPointToA(avgFlow));
 						sprintf(mTrackballValue, "%s", c->getDelta().c_str());
 						break;
+					}
 					default:
 						break;
 				}
@@ -131,11 +148,18 @@ void Sauron::update(){
 				m.setAddress("/" + componentType + "/" + idstr);
 				m.addStringArg(delta);
 				sender.sendMessage(m);
-				websocketsSender.sendMessage(m);
+				ofxOscMessage n;
+				n.setRemoteEndpoint(HOST, WEBSOCKETS_PORT);
+				n.setAddress("/" + componentType + "/" + idstr);
+				n.addStringArg(delta);
+				sender.sendMessage(n);
+				websocketsSender.sendMessage(n);
 
 				std::cout << delta;
 			}
 		}
+		
+		prevImage = grayImage;
 		
 	}
 	
@@ -378,6 +402,9 @@ void Sauron::stageComponent(ComponentTracker::ComponentType type, int id){
 	
 	if(!registering && type!=ComponentTracker::no_component){
 		currentRegisteringComponent = new ComponentTracker(type, id);
+		if(type == ComponentTracker::trackball) {
+			currentRegisteringComponent->trackballer = trackballer;
+		}
 	}
 }
 

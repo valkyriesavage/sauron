@@ -121,9 +121,7 @@ bool ComponentTracker::isRegistered(){
 void ComponentTracker::finalizeRegistration(){
 	mIsRegistered = true;
 
-	if(comptype == ComponentTracker::dpad) {
-		dpadAtRestBlobs = this->keepInsideBlobs(previousBlobs);
-	}
+	atRestBlobs = this->keepInsideBlobs(previousBlobs);
 }
 
 bool ComponentTracker::buttonEventDetected() {
@@ -485,11 +483,17 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 bool ComponentTracker::isButtonPressed(std::vector<ofxCvBlob> blobs){
 	float centerThreshold = 10.0f;
 	
-	ofRectangle* temp = new ofRectangle();
-	temp->setFromCenter(blobs.front().centroid.x, blobs.front().centroid.y, centerThreshold, centerThreshold);
-	if(blobs.front().area >mButtonOrigin.area || !temp->inside(mButtonOrigin.centroid)){//this checks whether the area is greater than start position or whether center is out of some thresholded origin area
-		return true;
-	}else return false;
+	if(blobs.size() > 0) {
+		ofPoint centreAtRest = averageOfBlobCentres(atRestBlobs);
+		ofPoint currentCentre = averageOfBlobCentres(blobs);
+		
+		if (centreAtRest.distance(currentCentre) > jiggleThreshold) {
+			return true;
+		}
+		return false;
+	}
+	// if there are no blobs, it means that the blob is outside.  so, pressed!
+	return true;
 }
 
 /*
@@ -499,7 +503,7 @@ ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector
 	ComponentTracker::Direction direction = ComponentTracker::none;
 
 	// we want to know if we are off from "at rest", based on centre of centres
-	ofPoint centreAtRest = averageOfBlobCentres(dpadAtRestBlobs);
+	ofPoint centreAtRest = averageOfBlobCentres(atRestBlobs);
 	ofPoint currentCentre = averageOfBlobCentres(blobs);
 
 	if(centreAtRest.distance(currentCentre) < 1) {
@@ -532,7 +536,7 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 	ofPoint direction = *(new ofPoint(0,0));
 
 	// we want to know if we are off from "at rest", based on centre of centres
-	ofPoint centreAtRest = averageOfBlobCentres(dpadAtRestBlobs);
+	ofPoint centreAtRest = averageOfBlobCentres(atRestBlobs);
 	ofPoint currentCentre = averageOfBlobCentres(blobs);
 
 	if(centreAtRest.distance(currentCentre) < 1) {
@@ -578,7 +582,7 @@ float ComponentTracker::yJoystick(ofPoint flankCentroid) {
 
 ofPoint ComponentTracker::calculateTrackballValue(std::vector<ofxCvBlob> blobs) {
 	ofPoint avgOpticalFlow = averageOpticalFlow(previousBlobs, blobs, ROI);
-
+	
 	// now decide what direction we are moving WRT the x-axis defined by the user
 	return changeBasis(avgOpticalFlow, this->trackballXDirection, this->trackballYDirection);
 }

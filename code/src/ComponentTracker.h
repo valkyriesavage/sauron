@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "ofxOpenCv.h"
+#include "TrackballTracker.h"
 #include "utilities.h"
 
 #pragma once
@@ -73,7 +74,7 @@ public:
 	ofPoint sliderStart;
 	ofPoint sliderEnd;
 
-	std::vector<ofxCvBlob> dpadAtRestBlobs;
+	std::vector<ofxCvBlob> atRestBlobs;
 
 	ofPoint joystickMiddleStart;
 	ofPoint joystickMiddleEnd;
@@ -82,8 +83,8 @@ public:
 
 	ofPoint trackballXDirection;  // this should be a vector...
 	ofPoint trackballYDirection;  // this should, too... :(
-
-
+	TrackballTracker trackballer;
+	
 	// Well, for some reason we have two of these
 	ofRectangle ROI;
 
@@ -105,6 +106,4 @@ private:
 	
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);
-
-	
 };

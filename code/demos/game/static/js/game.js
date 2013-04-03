@@ -1,3 +1,5 @@
+
+
 // Handle keyboard controls
 var keysDown = [];
 
@@ -9,49 +11,110 @@ addEventListener("keyup", function (e) {
 	delete keysDown[e.keyCode];
 }, false);
 
-// WebSocketssssssss!!!!
-var ws = new WebSocket("ws://localhost:5002");
-ws.onmessage = function(event) {
-	var message = event.data;
-	switch(message.split("/")[0]) {
-		case "joystick":
-			break;
-		case "dpad":
-			break;
-		case "button":
-			break;
-		default:
-			break;
-	}
-}
-
-var joystickDealings = function(message) {
-
-}
-
-var dpadDealings = function(message) {
-	var payload = message.substring(message.split(" ")[0].length);
+var joystickDealings = function(pointshit) {
 	switch(payload) {
 		case 'up':
-			keysDown['w'] = true;
+			keysDown[38] = true;
 			break;
 		case 'down':
-			keysDown['s'] = true;
+			keysDown[40] = true;
 			break;
 		case 'right':
-			keysDown['a'] = true;
+			keysDown[39] = true;
 			break;
 		case 'left':
-			keysDown['d'] = true;
+			keysDown[37] = true;
 			break;
+                case 'none':
+                        delete keysDown[37];
+                        delete keysDown[38];
+                        delete keysDown[39];
+                        delete keysDown[40];
 		default:
 			console.log(payload);
 	}
 }
 
-var buttonDealings = function(message) {
-	var id = message.split("/")[1].split()[0];
+var dpadDealings = function(payload) {
+	switch(payload) {
+		case 'up':
+			keysDown[49] = true;
+			break;
+		case 'down':
+			keysDown[50] = true;
+			break;
+		case 'right':
+			keysDown[51] = true;
+			break;
+		case 'left':
+			keysDown[52] = true;
+			break;
+                case 'none':
+                        delete keysDown[49];
+                        delete keysDown[50];
+                        delete keysDown[51];
+                        delete keysDown[52];
+		default:
+			console.log(payload);
+	}
 }
+
+var buttonDealings = function(id, state) {
+  if(state == 'true') {
+    switch(id) {
+      case '0': case '4':
+        keysDown[87] = newVal;
+        break;
+      case '1':
+        keysDown[65] = newVal;
+        break;
+      case '2':
+        keysDown[83] = newVal;
+        break;
+      case '3':
+        keysDown[68] = newVal;
+        break;
+    }
+  } else {
+    switch(id) {
+      case '0': case '4':
+        delete keysDown[87];
+        break;
+      case '1':
+        delete keysDown[65];
+        break;
+      case '2':
+        delete keysDown[83];
+        break;
+      case '3':
+        delete keysDown[68];
+        break;
+  }
+}
+
+// WebSocketssssssss!!!!
+var socket = io.connect('http://localhost:3000/ping');
+socket.on('pong', function(message) {
+        console.log(message);
+        var id = message.split('/')[2];
+        var payload = message.split(',s')[1];
+	switch(message.split("/")[1]) {
+		case "dpad":
+                  if(id == '1') {
+                    joystickDealings(payload);
+                  } else {
+                    dpadDealings(payload);
+                  }
+                  break;
+		case "button":
+                  buttonDealings(id, payload);
+                  break;
+		default:
+                  break;
+	}
+});
+
+socket.emit('ping');
 
 // Create the canvas
 var canvas = document.createElement("canvas");
@@ -75,6 +138,7 @@ heroImage.onload = function () {
 	heroReady = true;
 };
 heroImage.src = "images/hero.png";
+var heroPrevColor = "";
 
 // Monster image
 var monsterReady = false;
@@ -206,7 +270,10 @@ var render = function () {
 	}
 
 	if (heroReady) {
-		heroImage.src = "images/hero-"+hero.color+".png";
+            if(hero.color != heroPrevColor) {
+		heroImage.src = "/static/images/hero-"+hero.color+".png";
+                heroPrevColor = hero.color;
+            }
 		ctx.drawImage(heroImage, hero.x, hero.y);
 	}
 
