@@ -11,7 +11,8 @@ addEventListener("keyup", function (e) {
 	delete keysDown[e.keyCode];
 }, false);
 
-var joystickDealings = function(pointshit) {
+
+var joystickDealings = function(payload) {
 	switch(payload) {
 		case 'up':
 			keysDown[38] = true;
@@ -33,7 +34,7 @@ var joystickDealings = function(pointshit) {
 		default:
 			console.log(payload);
 	}
-}
+};
 
 var dpadDealings = function(payload) {
 	switch(payload) {
@@ -57,50 +58,43 @@ var dpadDealings = function(payload) {
 		default:
 			console.log(payload);
 	}
-}
+};
 
 var buttonDealings = function(id, state) {
-  if(state == 'true') {
-    switch(id) {
-      case '0': case '4':
-        keysDown[87] = newVal;
-        break;
-      case '1':
-        keysDown[65] = newVal;
-        break;
-      case '2':
-        keysDown[83] = newVal;
-        break;
-      case '3':
-        keysDown[68] = newVal;
-        break;
+  id = "" + id;
+  if(state.indexOf('true') > 0) {
+    if(id.indexOf("0") > -1 || id.indexOf("4") > -1) {
+        keysDown[87] = true;
+    } else if (id.indexOf("1") > -1) {
+        keysDown[65] = true;
+    } else if (id.indexOf("2") > -1) {
+        keysDown[83] = true;
+    } else if (id.indexOf("3") > -1) {
+        keysDown[68] = true;
+    } else {
+        console.log(id);
     }
   } else {
-    switch(id) {
-      case '0': case '4':
+    if(id.indexOf("0") > -1 || id.indexOf("4") > -1) {
         delete keysDown[87];
-        break;
-      case '1':
+    } else if (id.indexOf("1") > -1) {
         delete keysDown[65];
-        break;
-      case '2':
+    } else if (id.indexOf("2") > -1) {
         delete keysDown[83];
-        break;
-      case '3':
+    } else if (id.indexOf("3") > -1) {
         delete keysDown[68];
-        break;
+    }
   }
-}
+};
 
 // WebSocketssssssss!!!!
 var socket = io.connect('http://localhost:3000/ping');
 socket.on('pong', function(message) {
-        console.log(message);
-        var id = message.split('/')[2];
+        var id = message.split('/')[2].split(',s')[0];
         var payload = message.split(',s')[1];
 	switch(message.split("/")[1]) {
 		case "dpad":
-                  if(id == '1') {
+                  if(id.indexOf('1') > -1) {
                     joystickDealings(payload);
                   } else {
                     dpadDealings(payload);
@@ -113,8 +107,6 @@ socket.on('pong', function(message) {
                   break;
 	}
 });
-
-socket.emit('ping');
 
 // Create the canvas
 var canvas = document.createElement("canvas");

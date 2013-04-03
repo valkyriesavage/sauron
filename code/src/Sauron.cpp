@@ -35,13 +35,6 @@ void Sauron::setup(){
 	sender.setup(HOST, SEND_PORT);
 	websocketsSender.setup(HOST, WEBSOCKETS_PORT);
 	
-	ofxOscMessage m;
-	m.setRemoteEndpoint(HOST, WEBSOCKETS_PORT);
-	m.setAddress("/button/1");
-	m.addStringArg("on");
-	sender.sendMessage(m);
-	websocketsSender.sendMessage(m);
-	
 	testing = false;
 	
 	currentRegisteringComponent = new ComponentTracker();
@@ -376,6 +369,15 @@ void Sauron::keyPressed(int key){
 		case 't':
 			testing = !testing;
 			break;
+		case 'm': {
+			ofxOscMessage m;
+			m.setRemoteEndpoint(HOST, WEBSOCKETS_PORT);
+			m.setAddress("/button/1");
+			m.addStringArg("true");
+			sender.sendMessage(m);
+			websocketsSender.sendMessage(m);
+			break;
+		}
 		case '0':
 			if (registering) {
 				stopRegistrationMode();
