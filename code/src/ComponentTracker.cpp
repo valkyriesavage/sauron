@@ -355,7 +355,7 @@ bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 			sprintf(s, "%f", calculateSliderProgress(componentBlobs));
 			break;
 		case ComponentTracker::dial:
-			sprintf(s, "%f", calculateDialProgress(componentBlobs));
+			sprintf(s, "%f", (calculateDialProgress(componentBlobs)/360));
 			break;
 		case ComponentTracker::scroll_wheel:
 			sprintf(s,"%s", EnumDirectionToString(calculateScrollWheelDirection(componentBlobs)));
