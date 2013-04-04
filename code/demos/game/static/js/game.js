@@ -13,27 +13,26 @@ addEventListener("keyup", function (e) {
 
 
 var joystickDealings = function(payload) {
-	switch(payload) {
-		case 'up':
-			keysDown[38] = true;
-			break;
-		case 'down':
-			keysDown[40] = true;
-			break;
-		case 'right':
-			keysDown[39] = true;
-			break;
-		case 'left':
-			keysDown[37] = true;
-			break;
-                case 'none':
-                        delete keysDown[37];
-                        delete keysDown[38];
-                        delete keysDown[39];
-                        delete keysDown[40];
-		default:
-			console.log(payload);
-	}
+    if(payload.indexOf('up') > -1) {
+      keysDown[38] = true;
+    } else {
+      delete keysDown[38];
+    }
+    if(payload.indexOf('down') > -1) {
+      keysDown[40] = true;
+    } else {
+      delete keysDown[40];
+    }
+    if(payload.indexOf('right') > -1) {
+      keysDown[37] = true;
+    } else {
+      delete keysDown[37];
+    }
+    if(payload.indexOf('left') > -1) {
+      keysDown[39] = true;
+    } else {
+      delete keysDown[39];
+    }
 };
 
 var dpadDealings = function(payload) {
@@ -100,10 +99,13 @@ socket.on('pong', function(message) {
                     dpadDealings(payload);
                   }
                   break;
+                case "joystick":
+                  joystickDealings(payload);
 		case "button":
                   buttonDealings(id, payload);
                   break;
 		default:
+                  console.log(message.split("/")[1]);
                   break;
 	}
 });
@@ -190,6 +192,11 @@ var update = function (modifier) {
 	if (39 in keysDown) { // Player holding right
 		hero.x += hero.speed * modifier;
 	}
+
+        if (hero.x > canvas.width - 32) hero.x = canvas.width - 32;
+        if (hero.x < 0) hero.x = 0;
+        if (hero.y > canvas.height - 32) hero.y = canvas.height - 32;
+        if (hero.y < 0) hero.y = 0;
 
 	if (87 in keysDown) { // Player pushed w
 		fireballs[fireballs.length] = fireBall('red', function(x) {

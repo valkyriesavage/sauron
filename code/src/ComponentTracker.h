@@ -84,6 +84,9 @@ public:
 	ofPoint joystickMiddleEnd;
 	ofPoint joystickFlankStart;
 	ofPoint joystickFlankEnd;
+	
+	ofPoint joystickLocation;
+	ofPoint prevJoystickLocation;
 
 	ofPoint trackballXDirection;  // this should be a vector...
 	ofPoint trackballYDirection;  // this should, too... :(

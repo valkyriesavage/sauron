@@ -273,14 +273,14 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 		// we want the start to be the min X or min Y WRT the camera
 		ofxCvBlob* blob = new ofxCvBlob();
 		if ( getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
-			if(blobIsMiddle(blob, blobs)) {
+			if(blobIsMiddle(*blob, blobs)) {
 				if(blob->centroid.x < this->joystickMiddleStart.x || blob->centroid.y < this->joystickMiddleStart.y) {
 					this->joystickMiddleStart = blob->centroid;
 				} else if(blob->centroid.x > this->joystickMiddleEnd.x || blob->centroid.y > this->joystickMiddleEnd.y) {
 					this->joystickMiddleEnd = blob->centroid;
 				}
 				if(idOfMiddleBlob == -1) {
-					idOfMiddleBlob = std::find(blobs.begin(), blobs.end(), blob) - blobs.begin();
+					idOfMiddleBlob = blobIdInVector(*blob, blobs);
 				}
 			} else if(blob->area > ROI.getArea()/6) { // we need to make sure we're not looking at spurious blobs
 				// if the farthest moved blob is not the middle blob, it is a flank blob
@@ -557,11 +557,14 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 		if(blobIsMiddle(blob, blobs)) {
 			direction.x = xJoystick(blob.centroid);	
 		}
-		else if(this->previousBlobs.at(i).centroid.distance(blob.centroid) > jiggleThreshold && !blob.hole && blob.area > this->ROI.getArea()/6) {
+		else {//if(blob.area > this->ROI.getArea()/6) {
 			// we might have spurious blobs in there
 			direction.y = yJoystick(blob.centroid);
 		}
 	}
+	
+	prevJoystickLocation = joystickLocation;
+	joystickLocation = direction;
 	
 	return direction;
 }
@@ -569,7 +572,7 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 bool ComponentTracker::blobIsMiddle(ofxCvBlob blob, std::vector<ofxCvBlob> blobs) {
 	//if(blob.area > this->ROI.getArea()/4) {
 	if(idOfMiddleBlob > -1) {
-		return std::find(blobs.start(), blobs.end(), blob) - blobs.start() == idOfMiddleBlob;
+		return blobIdInVector(blob, blobs) == idOfMiddleBlob;
 	}
 	return blob.centroid.x > this->ROI.x + this->ROI.width/2;
 }
@@ -733,7 +736,7 @@ bool ComponentTracker::isDeltaSignificant(){
 
 			break;
 		case ComponentTracker::joystick://significant on a point by point change significance
-			if(strcmp(delta.c_str(), prevDelta.c_str()) != 0){//does a bit of throttling. but not to the extent we want. Probably need an aToOfPoint() in util
+			if(prevJoystickLocation.distance(joystickLocation) > 1){
 				return true;
 			}else return false;
 			break;

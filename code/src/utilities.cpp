@@ -33,7 +33,8 @@ float distanceFormula(float x1, float y1, float x2, float y2){
 
 ofPoint	midpoint(ofPoint p1, ofPoint p2){
 	ofPoint result;
-	result.set(p1.x+p2.x/2, p1.y+p2.y/2, 0.0f);
+	result.x = (p1.x+p2.x)/2;
+	result.y = (p1.y+p2.y)/2;
 	return result;
 }
 
@@ -85,8 +86,37 @@ ofPoint getOpticalFlowOfBlob(ofxCvBlob blob, std::vector<ofxCvBlob> prevBlobs, s
 
 string ofPointToA(ofPoint pt){
 	std::ostringstream temp;
-    temp << "ofPoint(" << pt.x << ", " << pt.y << ")"; 
-    return temp.str();
+	
+	if(pt.x >= 0.5) {
+		temp << "right";
+	}
+	
+	if(pt.x <= -0.5) {
+		temp << "left";
+	}
+	
+	if(-.5 < pt.x && pt.x < .5) {
+		temp << "none";
+	}
+		
+	temp << pt.x << ":";
+	
+	if(pt.y >= 0.5) {
+		temp << "up";
+	}
+	
+	if(pt.y <= -.5) {
+		temp << "down";
+	}
+	
+	if(-.5 < pt.y && pt.y < 0.5) {
+		temp << "none";
+  }
+	
+	temp << pt.y;
+  
+	//temp << "ofPoint(" << pt.x << ", " << pt.y << ")"; 
+	return temp.str();
 }
 
 void distributeJoystickBlobs(std::vector<ofxCvBlob> blobs, ofxCvBlob* middle, ofxCvBlob* flank0, ofxCvBlob* flank1, int maxBlobs){
@@ -210,7 +240,7 @@ ofPoint averageOfBlobCentres(std::vector<ofxCvBlob> blobs) {
 
 int blobIdInVector(ofxCvBlob blob, std::vector<ofxCvBlob> blobs) {
 	for(int i = 0; i < blobs.size(); i++) {
-		if(blobs.at(i) == blob) {
+		if(blobs.at(i).centroid.x == blob.centroid.x && blobs.at(i).centroid.y == blob.centroid.y) {
 			return i;
 		}
 	}
