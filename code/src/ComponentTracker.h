@@ -9,12 +9,15 @@
 class ComponentTracker {
 public:
 		//enums
-	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel, no_component};
+	enum ComponentType {button, slider, dial, joystick, dpad, scroll_wheel, trackball, no_component};
 	enum Direction {up, down, left, right, none};
 
 		//constructors
     ComponentTracker();
 	ComponentTracker(ComponentType type, int id);
+
+	// let everyone know!!
+	ComponentType comptype;
 	
 		//enums to strings
 	string getComponentTypeString();
@@ -22,13 +25,14 @@ public:
 
 		//flagged for deletion...
 	ofxCvContourFinder contourFinder;
-	CvRect regionOfInterest;
+	
 	bool buttonEventDetected();
 	bool sliderEventDetected(int* sliderPosition);
 	bool dialEventDetected(int* dialPosition);
     bool scrollWheelEventDetected(Direction* scrollDirection, int* scrollAmount);
 	bool joystickEventDetected(int* xPosition, int* yPosition);
 	bool dpadEventDetected(Direction* direction);
+	CvRect regionOfInterest;
 		//...until here
 	
 		//registration
@@ -48,6 +52,10 @@ public:
 	bool isButtonPressed(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction calculateDpadDirection(std::vector<ofxCvBlob> blobs);
 	ofPoint measureJoystickLocation(std::vector<ofxCvBlob> blobs);
+	ofPoint calculateTrackballValue(std::vector<ofxCvBlob> blobs);
+
+	float xJoystick(ofPoint middleCentroid);
+	float yJoystick(ofPoint flankCentroid);
 	
 		//deltas
 	string getDelta();
@@ -60,8 +68,25 @@ public:
 	bool isDeltaSignificant();
 	bool verifyNumBlobs(int numBlobs);
 
-	void determineDialEllipse();
-	
+	// can I just say that this NEEDS TO BE REFACTORED
+	// we should split this crap out into detectors for each type of component, rather than this horrible, horrible thing
+	ofPoint sliderStart;
+	ofPoint sliderEnd;
+
+	std::vector<ofxCvBlob> dpadAtRestBlobs;
+
+	ofPoint joystickMiddleStart;
+	ofPoint joystickMiddleEnd;
+	ofPoint joystickFlankStart;
+	ofPoint joystickFlankEnd;
+
+	ofPoint trackballXDirection;  // this should be a vector...
+	ofPoint trackballYDirection;  // this should, too... :(
+
+
+	// Well, for some reason we have two of these
+	ofRectangle ROI;
+
 private:
 	double jiggleThreshold;
 	bool mIsRegistered;
@@ -70,11 +95,9 @@ private:
 	int id;
 	string delta;
 	string prevDelta;
-	ComponentType comptype;
 	float mThreshold;
 	ComponentTracker::Direction mPreviousScrollWheelDirection;
-	ofRectangle ROI;//there's a bit of ambiguity with regionOfInterest. Not sure why regionOfInterest is a CvRect rather than a ofRectangle
-
+	
     std::vector<ofxCvBlob> previousBlobs;
 	std::vector<ofRectangle> previousRectangles;//rectangles are used during the ROI set stage of registration (instead of blobs)
 	
@@ -83,13 +106,5 @@ private:
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);
 
-
-	// can I just say that this NEEDS TO BE REFACTORED
-	// we should split this crap out into detectors for each type of component, rather than this horrible, horrible thing
-	ofPoint sliderStart;
-	ofPoint sliderEnd;
-
-	std::vector<ofPoint> dialPoints;
-	ofPoint dialEllipseCenter;
-	double dialEllipseWidth, dialEllipseHeight;
+	
 };

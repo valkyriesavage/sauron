@@ -1,0 +1,27 @@
+It's about time we had a README here.
+
+node/
+this contains a small node.js webserver that takes OSC commands
+  and forwards them to websockets.
+you are expected to run this when you run the bits in code: the
+  messages that come through here will be of the form
+
+  address                   message
+  /*componenttype*/*id*     *delta*
+
+  where *delta* is different per component, but will always be a string
+  slider : a float between 0 and 1
+  dial : a number of degrees between 0 and 360
+  scroll_wheel : a direction in {up, down, none}
+  button : a bool {true, false} describing if it has been pushed
+  dpad : a direction in {up, down, right, left, none}
+  joystick : ofPoint(x, y) where {x, y} are in {-1, 1}
+  trackball : ofPoint(x, y) where {x, y} are the magnitude in each direction
+
+src/
+this directory contains the openframeworks code for the vision system
+you want to run main.cpp.  I'm not totally clear on how things are broken
+up between the files.
+
+swplugin/
+this directory contains the code for the SolidWorks plugin

@@ -99,6 +99,9 @@ void Sauron::update(){
 					case ComponentTracker::joystick:
 						sprintf(mJoystickLocation, "%s", c->getDelta().c_str());
 						break;
+					case ComponentTracker::trackball:
+						sprintf(mTrackballValue, "%s", c->getDelta().c_str());
+						break;
 					default:
 						break;
 				}
@@ -125,10 +128,12 @@ void Sauron::update(){
 				
 				ofxOscMessage m;
 				m.setRemoteEndpoint(HOST, SEND_PORT);
-				m.setAddress(componentType + "/" + idstr);
+				m.setAddress("/" + componentType + "/" + idstr);
 				m.addStringArg(delta);
 				sender.sendMessage(m);
 				websocketsSender.sendMessage(m);
+
+				std::cout << delta;
 			}
 		}
 		
@@ -211,6 +216,17 @@ void Sauron::update(){
 					stopRegistrationMode();
 				}
 			}
+
+			if(tld.compare("trackball") == 0) {
+				if(command.compare("start") == 0) {
+						// enter trackball registration mode for id componentId
+					stageComponent(ComponentTracker::trackball, componentId);
+					startRegistrationMode();
+				} else {
+						// exit trackball registration mode for id componentId
+					stopRegistrationMode();
+				}
+			}
 		}
 	}
 }
@@ -235,12 +251,43 @@ void Sauron::draw(){
 
 	ofPushView();
 		//draw all the ROIs
-	ofSetHexColor(0xffff00);
-	ofNoFill();
+	
 	ofTranslate(360, 20);
 	for(std::vector<ComponentTracker*>::iterator it = components.begin();it != components.end(); ++it){		
 		ComponentTracker* c = *it;
+		ofSetHexColor(0xffff00);
+		ofNoFill();
 		ofRect(c->getROI());
+
+		// now, more special-casing.  what we actually want is to have a draw() function per componentTracker, but
+		// now there's no time!
+
+		switch(c->comptype) {
+		case ComponentTracker::joystick:
+			visualizePoint(c->joystickFlankStart, 255,0,0);
+			visualizePoint(c->joystickFlankEnd, 0,255,0);
+			visualizePoint(c->joystickMiddleStart, 255,255,0);
+			visualizePoint(c->joystickMiddleEnd, 0,255,255);
+			break;
+
+		case ComponentTracker::slider:
+			visualizePoint(c->sliderStart, 255,0,0);
+			visualizePoint(c->sliderEnd, 0,255,0);
+			break;
+
+		case ComponentTracker::dial:
+			ofNoFill();
+			ofEllipse(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.width, c->ROI.height);
+
+		case ComponentTracker::trackball:
+			ofSetColor(255,0,0);
+			ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballXDirection.x, c->ROI.y + c->ROI.height/2 + c->trackballXDirection.y);
+			ofSetColor(0,0,255);
+			ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballYDirection.x, c->ROI.y + c->ROI.height/2 + c->trackballYDirection.y);
+
+		default:
+			break;
+		}
 	}
 		
 	ofPopView();//don't keep the ROI drawing settings
@@ -249,9 +296,15 @@ void Sauron::draw(){
 	ofSetHexColor(0xffffff);
 	char reportStr[1024];
 	const char* ctype = currentRegisteringComponent->getComponentTypeString().c_str();
-	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s",
-			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection);
+	sprintf(reportStr, "You are currently registering: %s\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f\nSlider completion percentage: %s\nDial completion angle: %s\nScroll Wheel Direction: %s\nButton Pressed: %s\nJoystick Location: %s\nDpad Direction: %s\nTrackball value: %s",
+			ctype, threshold, contourFinderGrayImage.nBlobs, ofGetFrameRate(), mSliderProgress, mDialProgress, mScrollWheelDirection, mButtonPressed, mJoystickLocation, mDpadDirection, mTrackballValue);
 	ofDrawBitmapString(reportStr, 20, 280);
+}
+
+void Sauron::visualizePoint(ofPoint point, int r, int g, int b) {
+	ofSetColor(r,g,b);
+	ofFill();
+	ofEllipse(point.x, point.y, 20, 20);
 }
 
 
@@ -282,7 +335,6 @@ void Sauron::keyPressed(int key){
 			break;
 		case '4':
 			stageComponent(ComponentTracker::joystick, 0);
-			threshold = 150;
 			startRegistrationMode();
 			break;
 		case '5':
@@ -292,6 +344,13 @@ void Sauron::keyPressed(int key){
 		case '6':
 			stageComponent(ComponentTracker::button, 0);
 			startRegistrationMode();
+			break;
+		case '7':
+			stageComponent(ComponentTracker::trackball, 0);
+			startRegistrationMode();
+			break;
+		case 't':
+			testing = !testing;
 			break;
 		case '0':
 			if (registering) {
