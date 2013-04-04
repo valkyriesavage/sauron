@@ -33,7 +33,7 @@ float distanceFormula(float x1, float y1, float x2, float y2){
 
 ofPoint	midpoint(ofPoint p1, ofPoint p2){
 	ofPoint result;
-	result.set(abs(p1.x-p2.x), abs(p1.y-p2.y), 0.0f);
+	result.set(p1.x+p2.x/2, p1.y+p2.y/2, 0.0f);
 	return result;
 }
 
@@ -206,4 +206,13 @@ ofPoint averageOfBlobCentres(std::vector<ofxCvBlob> blobs) {
 	centre.y /= blobs.size();
 
 	return centre;
+}
+
+int blobIdInVector(ofxCvBlob blob, std::vector<ofxCvBlob> blobs) {
+	for(int i = 0; i < blobs.size(); i++) {
+		if(blobs.at(i) == blob) {
+			return i;
+		}
+	}
+	return -1;
 }

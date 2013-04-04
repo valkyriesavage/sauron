@@ -34,3 +34,5 @@ ofPoint changeBasis(ofPoint toBeChanged, ofPoint xDirection, ofPoint yDirection)
 ofPoint averageOpticalFlow(std::vector<ofxCvBlob> previousBlobs, std::vector<ofxCvBlob> newBlobs, ofRectangle ROI);
 
 ofPoint averageOfBlobCentres(std::vector<ofxCvBlob> blobs);
+
+int blobIdInVector(ofxCvBlob blob, std::vector<ofxCvBlob> blobs);

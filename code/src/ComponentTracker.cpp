@@ -52,11 +52,14 @@ void ComponentTracker::init(ComponentType type, int id){
 	this->joystickMiddleEnd = *(new ofPoint(std::numeric_limits<int>::min(), std::numeric_limits<int>::min()));
 	this->joystickFlankStart = *(new ofPoint(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()));
 	this->joystickFlankEnd = *(new ofPoint(std::numeric_limits<int>::min(), std::numeric_limits<int>::min()));
+	this->idOfMiddleBlob = -1;
 
 	this->trackballXDirection = *(new ofPoint(1,0));
 	this->trackballYDirection = *(new ofPoint(0,1));
 
 	this->jiggleThreshold = 5;
+	
+	this->buttonSentTrue = false;
 }
 	
 string ComponentTracker::getComponentTypeString(){
@@ -270,16 +273,16 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 		// we want the start to be the min X or min Y WRT the camera
 		ofxCvBlob* blob = new ofxCvBlob();
 		if ( getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
-			if(blob->area > ROI.getArea()/5) { // TODO : get rid of this stupid assumption
-				// what we basically want is to ensure that we are looking at the biggest blob
-				// in the ROI, and if it's a joystick we're looking at, then the center blob
-				// should be bigger than 1/3 the ROI's area...
+			if(blobIsMiddle(blob, blobs)) {
 				if(blob->centroid.x < this->joystickMiddleStart.x || blob->centroid.y < this->joystickMiddleStart.y) {
 					this->joystickMiddleStart = blob->centroid;
 				} else if(blob->centroid.x > this->joystickMiddleEnd.x || blob->centroid.y > this->joystickMiddleEnd.y) {
 					this->joystickMiddleEnd = blob->centroid;
 				}
-			} else {
+				if(idOfMiddleBlob == -1) {
+					idOfMiddleBlob = std::find(blobs.begin(), blobs.end(), blob) - blobs.begin();
+				}
+			} else if(blob->area > ROI.getArea()/6) { // we need to make sure we're not looking at spurious blobs
 				// if the farthest moved blob is not the middle blob, it is a flank blob
 				// we want to be consistent in which blob we pick... so we'll always pick the one with an x or y lower
 				// than the middle blob's x
@@ -439,8 +442,8 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	}
 	
 	float totalDistance = 0.0f;
-	float movementThreshhold = 1.5f;//based on empirical evidence. 
-	float movementTolerance = max(3*ROI.width/4, 3*ROI.height/4);
+	float movementThreshhold = 2*jiggleThreshold;//based on empirical evidence. 
+	float movementTolerance = max(ROI.width/2, ROI.height/2);
 	
 	
 	for(int i = 0; i < min(blobs.size(), previousBlobs.size()); i++) {
@@ -533,7 +536,7 @@ ComponentTracker::Direction ComponentTracker::calculateDpadDirection(std::vector
  * This function is meant for the iteration 1 joystick (the red one that has three blobs of measurement)
  */
 ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
-	ofPoint direction = *(new ofPoint(0,0));
+	/*ofPoint direction = *(new ofPoint(0,0));
 
 	// we want to know if we are off from "at rest", based on centre of centres
 	ofPoint centreAtRest = averageOfBlobCentres(atRestBlobs);
@@ -547,7 +550,28 @@ ofPoint ComponentTracker::measureJoystickLocation(std::vector<ofxCvBlob> blobs){
 	direction.x = currentCentre.x - centreAtRest.x;
 	direction.y = currentCentre.y - centreAtRest.y;
 
+	return direction;*/
+	ofPoint direction = *(new ofPoint(0,0));
+	for(int i=0; i < blobs.size(); i++) {
+		ofxCvBlob blob = blobs.at(i);
+		if(blobIsMiddle(blob, blobs)) {
+			direction.x = xJoystick(blob.centroid);	
+		}
+		else if(this->previousBlobs.at(i).centroid.distance(blob.centroid) > jiggleThreshold && !blob.hole && blob.area > this->ROI.getArea()/6) {
+			// we might have spurious blobs in there
+			direction.y = yJoystick(blob.centroid);
+		}
+	}
+	
 	return direction;
+}
+
+bool ComponentTracker::blobIsMiddle(ofxCvBlob blob, std::vector<ofxCvBlob> blobs) {
+	//if(blob.area > this->ROI.getArea()/4) {
+	if(idOfMiddleBlob > -1) {
+		return std::find(blobs.start(), blobs.end(), blob) - blobs.start() == idOfMiddleBlob;
+	}
+	return blob.centroid.x > this->ROI.x + this->ROI.width/2;
 }
 
 float ComponentTracker::xJoystick(ofPoint middleCentroid) {
@@ -581,7 +605,7 @@ float ComponentTracker::yJoystick(ofPoint flankCentroid) {
 }
 
 ofPoint ComponentTracker::calculateTrackballValue(std::vector<ofxCvBlob> blobs) {
-	ofPoint avgOpticalFlow = averageOpticalFlow(previousBlobs, blobs, ROI);
+	ofPoint avgOpticalFlow = trackballer.latestFlow;
 	
 	// now decide what direction we are moving WRT the x-axis defined by the user
 	return changeBasis(avgOpticalFlow, this->trackballXDirection, this->trackballYDirection);
@@ -678,7 +702,14 @@ bool ComponentTracker::isDeltaSignificant(){
 	float significance;
 	switch(this->comptype){
 		case ComponentTracker::button:
-			return true;//for now until we get some values
+			if(!buttonSentTrue && strcmp(delta.c_str(), "1") == 0) {
+				buttonSentTrue = true;
+				
+				return true;
+			} if (!strcmp(delta.c_str(), "1") == 0) {
+				buttonSentTrue = false;
+			}
+			return false;//for now until we get some values
 			break;
 		case ComponentTracker::slider://significant on a numerical significance
 			significance =  0.01f;
@@ -706,6 +737,10 @@ bool ComponentTracker::isDeltaSignificant(){
 				return true;
 			}else return false;
 			break;
+		case ComponentTracker::trackball: // did it move at all
+			if(trackballer.getLatestFlow().distance(ofPoint(0,0)) > .1) {
+				return true;
+			} else return false;
 		default:
 			return false;
 			break;

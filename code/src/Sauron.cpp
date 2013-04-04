@@ -133,22 +133,67 @@ void Sauron::update(){
 				string componentType = component->getComponentTypeString();
 				int id = component->getId();
 				string delta = component->getDelta();
+				float deltaFloat = 0;
 				char idstr[21]; // enough to hold all numbers up to 64-bits
 				sprintf(idstr, "%d", id);
 				
+				
+				// this is what we send to SolidWorks or OSCulator
 				ofxOscMessage m;
 				m.setRemoteEndpoint(HOST, SEND_PORT);
 				m.setAddress("/" + componentType + "/" + idstr);
-				m.addStringArg(delta);
+				// ok, well, this is a little annoying
+				switch(component->comptype) {
+					case ComponentTracker::button:
+						if(strcmp(delta.c_str(), "1") == 0) {
+							deltaFloat = 1.0f;
+						}
+						break;
+					case ComponentTracker::scroll_wheel:
+						deltaFloat = .5;
+						if(strcmp(delta.c_str(), "up")) {
+							deltaFloat = 1;
+						} if (strcmp(delta.c_str(), "down")) {
+							deltaFloat = 0;
+						}
+						break;
+					case ComponentTracker::dpad:
+						if(strcmp(delta.c_str(), "up")) {
+							deltaFloat = 1;
+						} if (strcmp(delta.c_str(), "down")) {
+							deltaFloat = -1;
+						}  if (strcmp(delta.c_str(), "right")) {
+							deltaFloat = .5;
+						} if (strcmp(delta.c_str(), "left")) {
+							deltaFloat = -.5;
+						}
+						break;
+					case ComponentTracker::dial: case ComponentTracker::slider:
+						deltaFloat = ::atof(delta.c_str());
+						break;
+					case ComponentTracker::trackball:
+						/*string xDiff = split(split(delta.c_str, '(').at(1), ',').at(0);
+						string yDiff = split(split(delta.c_str, ',').at(1), ')').at(0);
+						m.setAddress("/" + componentType + "/" + idstr + "/X");
+						m.addFloatArg(::atof(xDiff.c_str()));
+						ofxOscMessage m2;
+						m2.setRemoteEndpoint(HOST, SEND_PORT);
+						m2.setAddress("/" + componentType + "/" + idstr + "/Y");
+						m2.addFloatArg(::atof(yDiff.c_str()));
+						sender.sendMessage(m2);*/
+						break;
+					//TODO : valkyrie : deal with joystick here??
+					//TODO : valkyrie : deal with trackball here??
+				}
+				m.addFloatArg(deltaFloat);
 				sender.sendMessage(m);
+				
+				// this is what we send to websockets
 				ofxOscMessage n;
 				n.setRemoteEndpoint(HOST, WEBSOCKETS_PORT);
 				n.setAddress("/" + componentType + "/" + idstr);
 				n.addStringArg(delta);
-				sender.sendMessage(n);
 				websocketsSender.sendMessage(n);
-
-				std::cout << delta;
 			}
 		}
 		
@@ -338,31 +383,31 @@ void Sauron::keyPressed(int key){
 			threshold --;
 			if (threshold < 0) threshold = 0;
 			break;
-		case '1':
+		case '1': case 'l':
 			stageComponent(ComponentTracker::slider, 0);
 			startRegistrationMode();
 			break;
-		case '2':
+		case '2': case 's':
 			stageComponent(ComponentTracker::scroll_wheel, 0);
 			startRegistrationMode();
 			break;
-		case '3':
+		case '3': case 'd':
 			stageComponent(ComponentTracker::dial, 0);
 			startRegistrationMode();
 			break;
-		case '4':
+		case '4': case 'j':
 			stageComponent(ComponentTracker::joystick, 0);
 			startRegistrationMode();
 			break;
-		case '5':
+		case '5': case 'p':
 			stageComponent(ComponentTracker::dpad, 0);
 			startRegistrationMode();
 			break;
-		case '6':
+		case '6': case 'b':
 			stageComponent(ComponentTracker::button, 0);
 			startRegistrationMode();
 			break;
-		case '7':
+		case '7': case 'r':
 			stageComponent(ComponentTracker::trackball, 0);
 			startRegistrationMode();
 			break;
@@ -371,11 +416,18 @@ void Sauron::keyPressed(int key){
 			break;
 		case 'm': {
 			ofxOscMessage m;
-			m.setRemoteEndpoint(HOST, WEBSOCKETS_PORT);
+			m.setRemoteEndpoint(HOST, SEND_PORT);
 			m.setAddress("/button/1");
-			m.addStringArg("true");
+			m.addFloatArg(1);
 			sender.sendMessage(m);
-			websocketsSender.sendMessage(m);
+			break;
+		}
+		case 'w': {
+			ofxOscMessage n;
+			n.setRemoteEndpoint(HOST, WEBSOCKETS_PORT);
+			n.setAddress("/button/1");
+			n.addStringArg("true");
+			websocketsSender.sendMessage(n);
 			break;
 		}
 		case '0':
@@ -393,15 +445,6 @@ void Sauron::keyPressed(int key){
  stageComponent takes preparatory information from solidworks and stages it to be registered with sauronRegister().
  */
 void Sauron::stageComponent(ComponentTracker::ComponentType type, int id){
-	for (std::vector<ComponentTracker*>::size_type i = 0; i != components.size(); i++){
-		ComponentTracker* c = components[i];
-		if (c->getComponentType() == type && c->getId() == id) {
-			components.erase(components.begin()+i);
-
-			break;
-		}
-	}
-	
 	if(!registering && type!=ComponentTracker::no_component){
 		currentRegisteringComponent = new ComponentTracker(type, id);
 		if(type == ComponentTracker::trackball) {
@@ -457,7 +500,6 @@ void Sauron::registerComponent(ComponentTracker* ct){
  */
 void Sauron::resetSauron(){
 	components.clear();
-
 }
 /*
  * arduinoTest writes the deltas of any registered components during every update().

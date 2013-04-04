@@ -71,8 +71,12 @@ public:
 
 	// can I just say that this NEEDS TO BE REFACTORED
 	// we should split this crap out into detectors for each type of component, rather than this horrible, horrible thing
+	bool buttonSentTrue;
+	
 	ofPoint sliderStart;
 	ofPoint sliderEnd;
+	
+	time_t changedAtTime;
 
 	std::vector<ofxCvBlob> atRestBlobs;
 
@@ -106,4 +110,7 @@ private:
 	
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);
+	
+	int idOfMiddleBlob;
+	bool blobIsMiddle(ofxCvBlob blob, std::vector<ofxCvBlob> blobs);
 };
