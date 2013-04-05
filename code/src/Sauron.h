@@ -55,7 +55,7 @@ class Sauron : public ofBaseApp{
 	bool				testing;
 	int					mNumBlobsConsidered;
 	bool				mArduinoTest;
-
+	
 	std::vector<ComponentTracker*> components;
 	ComponentTracker* currentRegisteringComponent;
 	std::vector<ofxCvBlob> blobsCaptured;//assists with registration

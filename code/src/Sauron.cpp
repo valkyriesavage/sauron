@@ -15,7 +15,7 @@ void Sauron::setup(){
 	grayImage.allocate(320,240);
 	prevImage.allocate(320,420);
 	
-	threshold = 225;//threshold is such to account for the new camera and brightness
+	threshold = 117;//threshold is such to account for the new camera and brightness
 	mNumBlobsConsidered = 10;//just an arbitrary number high enough to capture all components
 	
 	registering = false;
@@ -151,10 +151,10 @@ void Sauron::update(){
 						break;
 					case ComponentTracker::scroll_wheel:
 						deltaFloat = .5;
-						if(strcmp(delta.c_str(), "up")) {
-							deltaFloat = 1;
-						} if (strcmp(delta.c_str(), "down")) {
-							deltaFloat = 0;
+						if(strcmp(delta.c_str(), "up") == 0) {
+							deltaFloat = .7;
+						} if (strcmp(delta.c_str(), "down") == 0) {
+							deltaFloat = .3;
 						}
 						break;
 					case ComponentTracker::dpad:
@@ -187,6 +187,8 @@ void Sauron::update(){
 				}
 				m.addFloatArg(deltaFloat);
 				sender.sendMessage(m);
+				
+				cout << "sending " << deltaFloat << " on " << "/" << componentType << "/" << idstr << endl;
 				
 				// this is what we send to websockets
 				ofxOscMessage n;

@@ -442,22 +442,28 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	}
 	
 	float totalDistance = 0.0f;
-	float movementThreshhold = 2*jiggleThreshold;//based on empirical evidence. 
+	float movementThreshhold = jiggleThreshold;//based on empirical evidence. 
 	float movementTolerance = max(ROI.width/2, ROI.height/2);
-	
+	int blobsNotJumping = 0;
 	
 	for(int i = 0; i < min(blobs.size(), previousBlobs.size()); i++) {
 		float xDisp = blobs[i].centroid.x - previousBlobs[i].centroid.x;
 		float yDisp = blobs[i].centroid.y - previousBlobs[i].centroid.y;
+		
+		if(xDisp > movementTolerance || yDisp > movementTolerance) {
+			continue;
+		}
+		
 		if (((abs(xDisp) > abs(yDisp)) && xDisp > 0) || ((abs(yDisp) > abs(xDisp)) && yDisp > 0)) {//yes I know, hacky.
 			totalDistance += distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
 				//I guess we don't technically need to do this here, but it'll set up nicely for measuring scrollwheel movement later.
 		}else {
 			totalDistance -= distanceFormula(blobs[i].centroid.x, blobs[i].centroid.y, previousBlobs[i].centroid.x, previousBlobs[i].centroid.y);
 		}
+		blobsNotJumping++;
 	}
 	
-	float meanDistance =  totalDistance /min(blobs.size(), previousBlobs.size());	
+	float meanDistance =  totalDistance /blobsNotJumping;	
 	
 	this->previousBlobs = blobs;//gotta replace our previous blobs
 	
@@ -705,14 +711,18 @@ bool ComponentTracker::isDeltaSignificant(){
 	float significance;
 	switch(this->comptype){
 		case ComponentTracker::button:
-			if(!buttonSentTrue && strcmp(delta.c_str(), "1") == 0) {
-				buttonSentTrue = true;
-				
-				return true;
-			} if (!strcmp(delta.c_str(), "1") == 0) {
+			if (!strcmp(delta.c_str(), "1") == 0) {
+				if(buttonSentTrue) {
+					buttonSentTrue = false;
+					return true;
+				}
 				buttonSentTrue = false;
 			}
-			return false;//for now until we get some values
+			if(!buttonSentTrue && strcmp(delta.c_str(), "1") == 0) {
+				buttonSentTrue = true;
+				return true;
+			}
+			return false;
 			break;
 		case ComponentTracker::slider://significant on a numerical significance
 			significance =  0.01f;
