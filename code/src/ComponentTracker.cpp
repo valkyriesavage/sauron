@@ -414,22 +414,17 @@ float ComponentTracker::calculateDialProgress(std::vector<ofxCvBlob> blobs){
 	// that means that in order to solve for t, we can do...
 	double x = blob.centroid.x;
 	double y = blob.centroid.y;
-
-	double cost = x/(this->ROI.width/2);
-	double sint = y/(this->ROI.height/2);
-
-	float theta = acos(cost);
-	float thetaInDegrees = theta*180/PI;
-
-	// because of lameness, we only get theta in the [0, pi) range
-	// so we need to figure out if we should be in the 3rd or 4th quadrant
-	// which basically means this: is our y value below our center's y value
-	if(y < ROI.y + ROI.height/2) {
-		// ok, then rotate into those quadrants
-		theta = theta + 180;
-	}
 	
-	return theta;
+	double ROICentreX = ROI.x + ROI.width/2;
+	double ROICentreY = ROI.y + ROI.height/2;
+
+	double cost = (x - ROICentreX)/(this->ROI.width/2);
+	double sint = (y - ROICentreY)/(this->ROI.height/2);
+
+	float theta = atan2(x - ROICentreX, y - ROICentreY) + PI;
+	float thetaInDegrees = theta*180/PI;
+	
+	return thetaInDegrees;
 }
 
 /*
@@ -443,7 +438,7 @@ ComponentTracker::Direction ComponentTracker::calculateScrollWheelDirection(std:
 	
 	float totalDistance = 0.0f;
 	float movementThreshhold = jiggleThreshold;//based on empirical evidence. 
-	float movementTolerance = max(ROI.width/2, ROI.height/2);
+	float movementTolerance = min(ROI.width/2, ROI.height/2);
 	int blobsNotJumping = 0;
 	
 	for(int i = 0; i < min(blobs.size(), previousBlobs.size()); i++) {
@@ -734,7 +729,7 @@ bool ComponentTracker::isDeltaSignificant(){
 			return true;//for now until we implement
 			break;
 		case ComponentTracker::dial://significant on a numerical significance
-			significance =  0.5f;
+			significance =  0.05f;
 			if (abs(atof(delta.c_str())-atof(prevDelta.c_str()))>significance) {
 				return true;
 			}else return false;

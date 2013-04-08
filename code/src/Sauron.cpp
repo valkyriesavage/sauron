@@ -15,7 +15,7 @@ void Sauron::setup(){
 	grayImage.allocate(320,240);
 	prevImage.allocate(320,420);
 	
-	threshold = 117;//threshold is such to account for the new camera and brightness
+	threshold = 174;//threshold is such to account for the new camera and brightness
 	mNumBlobsConsidered = 10;//just an arbitrary number high enough to capture all components
 	
 	registering = false;
@@ -46,6 +46,8 @@ void Sauron::setup(){
 	mFrameCounter = 0;
 	
 	trackballer = *(new TrackballTracker());
+	
+	componentId = 0;
 }
 
 	//--------------------------------------------------------------
@@ -386,31 +388,31 @@ void Sauron::keyPressed(int key){
 			if (threshold < 0) threshold = 0;
 			break;
 		case '1': case 'l':
-			stageComponent(ComponentTracker::slider, 0);
+			stageComponent(ComponentTracker::slider, componentId++);
 			startRegistrationMode();
 			break;
 		case '2': case 's':
-			stageComponent(ComponentTracker::scroll_wheel, 0);
+			stageComponent(ComponentTracker::scroll_wheel, componentId++);
 			startRegistrationMode();
 			break;
 		case '3': case 'd':
-			stageComponent(ComponentTracker::dial, 0);
+			stageComponent(ComponentTracker::dial, componentId++);
 			startRegistrationMode();
 			break;
 		case '4': case 'j':
-			stageComponent(ComponentTracker::joystick, 0);
+			stageComponent(ComponentTracker::joystick, componentId++);
 			startRegistrationMode();
 			break;
 		case '5': case 'p':
-			stageComponent(ComponentTracker::dpad, 0);
+			stageComponent(ComponentTracker::dpad, componentId++);
 			startRegistrationMode();
 			break;
 		case '6': case 'b':
-			stageComponent(ComponentTracker::button, 0);
+			stageComponent(ComponentTracker::button, componentId++);
 			startRegistrationMode();
 			break;
 		case '7': case 'r':
-			stageComponent(ComponentTracker::trackball, 0);
+			stageComponent(ComponentTracker::trackball, componentId++);
 			startRegistrationMode();
 			break;
 		case 't':
@@ -440,6 +442,10 @@ void Sauron::keyPressed(int key){
 			break;
 		case ' ':
 			stopRegistrationMode();
+			break;
+		case 'c':
+			stopRegistrationMode();
+			components.pop_back();
 			break;
 	}
 }

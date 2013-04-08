@@ -16,9 +16,9 @@
 #include <fstream>
 
 #define RECEIVE_PORT 5001
-#define SEND_PORT 5002
+#define SEND_PORT 8000
 #define WEBSOCKETS_PORT 4344
-#define HOST "localhost"
+#define HOST "128.32.45.234"
 
 #define PRINTED_IN_WHITE true
 
@@ -82,5 +82,7 @@ class Sauron : public ofBaseApp{
 	int getNumComponentsRegistered();
 
 	void visualizePoint(ofPoint point, int r, int g, int b);
+	
+	int componentId;
 };
 
