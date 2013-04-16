@@ -1,0 +1,32 @@
+To create a new component, we need some tagged geometry.
+
+You can modify the appearance of any of the components in this
+repository and they will work.
+
+To add a component with a new name, modify the file "SWTaskpaneHost.cs"
+in ../code/swPlugin/SauronSWPlugin/SauronSWPlugin and add the prefix
+of the component's name (e.g. "rockerswitch") to the list called
+ourComponentNames.  We need this to find the correct component in the
+feature tree.
+
+To add sensing for a component, you will need to create a tracker for it,
+or modify an existing tracker, in ../code/src/.
+
+To create a new component that extrudes, in the SolidWorks file you need:
+a feature called "flag"
+a point called "centre of flag base"
+a point called "centre of flag top"
+
+To add components to your assembly and get simulation benefits, you need
+tagged mates.  The mate, described below for each component, will need
+to be called componenttype-distance (e.g. "button-distance").
+
+button : a mate between the top inner face of the button and the main body
+set to the maximum distance the button can be away from the body
+slider : a mate between one side of the slider and the facing side of the
+main body set to the maximum distance it can go along its track
+dial : an angle mate between the flag and something else
+dpad : N/A
+joystick : N/A
+trackball : N/A
+scroll wheel : N/A
