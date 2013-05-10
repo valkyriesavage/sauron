@@ -2,8 +2,8 @@
 
 	//--------------------------------------------------------------
 void Sauron::setup(){
-	#if defined (_WIN32) // if we are on Valkyrie's computer, use the Eye camera rather than the FaceTime
-	vidGrabber.setDeviceID(1);
+	#if defined (_WIN32) // if we are on Valkyrie's computer, pull in the test library
+		vidGrabber.setDeviceID(1);
 	#else
 		vidGrabber.setDeviceID(1);//Colin likes using the marooned USB port
 	#endif

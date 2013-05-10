@@ -78,21 +78,27 @@
   <ItemGroup>
     <Compile Include="Camera.cs" />
     <Compile Include="ComponentIdentifier.cs" />
+    <Compile Include="Extrusion.cs" />
     <Compile Include="InstructionsGenerator.cs" />
+    <Compile Include="MirrorLocation.cs" />
+    <Compile Include="OSCCommunicator.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="RayTracer.cs" />
     <Compile Include="ReflectionPoint.cs" />
     <Compile Include="Sauron_plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Simulator.cs" />
     <Compile Include="SWTaskpaneHost.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="SWTaskpaneHost.Designer.cs">
       <DependentUpon>SWTaskpaneHost.cs</DependentUpon>
     </Compile>
+    <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="SWTaskpaneHost.resx">

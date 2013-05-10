@@ -35,11 +35,16 @@ namespace SauronSWPlugin
 
         private static String CAMERA_RAY_NAME = "camera ray";
 
+        double VIEWINGANGLERIGHTLEFT = 55 * 2 * Math.PI / 360;  // radians
+        double VIEWINGANGLEUPDOWN = 50 * 2 * Math.PI / 360;  // radians
         double VECTORSRIGHTLEFT = 20;
         double VECTORSUPDOWN = 20;
 
         private List<MathVector> castRayVectors = null;
         private List<MathPoint> castRayCentres = null;
+
+        private MathVector edgeOfQ1 = null, edgeOfQ2 = null, edgeOfQ3 = null, edgeOfQ4 = null;
+
 
         public static Camera createCamera(Component2 fieldOfView, SldWorks swApp, ModelDoc2 swDoc, AssemblyDoc swAssembly, SelectionMgr swSelectionMgr, MathUtility mathUtils)
         {
@@ -95,9 +100,14 @@ namespace SauronSWPlugin
             return namedPoint;
         }
 
-        private static IMathPoint getCentreOfVision(Component2 fieldOfView, ModelDoc2 swDoc, SelectionMgr swSelectionMgr, MathUtility mathUtils)
+        public static IMathPoint getCentreOfVision(Component2 fieldOfView, ModelDoc2 swDoc, SelectionMgr swSelectionMgr, MathUtility mathUtils)
         {
             return getNamedPoint("centre of vision", fieldOfView, swDoc, swSelectionMgr, mathUtils);    
+        }
+
+        private IMathPoint getCentreOfVision()
+        {
+            return Camera.getNamedPoint("centre of vision", fieldOfView, swDoc, swSelectionMgr, mathUtils);
         }
 
         private static IMathPoint getDirectionReference(Component2 fieldOfView, ModelDoc2 swDoc, SelectionMgr swSelectionMgr, MathUtility mathUtils)
@@ -109,7 +119,7 @@ namespace SauronSWPlugin
         {
             // now figure out the direction the camera points
             // this is translated from http://help.solidworks.com/2012/English/api/sldworksapi/get_the_normal_and_origin_of_a_reference_plane_using_its_transform_example_vb.htm
-            swDoc.Extension.SelectByID2("distance of measurement@" + fieldOfView.GetSelectByIDString(),
+            swDoc.Extension.SelectByID2("Front Plane@" + fieldOfView.GetSelectByIDString(),
                                         "PLANE", 0, 0, 0, false, 0, null, 0);
             IFeature cameraNormalFeature = swSelectionMgr.GetSelectedObject6(1, -1);
             RefPlane cameraNormalPlane = cameraNormalFeature.GetSpecificFeature2();
@@ -163,7 +173,7 @@ namespace SauronSWPlugin
 
             if (centreOfVision == null)
             {
-                swApp.SendMsgToUser2("you need to insert the camera first!", 1, 1);
+                Utilities.alert("you need to insert the camera first!");
                 return;
             }
 
@@ -247,15 +257,6 @@ namespace SauronSWPlugin
             {
                 castRayVectors = new List<MathVector>();
                 castRayVectors.Add(cameraDirection);
-
-                // direction reference {12,13,14,15} are the bounding corners of the field of view cone
-                for (int i = 12; i < 16; i++)
-                {
-                    castRayVectors.Add(getRayFromNamedPoint("direction reference " + i));
-                }
-
-                double viewingAngleRightLeft = 55*2*Math.PI/360;  // radians
-                double viewingAngleUpDown = 50*2*Math.PI/360;  // radians
                 
                 double pixelsRightLeft = 480;
                 double pixelsUpDown = 320;
@@ -268,8 +269,8 @@ namespace SauronSWPlugin
                     for (int j = 0; j < (VECTORSUPDOWN / 2); j++)
                     {
                         // note that we are doing all our math in a transformed basis where the camera normal = [1,0,0]
-                        double upDownAngle = i * pixelsPerGapUpDown * viewingAngleUpDown / (pixelsUpDown / 2);
-                        double rightLeftAngle = j * pixelsPerGapRightLeft * viewingAngleRightLeft / (pixelsRightLeft / 2);
+                        double upDownAngle = i * pixelsPerGapUpDown * VIEWINGANGLEUPDOWN / (pixelsUpDown / 2);
+                        double rightLeftAngle = j * pixelsPerGapRightLeft * VIEWINGANGLERIGHTLEFT / (pixelsRightLeft / 2);
 
                         MathVector xyVect = mathUtils.CreateVector(new double[] {Math.Cos(upDownAngle),
                                                                                  Math.Sin(upDownAngle),
@@ -307,6 +308,13 @@ namespace SauronSWPlugin
                         castRayVectors.Add(transformBack(Q2Ray));
                         castRayVectors.Add(transformBack(Q3Ray));
                         castRayVectors.Add(transformBack(Q4Ray));
+
+                        // the most extreme vectors will be the last ones we loop to, so we'll just
+                        // set these values every time, and we'll get the correct ones when we are done
+                        edgeOfQ1 = Q1Ray;
+                        edgeOfQ2 = Q2Ray;
+                        edgeOfQ3 = Q3Ray;
+                        edgeOfQ4 = Q4Ray;
                     }
                 }
             }
@@ -353,6 +361,53 @@ namespace SauronSWPlugin
                 rayCentres[3 * i + 2] = centreData[2];
             }
             return rayCentres;
+        }
+
+        public bool isRayWithinFOV(IMathPoint rayTo)
+        {
+            IMathPoint source = getCentreOfVision();
+            MathVector direction = ((MathVector)mathUtils.CreateVector(new double[] {
+                                    rayTo.ArrayData[0] - source.ArrayData[0],
+                                    rayTo.ArrayData[1] - source.ArrayData[1],
+                                    rayTo.ArrayData[2] - source.ArrayData[2],
+                                    })).Normalise();
+
+            // now we need to see if our direction is less extreme than all of the corner directions.
+            rayVectors();
+
+            double theta = Math.Acos(direction.Dot(cameraDirection.Normalise()));
+
+            // TODO : this could be better
+            return theta < VIEWINGANGLEUPDOWN && theta < VIEWINGANGLERIGHTLEFT;
+        }
+
+        private void setLoftTerminalTo(string name)
+        {
+            IFeature fov = fieldOfView.FeatureByName("field of view");
+            ILoftFeatureData fieldOfViewLoft = (ILoftFeatureData)fov.GetDefinition();
+            fieldOfViewLoft.AccessSelections(swDoc, fieldOfView);
+
+            Object[] fovProfiles = fieldOfViewLoft.Profiles;
+            IFeature sizedSketch = fieldOfView.FeatureByName(name);
+            IFeature originalSketch = fovProfiles[0] as IFeature;
+            IFeature[] newProfiles = new IFeature[] { fovProfiles[0] as IFeature, sizedSketch };
+
+            fieldOfViewLoft.Profiles = newProfiles;
+            fov.ModifyDefinition(fieldOfViewLoft, swDoc, fieldOfView);
+
+            fieldOfViewLoft.ReleaseSelectionAccess();
+            swDoc.EditRebuild3();
+            swAssembly.EditAssembly();
+        }
+
+        public void infiniteCamera()
+        {
+            setLoftTerminalTo("large camera sketch");
+        }
+
+        public void regularCamera()
+        {
+            setLoftTerminalTo("small camera sketch");
         }
 
         public static MathTransform reverseTransform(MathTransform transform, MathUtility mathUtility)
