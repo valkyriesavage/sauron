@@ -11,7 +11,6 @@
 
 #include "ComponentTracker.h"
 #include "utilities.h"
-#include "TrackballTracker.h"
 #include <iostream>
 #include <fstream>
 
@@ -20,11 +19,11 @@
 #define WEBSOCKETS_PORT 4344
 #define HOST "128.32.45.234"
 
-#define PRINTED_IN_WHITE true
-
 class Sauron : public ofBaseApp{
 
 	public:
+	bool PRINTED_IN_WHITE;
+	
 	void setup();
 	void update();
 	void draw();
@@ -67,8 +66,6 @@ class Sauron : public ofBaseApp{
 	char mDpadDirection[128];
 	char mJoystickLocation[128];
 	char mTrackballValue[128];
-	
-	TrackballTracker trackballer;
 
 	ofxOscReceiver receiver;
 	ofxOscSender sender;

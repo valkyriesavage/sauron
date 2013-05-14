@@ -1,7 +1,6 @@
 #include "ofMain.h"
 #include "ofAppGlutWindow.h"
 
-#include "testing.h"
 #include "Sauron.h"
 #include "ComponentTracker.h"
 #include "utilities.h"

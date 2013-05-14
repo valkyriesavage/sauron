@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "ofxOpenCv.h"
-#include "TrackballTracker.h"
 #include "utilities.h"
 
 #pragma once
@@ -90,7 +89,7 @@ public:
 
 	ofPoint trackballXDirection;  // this should be a vector...
 	ofPoint trackballYDirection;  // this should, too... :(
-	TrackballTracker trackballer;
+	int trackballCenterBlob;
 	
 	// Well, for some reason we have two of these
 	ofRectangle ROI;
@@ -113,6 +112,8 @@ private:
 	
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);
+	
+	int closestBlobToROICentre(std::vector<ofxCvBlob> blobs);
 	
 	int idOfMiddleBlob;
 	bool blobIsMiddle(ofxCvBlob blob, std::vector<ofxCvBlob> blobs);

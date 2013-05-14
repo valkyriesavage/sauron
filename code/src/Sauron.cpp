@@ -2,6 +2,8 @@
 
 	//--------------------------------------------------------------
 void Sauron::setup(){
+	this->PRINTED_IN_WHITE = true;
+	
 	#if defined (_WIN32) // if we are on Valkyrie's computer, use the Eye camera rather than the FaceTime
 	vidGrabber.setDeviceID(1);
 	#else
@@ -30,6 +32,7 @@ void Sauron::setup(){
 	sprintf(mButtonPressed,"%s", notRegistered);
 	sprintf(mJoystickLocation, "%s", notRegistered);
 	sprintf(mDpadDirection, "%s", notRegistered);
+	sprintf(mTrackballValue, "%s", notRegistered);
 	
 	receiver.setup(RECEIVE_PORT);
 	sender.setup(HOST, SEND_PORT);
@@ -44,8 +47,6 @@ void Sauron::setup(){
 	mArduinoTest = false;
 	
 	mFrameCounter = 0;
-	
-	trackballer = *(new TrackballTracker());
 	
 	componentId = 0;
 }
@@ -107,13 +108,8 @@ void Sauron::update(){
 						sprintf(mJoystickLocation, "%s", c->getDelta().c_str());
 						break;
 					case ComponentTracker::trackball:
-					{
-						ofPoint avgFlow = *(new ofPoint());
-						avgFlow = trackballer.getTrackballFlow(colorImg, grayImage, prevImage, c->ROI);
-						c->setDelta(ofPointToA(avgFlow));
 						sprintf(mTrackballValue, "%s", c->getDelta().c_str());
 						break;
-					}
 					default:
 						break;
 				}
@@ -344,13 +340,19 @@ void Sauron::draw(){
 		case ComponentTracker::dial:
 			ofNoFill();
 			ofEllipse(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.width, c->ROI.height);
+			break;
 
 		case ComponentTracker::trackball:
-			ofSetColor(255,0,0);
-			ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballXDirection.x, c->ROI.y + c->ROI.height/2 + c->trackballXDirection.y);
-			ofSetColor(0,0,255);
-			ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballYDirection.x, c->ROI.y + c->ROI.height/2 + c->trackballYDirection.y);
-
+			{
+				ofRectangle centreBlobBound = contourFinderGrayImage.blobs.at(c->trackballCenterBlob).boundingRect;
+				ofSetColor(255,0,0);
+				ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballXDirection.x, c->ROI.y + c->ROI.height/2 + c->trackballXDirection.y);
+				ofSetColor(0,0,255);
+				ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballYDirection.x, c->ROI.y + c->ROI.height/2 + c->trackballYDirection.y);
+				ofRect(centreBlobBound.x, centreBlobBound.y, centreBlobBound.width, centreBlobBound.height);
+			}
+				break;
+				
 		default:
 			break;
 		}
@@ -447,6 +449,9 @@ void Sauron::keyPressed(int key){
 			stopRegistrationMode();
 			components.pop_back();
 			break;
+		case '\\':
+			this->PRINTED_IN_WHITE = !this->PRINTED_IN_WHITE;
+			break;
 	}
 }
 /*
@@ -455,9 +460,6 @@ void Sauron::keyPressed(int key){
 void Sauron::stageComponent(ComponentTracker::ComponentType type, int id){
 	if(!registering && type!=ComponentTracker::no_component){
 		currentRegisteringComponent = new ComponentTracker(type, id);
-		if(type == ComponentTracker::trackball) {
-			currentRegisteringComponent->trackballer = trackballer;
-		}
 	}
 }
 
