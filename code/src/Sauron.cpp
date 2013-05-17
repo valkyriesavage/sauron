@@ -344,12 +344,17 @@ void Sauron::draw(){
 
 		case ComponentTracker::trackball:
 			{
-				ofRectangle centreBlobBound = contourFinderGrayImage.blobs.at(c->trackballCenterBlob).boundingRect;
+				ofSetLineWidth(5);
 				ofSetColor(255,0,0);
-				ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballXDirection.x, c->ROI.y + c->ROI.height/2 + c->trackballXDirection.y);
+				ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballXDirection.x*20, c->ROI.y + c->ROI.height/2 + c->trackballXDirection.y*20);
 				ofSetColor(0,0,255);
-				ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballYDirection.x, c->ROI.y + c->ROI.height/2 + c->trackballYDirection.y);
-				ofRect(centreBlobBound.x, centreBlobBound.y, centreBlobBound.width, centreBlobBound.height);
+				ofLine(c->ROI.x + c->ROI.width/2, c->ROI.y + c->ROI.height/2, c->ROI.x + c->ROI.width/2 + c->trackballYDirection.x*20, c->ROI.y + c->ROI.height/2 + c->trackballYDirection.y*20);
+				ofSetColor(0,255,0);
+				ofSetLineWidth(1);
+				if(c->trackballCenterBlob > -1) {
+					ofRectangle centreBlobBound = contourFinderGrayImage.blobs.at(c->trackballCenterBlob).boundingRect;
+					ofRect(centreBlobBound.x, centreBlobBound.y, centreBlobBound.width, centreBlobBound.height);
+				}
 			}
 				break;
 				

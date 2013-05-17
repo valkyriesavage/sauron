@@ -632,22 +632,23 @@ int ComponentTracker::closestBlobToROICentre(std::vector<ofxCvBlob> blobs) {
 }
 
 ofPoint ComponentTracker::calculateTrackballValue(std::vector<ofxCvBlob> blobs) {
-	
-	// we want to consider the most central blob if we don't have one yet
-	if(this->trackballCenterBlob == -1) {
-		this->trackballCenterBlob = closestBlobToROICentre(blobs);
-		cout << "our center blob number is " << this->trackballCenterBlob;
+	this->trackballCenterBlob = closestBlobToROICentre(blobs);
 		
-		// we don't want to return a diff if we don't have a point
+	if( trackballCenterBlob < 0 ) {
+		cout << "we don't have a center blob..." << endl;
 		return *(new ofPoint(0,0));
 	}
 	
-	// find the absolute flow
-	ofPoint blobFlow = *(new ofPoint(blobs.at(this->trackballCenterBlob).centroid.x - previousBlobs.at(this->trackballCenterBlob).centroid.x,
-																	 blobs.at(this->trackballCenterBlob).centroid.y - previousBlobs.at(this->trackballCenterBlob).centroid.y));
+	if ( previousBlobs.size() <= this->trackballCenterBlob || blobs.size() <= this->trackballCenterBlob ) {
+		return *(new ofPoint(0,0));
+	}
 	
-	// update to have closest blob to centre
-	this->trackballCenterBlob = closestBlobToROICentre(blobs);
+	ofxCvBlob curBlob = blobs.at(this->trackballCenterBlob);
+	ofxCvBlob prevBlob = previousBlobs.at(this->trackballCenterBlob);
+	
+	// find the absolute flow
+	ofPoint blobFlow = *(new ofPoint(curBlob.centroid.x - prevBlob.centroid.x,
+																	 curBlob.centroid.y - prevBlob.centroid.y));
 	
 	// now decide what direction we are moving WRT the x-axis defined by the user
 	return changeBasis(blobFlow, this->trackballXDirection, this->trackballYDirection);
