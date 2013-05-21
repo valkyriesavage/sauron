@@ -10,7 +10,6 @@ ComponentTracker::ComponentTracker(ComponentType type, int id){
 
 void ComponentTracker::init(ComponentType type, int id){
 	mIsRegistered = false;
-	ROI = ofRectangle();
 	mThreshold = 2.0f;//just a guess
 	this->delta = "";
 	this->prevDelta = "";
@@ -127,92 +126,6 @@ void ComponentTracker::finalizeRegistration(){
 	atRestBlobs = this->keepInsideBlobs(previousBlobs);
 }
 
-bool ComponentTracker::buttonEventDetected() {
-	return this->contourFinder.blobs.size() > 0;
-}
-
-bool ComponentTracker::sliderEventDetected(int* sliderPosition) {
-	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-		return false;
-	}
-	*sliderPosition = this->contourFinder.blobs.at(0).centroid.distance(contourFinder.blobs.at(1).centroid) / this->regionOfInterest.width;
-	return true;
-}
-
-bool ComponentTracker::dialEventDetected(int* dialPosition) {
-	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-		return false;
-	}
-	// get the dial position : we have a triangle with one side as half the rectangle (from the edge to the
-	// center of the circle) and one side as the distance from the center of the circle to the moving blob.
-	// so we need to find angle between the adjacent side and hypotenuse : thus arccos
-	*dialPosition = acos((this->regionOfInterest.width/2)/contourFinder.blobs.at(0).centroid.distance(centerOf(this->regionOfInterest)) * 180/PI);
-	return true;
-}
-
-bool ComponentTracker::scrollWheelEventDetected(Direction* scrollDirection, int* scrollAmount) {
-    if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-        return false;
-    }
-    if (this->previousBlobs.empty()) {
-        this->previousBlobs = this->contourFinder.blobs;
-        return false;
-    }
-    // determine whether the blobs have moved generally right or up or generally left or down
-    int xDiff = this->previousBlobs.at(0).centroid.x - this->contourFinder.blobs.at(0).centroid.x;
-    int yDiff = this->previousBlobs.at(0).centroid.y - this->contourFinder.blobs.at(0).centroid.y;
-    if(xDiff > 0) {
-        *scrollDirection = ComponentTracker::up;
-    } else {
-        *scrollDirection = ComponentTracker::down;
-    }
-    *scrollAmount = (int)this->previousBlobs.at(0).centroid.distance(this->contourFinder.blobs.at(0).centroid);
-    return true;
-}
-
-bool ComponentTracker::dpadEventDetected(Direction* direction) {
-	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-		return false;
-	}
-    // determine whether the center of the four blobs' centers is off-center
-    double xCenter = this->regionOfInterest.x + this->regionOfInterest.width/2;
-    double yCenter = this->regionOfInterest.y + this->regionOfInterest.height/2;
-    
-    double xCenterBlobs = 0;
-    double yCenterBlobs = 0;
-    for (int i=0; i < this->contourFinder.blobs.size(); i++) {
-        xCenterBlobs += this->contourFinder.blobs.at(i).centroid.x;
-        yCenterBlobs += this->contourFinder.blobs.at(i).centroid.y;
-    }
-    xCenterBlobs = xCenterBlobs/this->contourFinder.blobs.size();
-    yCenterBlobs = yCenterBlobs/this->contourFinder.blobs.size();
-    
-    if(xCenterBlobs < xCenter) {
-        if(yCenterBlobs < yCenter) {
-            *direction = ComponentTracker::up;
-        } else {
-            *direction = ComponentTracker::right;
-        }
-    } else {
-        if(yCenterBlobs < yCenter) {
-            *direction = ComponentTracker::down;
-        } else {
-            *direction = ComponentTracker::left;
-        }
-    }
-
-	return true;
-}
-
-bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
-	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-		return false;
-	}
-    // TODO : finish this.  I don't have a printed joystick but can guess at stuff.
-	*xPosition = 0;
-	*yPosition = 0;
-	return false;
-}
 /*
  * setROI is called repeatedly from Sauron to set the ROI of a particular component. setROI starts to 
  * build an ROI by detecting the greatest difference in blob placement and building a ofRectangle to 
@@ -306,7 +219,10 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 			// let's look at the optical flow of the closest blob to the centre
 			this->trackballCenterBlob = closestBlobToROICentre(blobs);
 			
-			if(previousBlobs.size() < this->trackballCenterBlob) break;
+			if(previousBlobs.size() < this->trackballCenterBlob) {
+				previousBlobs = blobs;
+				return;
+			}
 			
 			ofxCvBlob blob = blobs.at(this->trackballCenterBlob);
 			ofxCvBlob prevBlob = previousBlobs.at(this->trackballCenterBlob);
@@ -320,7 +236,10 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 			if (opticalFlow.y < threshold && opticalFlow.y > -threshold) opticalFlow.y = 0;
 			
 			// we only want to save it if it's significant
-			if(opticalFlow.x == 0 && opticalFlow.y == 0) break;
+			if(opticalFlow.x == 0 && opticalFlow.y == 0) {
+				previousBlobs = blobs;
+				return;
+			}
 			
 			// now we have the optical flow.  we asked the user to move in the x direction, so...
 			this->trackballXDirection = opticalFlow;

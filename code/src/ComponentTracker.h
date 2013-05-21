@@ -22,18 +22,6 @@ public:
 		//enums to strings
 	string getComponentTypeString();
 	const char*  EnumDirectionToString(ComponentTracker::Direction dir);
-
-		//flagged for deletion...
-	ofxCvContourFinder contourFinder;
-	
-	bool buttonEventDetected();
-	bool sliderEventDetected(int* sliderPosition);
-	bool dialEventDetected(int* dialPosition);
-    bool scrollWheelEventDetected(Direction* scrollDirection, int* scrollAmount);
-	bool joystickEventDetected(int* xPosition, int* yPosition);
-	bool dpadEventDetected(Direction* direction);
-	CvRect regionOfInterest;
-		//...until here
 	
 		//registration
 	bool isRegistered();
