@@ -303,9 +303,24 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 	if(this->comptype == ComponentTracker::trackball) {
 		ofxCvBlob* blob = new ofxCvBlob();
 		if ( getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
-			/*// we want to actually look at all the blobs' optical flow in the ROI.  because... we need to average it
-			//ok, we got the blob that moved the most.  now figure out in what direction
-			ofPoint opticalFlow = averageOpticalFlow(previousBlobs, blobs, ROI);
+			// let's look at the optical flow of the closest blob to the centre
+			this->trackballCenterBlob = closestBlobToROICentre(blobs);
+			
+			if(previousBlobs.size() < this->trackballCenterBlob) break;
+			
+			ofxCvBlob blob = blobs.at(this->trackballCenterBlob);
+			ofxCvBlob prevBlob = previousBlobs.at(this->trackballCenterBlob);
+			
+			ofPoint opticalFlow = *(new ofPoint(blob.centroid.x - prevBlob.centroid.x,
+																					blob.centroid.y - prevBlob.centroid.y));
+			
+			// threshold it
+			double threshold = this->ROI.width/25;
+			if (opticalFlow.x < threshold && opticalFlow.x > -threshold) opticalFlow.x = 0;
+			if (opticalFlow.y < threshold && opticalFlow.y > -threshold) opticalFlow.y = 0;
+			
+			// we only want to save it if it's significant
+			if(opticalFlow.x == 0 && opticalFlow.y == 0) break;
 			
 			// now we have the optical flow.  we asked the user to move in the x direction, so...
 			this->trackballXDirection = opticalFlow;
@@ -319,9 +334,7 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 			ofPoint yDirection;
 			yDirection.x = 1;
 			yDirection.y = slopeOfY;
-			this->trackballYDirection = yDirection;*/
-			this->trackballXDirection = *(new ofPoint(1,0));
-			this->trackballYDirection = *(new ofPoint(0,1));
+			this->trackballYDirection = yDirection;
 
 			this->trackballXDirection = normalize(this->trackballXDirection);
 			this->trackballYDirection = normalize(this->trackballYDirection);
