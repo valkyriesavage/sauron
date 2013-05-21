@@ -31,6 +31,10 @@ float distanceFormula(float x1, float y1, float x2, float y2){
 	return sqrt(pow(x2-x1, 2) + pow(y2-y1, 2));
 }
 
+float distanceFormula(ofPoint p1, ofPoint p2) {
+	return distanceFormula(p1.x, p1.y, p2.x, p2.y);
+}
+
 ofPoint	midpoint(ofPoint p1, ofPoint p2){
 	ofPoint result;
 	result.x = (p1.x+p2.x)/2;

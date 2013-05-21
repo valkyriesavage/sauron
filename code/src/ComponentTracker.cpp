@@ -10,7 +10,6 @@ ComponentTracker::ComponentTracker(ComponentType type, int id){
 
 void ComponentTracker::init(ComponentType type, int id){
 	mIsRegistered = false;
-	ROI = ofRectangle();
 	mThreshold = 2.0f;//just a guess
 	this->delta = "";
 	this->prevDelta = "";
@@ -127,92 +126,6 @@ void ComponentTracker::finalizeRegistration(){
 	atRestBlobs = this->keepInsideBlobs(previousBlobs);
 }
 
-bool ComponentTracker::buttonEventDetected() {
-	return this->contourFinder.blobs.size() > 0;
-}
-
-bool ComponentTracker::sliderEventDetected(int* sliderPosition) {
-	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-		return false;
-	}
-	*sliderPosition = this->contourFinder.blobs.at(0).centroid.distance(contourFinder.blobs.at(1).centroid) / this->regionOfInterest.width;
-	return true;
-}
-
-bool ComponentTracker::dialEventDetected(int* dialPosition) {
-	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-		return false;
-	}
-	// get the dial position : we have a triangle with one side as half the rectangle (from the edge to the
-	// center of the circle) and one side as the distance from the center of the circle to the moving blob.
-	// so we need to find angle between the adjacent side and hypotenuse : thus arccos
-	*dialPosition = acos((this->regionOfInterest.width/2)/contourFinder.blobs.at(0).centroid.distance(centerOf(this->regionOfInterest)) * 180/PI);
-	return true;
-}
-
-bool ComponentTracker::scrollWheelEventDetected(Direction* scrollDirection, int* scrollAmount) {
-    if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-        return false;
-    }
-    if (this->previousBlobs.empty()) {
-        this->previousBlobs = this->contourFinder.blobs;
-        return false;
-    }
-    // determine whether the blobs have moved generally right or up or generally left or down
-    int xDiff = this->previousBlobs.at(0).centroid.x - this->contourFinder.blobs.at(0).centroid.x;
-    int yDiff = this->previousBlobs.at(0).centroid.y - this->contourFinder.blobs.at(0).centroid.y;
-    if(xDiff > 0) {
-        *scrollDirection = ComponentTracker::up;
-    } else {
-        *scrollDirection = ComponentTracker::down;
-    }
-    *scrollAmount = (int)this->previousBlobs.at(0).centroid.distance(this->contourFinder.blobs.at(0).centroid);
-    return true;
-}
-
-bool ComponentTracker::dpadEventDetected(Direction* direction) {
-	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-		return false;
-	}
-    // determine whether the center of the four blobs' centers is off-center
-    double xCenter = this->regionOfInterest.x + this->regionOfInterest.width/2;
-    double yCenter = this->regionOfInterest.y + this->regionOfInterest.height/2;
-    
-    double xCenterBlobs = 0;
-    double yCenterBlobs = 0;
-    for (int i=0; i < this->contourFinder.blobs.size(); i++) {
-        xCenterBlobs += this->contourFinder.blobs.at(i).centroid.x;
-        yCenterBlobs += this->contourFinder.blobs.at(i).centroid.y;
-    }
-    xCenterBlobs = xCenterBlobs/this->contourFinder.blobs.size();
-    yCenterBlobs = yCenterBlobs/this->contourFinder.blobs.size();
-    
-    if(xCenterBlobs < xCenter) {
-        if(yCenterBlobs < yCenter) {
-            *direction = ComponentTracker::up;
-        } else {
-            *direction = ComponentTracker::right;
-        }
-    } else {
-        if(yCenterBlobs < yCenter) {
-            *direction = ComponentTracker::down;
-        } else {
-            *direction = ComponentTracker::left;
-        }
-    }
-
-	return true;
-}
-
-bool ComponentTracker::joystickEventDetected(int* xPosition, int* yPosition) {
-	if (this->contourFinder.blobs.size() < this->numBlobsNeeded) {
-		return false;
-	}
-    // TODO : finish this.  I don't have a printed joystick but can guess at stuff.
-	*xPosition = 0;
-	*yPosition = 0;
-	return false;
-}
 /*
  * setROI is called repeatedly from Sauron to set the ROI of a particular component. setROI starts to 
  * build an ROI by detecting the greatest difference in blob placement and building a ofRectangle to 
@@ -303,9 +216,30 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 	if(this->comptype == ComponentTracker::trackball) {
 		ofxCvBlob* blob = new ofxCvBlob();
 		if ( getFarthestDisplacedBlob(blob, previousBlobs, blobs, mThreshold)) {
-			// we want to actually look at all the blobs' optical flow in the ROI.  because... we need to average it
-			//ok, we got the blob that moved the most.  now figure out in what direction
-			ofPoint opticalFlow = averageOpticalFlow(previousBlobs, blobs, ROI);
+			// let's look at the optical flow of the closest blob to the centre
+			this->trackballCenterBlob = closestBlobToROICentre(blobs);
+			
+			if(previousBlobs.size() < this->trackballCenterBlob) {
+				previousBlobs = blobs;
+				return;
+			}
+			
+			ofxCvBlob blob = blobs.at(this->trackballCenterBlob);
+			ofxCvBlob prevBlob = previousBlobs.at(this->trackballCenterBlob);
+			
+			ofPoint opticalFlow = *(new ofPoint(blob.centroid.x - prevBlob.centroid.x,
+																					blob.centroid.y - prevBlob.centroid.y));
+			
+			// threshold it
+			double threshold = this->ROI.width/25;
+			if (opticalFlow.x < threshold && opticalFlow.x > -threshold) opticalFlow.x = 0;
+			if (opticalFlow.y < threshold && opticalFlow.y > -threshold) opticalFlow.y = 0;
+			
+			// we only want to save it if it's significant
+			if(opticalFlow.x == 0 && opticalFlow.y == 0) {
+				previousBlobs = blobs;
+				return;
+			}
 			
 			// now we have the optical flow.  we asked the user to move in the x direction, so...
 			this->trackballXDirection = opticalFlow;
@@ -323,6 +257,8 @@ void ComponentTracker::setROI(std::vector<ofxCvBlob> blobs){
 
 			this->trackballXDirection = normalize(this->trackballXDirection);
 			this->trackballYDirection = normalize(this->trackballYDirection);
+			
+			this->trackballCenterBlob = -1;
 		}
 	}
 	
@@ -374,7 +310,9 @@ bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 			break;
 		default:
 			return false;
-	}	
+	}
+	
+	previousBlobs = componentBlobs;
 
 	//set delta
 	setDelta(s);	
@@ -608,11 +546,51 @@ float ComponentTracker::yJoystick(ofPoint flankCentroid) {
 	return distanceFromCentre;
 }
 
+int ComponentTracker::closestBlobToROICentre(std::vector<ofxCvBlob> blobs) {
+	ofxCvBlob blobToUse;
+	int blobToUseId = -1;
+	for (int i = 0; i < blobs.size(); i++) {
+		ofxCvBlob blob = blobs.at(i);
+		if(this->ROI.inside(blob.centroid)) {
+			double distanceFromCurrentBlob = distanceFormula(blobToUse.centroid, this->ROI.getCenter());
+			double distanceFromNewBlob = distanceFormula(blob.centroid, this->ROI.getCenter());
+			if(distanceFromNewBlob < distanceFromCurrentBlob) {
+				blobToUse = blob;
+				blobToUseId = i;
+			}
+		}
+	}
+	
+	return blobToUseId;
+		
+}
+
 ofPoint ComponentTracker::calculateTrackballValue(std::vector<ofxCvBlob> blobs) {
-	ofPoint avgOpticalFlow = trackballer.latestFlow;
+	this->trackballCenterBlob = closestBlobToROICentre(blobs);
+		
+	if( trackballCenterBlob < 0 ) {
+		cout << "we don't have a center blob..." << endl;
+		return *(new ofPoint(0,0));
+	}
+	
+	if ( previousBlobs.size() <= this->trackballCenterBlob || blobs.size() <= this->trackballCenterBlob ) {
+		return *(new ofPoint(0,0));
+	}
+	
+	ofxCvBlob curBlob = blobs.at(this->trackballCenterBlob);
+	ofxCvBlob prevBlob = previousBlobs.at(this->trackballCenterBlob);
+	
+	// find the absolute flow
+	ofPoint blobFlow = *(new ofPoint(curBlob.centroid.x - prevBlob.centroid.x,
+																	 curBlob.centroid.y - prevBlob.centroid.y));
+	
+	// now we want to threshold the blob flow...
+	double threshold = this->ROI.width/25;
+	if(blobFlow.x < threshold && blobFlow.x > -threshold) blobFlow.x = 0;
+	if(blobFlow.y < threshold && blobFlow.y > -threshold) blobFlow.y = 0;
 	
 	// now decide what direction we are moving WRT the x-axis defined by the user
-	return changeBasis(avgOpticalFlow, this->trackballXDirection, this->trackballYDirection);
+	return changeBasis(blobFlow, this->trackballXDirection, this->trackballYDirection);
 }
 
 string ComponentTracker::getDelta(){
@@ -746,7 +724,7 @@ bool ComponentTracker::isDeltaSignificant(){
 			}else return false;
 			break;
 		case ComponentTracker::trackball: // did it move at all
-			if(trackballer.getLatestFlow().distance(ofPoint(0,0)) > .1) {
+			if(strcmp(delta.c_str(), prevDelta.c_str()) != 0) {
 				return true;
 			} else return false;
 		default:

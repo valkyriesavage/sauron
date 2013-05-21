@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "ofxOpenCv.h"
-#include "TrackballTracker.h"
 #include "utilities.h"
 
 #pragma once
@@ -23,18 +22,6 @@ public:
 		//enums to strings
 	string getComponentTypeString();
 	const char*  EnumDirectionToString(ComponentTracker::Direction dir);
-
-		//flagged for deletion...
-	ofxCvContourFinder contourFinder;
-	
-	bool buttonEventDetected();
-	bool sliderEventDetected(int* sliderPosition);
-	bool dialEventDetected(int* dialPosition);
-    bool scrollWheelEventDetected(Direction* scrollDirection, int* scrollAmount);
-	bool joystickEventDetected(int* xPosition, int* yPosition);
-	bool dpadEventDetected(Direction* direction);
-	CvRect regionOfInterest;
-		//...until here
 	
 		//registration
 	bool isRegistered();
@@ -90,7 +77,7 @@ public:
 
 	ofPoint trackballXDirection;  // this should be a vector...
 	ofPoint trackballYDirection;  // this should, too... :(
-	TrackballTracker trackballer;
+	int trackballCenterBlob;
 	
 	// Well, for some reason we have two of these
 	ofRectangle ROI;
@@ -113,6 +100,8 @@ private:
 	
 	std::vector<ofxCvBlob> keepInsideBlobs(std::vector<ofxCvBlob> blobs);
 	ComponentTracker::Direction getRelativeDirection(ofxCvBlob largestBlob, std::vector<ofxCvBlob> dpadBlobs);
+	
+	int closestBlobToROICentre(std::vector<ofxCvBlob> blobs);
 	
 	int idOfMiddleBlob;
 	bool blobIsMiddle(ofxCvBlob blob, std::vector<ofxCvBlob> blobs);
