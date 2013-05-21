@@ -378,7 +378,9 @@ bool ComponentTracker::measureComponent(std::vector<ofxCvBlob> blobs){
 			break;
 		default:
 			return false;
-	}	
+	}
+	
+	previousBlobs = componentBlobs;
 
 	//set delta
 	setDelta(s);	
@@ -649,6 +651,11 @@ ofPoint ComponentTracker::calculateTrackballValue(std::vector<ofxCvBlob> blobs) 
 	// find the absolute flow
 	ofPoint blobFlow = *(new ofPoint(curBlob.centroid.x - prevBlob.centroid.x,
 																	 curBlob.centroid.y - prevBlob.centroid.y));
+	
+	// now we want to threshold the blob flow...
+	double threshold = this->ROI.width/25;
+	if(blobFlow.x < threshold && blobFlow.x > -threshold) blobFlow.x = 0;
+	if(blobFlow.y < threshold && blobFlow.y > -threshold) blobFlow.y = 0;
 	
 	// now decide what direction we are moving WRT the x-axis defined by the user
 	return changeBasis(blobFlow, this->trackballXDirection, this->trackballYDirection);
