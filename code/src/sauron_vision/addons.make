@@ -1,0 +1,5 @@
+ofxGui
+ofxNetwork
+ofxOpenCv
+ofxOsc
+ofxVectorGraphics
