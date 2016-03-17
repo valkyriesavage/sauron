@@ -684,7 +684,7 @@ bool ComponentTracker::isDeltaSignificant(){
 	float significance;
 	switch(this->comptype){
 		case ComponentTracker::button:
-			if (!strcmp(delta.c_str(), "1") == 0) {
+			if (!(strcmp(delta.c_str(), "1") == 0)) {
 				if(buttonSentTrue) {
 					buttonSentTrue = false;
 					return true;

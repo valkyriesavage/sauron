@@ -180,8 +180,19 @@ void Sauron::update(){
 						m2.addFloatArg(::atof(yDiff.c_str()));
 						sender.sendMessage(m2);*/
 						break;
-					//TODO : valkyrie : deal with joystick here??
-					//TODO : valkyrie : deal with trackball here??
+                    case ComponentTracker::joystick:
+                        /*string xDiff = split(split(delta.c_str, '(').at(1), ',').at(0);
+                         string yDiff = split(split(delta.c_str, ',').at(1), ')').at(0);
+                         m.setAddress("/" + componentType + "/" + idstr + "/X");
+                         m.addFloatArg(::atof(xDiff.c_str()));
+                         ofxOscMessage m2;
+                         m2.setRemoteEndpoint(HOST, SEND_PORT);
+                         m2.setAddress("/" + componentType + "/" + idstr + "/Y");
+                         m2.addFloatArg(::atof(yDiff.c_str()));
+                         sender.sendMessage(m2);*/
+                        break;
+                    case ComponentTracker::no_component:
+                        break;
 				}
 				m.addFloatArg(deltaFloat);
 				sender.sendMessage(m);
