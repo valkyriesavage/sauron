@@ -71,7 +71,7 @@ I wrote and tested it on SW2012, but theoretically it will work in newer
 versions of that tool. The computer vision subsystems are written with
 OpenFrameworks, and everything in here communicates via OSC messages.
 
-Here there be Dragons
+Here be Dragons
 =====================
 This code was written as a part of my PhD, and thus it can be sketchy in
 some places! It's not very well documented, but I wanted to provide it
